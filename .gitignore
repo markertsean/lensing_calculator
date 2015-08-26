@@ -1,0 +1,7 @@
+*#
+*~
+README.md
+all_parameters
+*.dat*
+paramfile
+build/
