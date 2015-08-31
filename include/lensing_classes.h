@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <cosmo.h>
+#include <math.h>
+#include <astro_constants.h>
 
 //Holds info on lens, source, any halo for easy access
 class haloInfo{
@@ -101,15 +103,25 @@ private:
     }
 };
 
-
+//Holds info on density profile, concentration, mass, shape param, etc
 class lensProfile{
 public:
-  void setC    ( double inpC ){ concentration = inpC; }
-  void setR_s  ( double inpR ){           r_s = inpR; }
-  void setType ( double inpS ){          type = inpS; }
-  void setRho_o( double inpR ){         rho_o = inpR; }
+
+  lensProfile  (             ){          type =    1; }
+  lensProfile  ( int inpT    ){          type = inpT; }
+
+  void setR_max( double inpR ){         r_max = inpR; }
   void setAlpha( double inpA ){         alpha = inpA; }
-  void setM_enc( double inpM ){         M_enc = inpM; }
+
+  void setC    ( double inpC ){ concentration = inpC;
+                                            modR_s(); }
+  void setR_s  ( double inpR ){           r_s = inpR;
+                                            modC  (); }
+
+  void setRho_o( double inpR ){         rho_o = inpR;
+                                          modM_enc(); }
+  void setM_enc( double inpM ){         M_enc = inpM;
+                                          modRho_o(); }
 
   double getC() {
       if ( concentration==-1.0 )
@@ -121,6 +133,12 @@ public:
       if ( rho_o==-1.0 )
         unDefVar("\"rho_o\"");
       return rho_o;
+  }
+
+  double getR_max() {
+      if ( r_max==-1.0 )
+        unDefVar("\"R_max\"");
+      return r_max;
   }
 
   double getR_s() {
@@ -151,11 +169,51 @@ private:
   double alpha         = -1.0;
   double rho_o         = -1.0;
   double r_s           = -1.0;
+  double r_max         = -1.0;
   double M_enc         = -1.0;
-  double type          =  1.0; //1 NFW, 2 Einasto
+  int    type          =    1; //1 NFW, 2 Einasto
 
   void   unDefVar( std::string inpS ){
-    std::cerr<<"WARNING: variable "<<inpS<<" undefined in <haloInfo>"<<std::endl;
+    std::cerr<<"WARNING: variable "<<inpS<<" undefined in <lensProfile>"<<std::endl;
+  }
+
+  void modRho_o(){
+    if ( M_enc > 0 && r_max > 0 && concentration > 0){ //All needed parameters def
+      if ( type == 1 ){
+        rho_o   =  M_enc / (4. * M_PI * r_max*r_max*r_max )  *
+                   concentration*concentration*concentration /
+                  (log( 1 + concentration ) - concentration / ( 1 + concentration) );
+      }
+      else {
+        rho_o   =   M_enc    *alpha / (4. * M_PI * r_s * r_s * r_s ) /
+                  (   exp( 4./alpha ) * pow( alpha/2., 3./alpha)   ) /
+                   tgamma( 3./alpha );
+      }
+    }
+  }
+
+  void modM_enc(){
+    if ( rho_o > 0 && r_max > 0 && concentration > 0){ //All needed parameters def
+      if ( type == 1 ){
+        M_enc   =  rho_o / (4. * M_PI * r_max*r_max*r_max )  *
+                   concentration*concentration*concentration /
+                  (log( 1 + concentration ) - concentration / ( 1 + concentration) );
+      }
+      else {
+        M_enc   =  rho_o   * 4. * M_PI * r_s * r_s * r_s *    exp( 4./alpha ) *
+                  pow( alpha/2., 3./alpha)   /     alpha * tgamma( 3./alpha );
+      }
+    }
+  }
+
+  void modR_s(){
+    if (   concentration > 0 && r_max > 0 )
+      r_s = r_max / concentration;
+  }
+
+  void modC(){
+    if (  r_s > 0 && r_max > 0 )
+      concentration = r_max / r_s ;
   }
 
 };
