@@ -244,7 +244,7 @@ public:
   double alphaMin =  0.1;
   double alphaMax =  0.4;
 
-  int maxFitAttempts =  1e6    ; //Max attempts at fitting before abort
+  int maxFitAttempts =  1e3    ; //Max attempts at fitting before abort
   int  N_chromosomes = 1000    ; //Number of chromosomes in population
   int     consistent =   10    ; //Number of times need avg below tolerance
   double   tolerance =    0.001; //Average residual must be below tolerance
