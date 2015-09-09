@@ -120,12 +120,15 @@ int main(int arg,char **argv){
     tempErrArr[i] = 0.3;
     tempSCRArr[i] = planck.SigmaCrit(lensInfo.getZ(), sourceInfo.getZ());
   }
+
+  //Determine distances of the sources from center of cluster
   distArrCalc( sourceDArr, indexes, userParams,
                realWidth/userParams.N_pixels, center );
 
 
   /*
   ///////////////////Determine radial average/////////////////
+  ///////////////////Bin different source vals////////////////
   */
 
 
@@ -136,27 +139,59 @@ int main(int arg,char **argv){
                     tempErrArr, userParams, center );
   radialSourceAverage( gTanArr,    gErrArr, indexes, g_tanMap,
                     tempErrArr, userParams, center );
+printf("GLAMER\n");
+for (int i=0;i<userParams.N_bins;++i)
+printf("%5.2lf %12.3e\n",distArr[i],gTanArr[i]);
   /*
     Have radial averages of sources,
     need to compare vs predictions,
     should probably have error, can use dummy
 
   //*/
+
+
 lensProfile densProfile;
+densProfile.setR_max( lensInfo.getRmax() );
 densProfile.setC    (  3.0  );
 densProfile.setM_enc( 1e14  );
-densProfile.setR_s  ( lensInfo.getRmax() / densProfile.getC()  );
 
+for (int i=0;i<userParams.N_sources;++i)
+printf("%12.3e\n",sourceDArr[i]);
+
+//Generate mock NFW for testing purposes
 generateNFWRTS(gTanArr, densProfile, lensInfo, userParams, tempSCRArr, sourceDArr);
+printf("\nAnalytic NFW\n");
+for (int i=0;i<userParams.N_bins;++i)
+printf("%5.2lf %12.3e\n",distArr[i],gTanArr[i]);
 
-  lensProfile nfwProfile, einProfile;
-  einProfile.setType(2);
+/*
+lensProfile densProfile2(2);
+densProfile2.setR_max( lensInfo.getRmax() );
+densProfile2.setC    (  3.0  );
+densProfile2.setM_enc( 1e14  );
+densProfile2.setAlpha( 0.12  );
+
+generateEinRTS(gTanArr, densProfile, lensInfo, userParams, tempSCRArr, sourceDArr);
+printf("\nAnalytic Ein\n");
+for (int i=0;i<userParams.N_bins;++i)
+printf("%5.2lf %12.3e\n",distArr[i],gTanArr[i]);
+*/
+
+exit(0);
+  lensProfile nfwProfile, einProfile(2); // 2 sets profile as Einasto
+  nfwProfile.setR_max( lensInfo.getRmax() );
+  einProfile.setR_max( lensInfo.getRmax() );
 
   fitDensProfile( nfwProfile, lensInfo, userParams, gTanArr, distArr, gErrArr,
                   tempSCRArr, sourceDArr );
 printf("%12.3e %5.3lf\n",nfwProfile.getM_enc(),nfwProfile.getC());
 
-//Need to include Einasto profile fitting to fitDensProfile
+/*
+printf("\n\n\n");
+  fitDensProfile( einProfile, lensInfo, userParams, gTanArr, distArr, gErrArr,
+                  tempSCRArr, sourceDArr );
+printf("%12.3e %5.3lf\n",einProfile.getM_enc(),einProfile.getC());
+//*/
 
   exit(0);
   return 0;

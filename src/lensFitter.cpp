@@ -1,23 +1,202 @@
 #include <math.h>
+#include <cmath>
 #include <omp.h>
+#include <astro_constants.h>
 #include <lensing_classes.h>
 #include <lens_fitter.h>
 #include <my_utilities.h>
 
 
+//   2 0[              (0,1)     ]    1     ^ G(2/as)G(s-1/2)           -2s         (-1)^k G(1/a-2/a k)  2k        a(-1)^k G(-1/2-a/2 k)  ak+1
+// H    [                        ]= -----  |  ------------------------ X   ds=  Sum ------ ------------ X    + Sum ------- ------------- X
+//   1 2[(0,2/a)(-1/2,1)         ]  2pi i U            G( s )                   k=0 (k  )! G(1/2-    k)        k=1 2(k)!   G(    -a/2 k)
+double foxH2012(
+                double         z ,  // Z from fox H function
+                double     alpha ,  // Shape parameter Ein profile
+                double tolerance ){ // Tolerance level for convergence
+
+  double sum1(0), sum2(0), oldSum(0), totSum(0), s1(0), s2(0);
+
+  int converge(0), k(-1);
+
+  //k = 0 term
+//     sum1 += tgamma( 1. / alpha ) / tgamma( 0.5 );
+//  oldSum  += sum1;
+//printf("%12.3e,%12.3e %12.3e,%12.3e %12.3e,%12.3e    %12.3e\n",s1,sum1,s2,sum2,totSum,oldSum,fabs((totSum-oldSum)/oldSum));
+  do {
+      ++k;
+
+      //Terms in summation
+      s1 =    pow(       - 1     , k ) / factorial(k) *    pow( z, 2 * k ) *
+           tgamma(  ( 1. - 2.    * k ) / alpha      ) / tgamma(  0.5 - k );
+      s2 =    pow(       - 1     , k ) / factorial(k) *    pow( z, 1 + k * alpha ) *
+           tgamma( -( 1. + alpha * k ) / 2.         ) / tgamma(      - k * alpha / 2.0);
+
+      if ( ! (std::isinf( s1 ) || s1!=s1) )  sum1 += s1;
+      if ( ! (std::isinf( s2 ) || s2!=s2) )  sum2 += s2;
+
+      //totSum is term for current k
+      totSum = sum1 + alpha/2. * sum2;
+      //oldSum an average over all old sums
+      oldSum = ( totSum + oldSum * k ) / ( k + 1 );
+//printf("%12.3e,%12.3e %12.3e,%12.3e %12.3e,%12.3e    %12.3e\n",s1,sum1,s2,sum2,totSum,oldSum,fabs((totSum-oldSum)/oldSum));
+      if ( fabs((totSum-oldSum)/oldSum) < tolerance ){
+        converge +=1;
+      }
+      else{
+        converge = 0;
+      }
+  } while ( converge < 10 && k < 1e2 );
+
+  sum2 *= alpha/2.;
+
+  return sum1+sum2;
+}
+
+
+
+//  2 1[     (-1/2,1) (0,1)     ]    1     ^ G(2/as)G(s-1/2) G(3/2-s)  -2s        (-1)^k G(1/a-2/a k)  2k+2      a(-1)^k G(-3/2-a/2 k)  ak+3
+// H   [                        ]= -----  |  ------------------------ X   ds= Sum ------ ------------ X    - Sum ------- ------------- X
+//  2 3[(0,2/a)(-1/2,1)(-3/2,1) ]  2pi i U   G(5/2-s) G( s )                  k=0 (k+1)! G(1/2-1/a  )        k=1 2(k)!   G(    -a/2 k)
+double foxH2123(
+                double         z ,  // Z from fox H function
+                double     alpha ,  // Shape parameter Ein profile
+                double tolerance ){ // Tolerance level for convergence
+
+  double sum1(0), sum2(0), oldSum(0), totSum(0), s1(0), s2(0);
+
+  int converge(0), k(-1);
+
+  //k = 0 term
+//     sum1 += tgamma( 1. / alpha ) / tgamma( 0.5 - 1. / alpha) * ( z * z );
+//  oldSum  += sum1;
+//printf("%12.3e,%12.3e %12.3e,%12.3e %12.3e,%12.3e    %12.3e\n",s1,sum1,s2,sum2,totSum,oldSum,fabs((totSum-oldSum)/oldSum));
+  do {
+      ++k;
+
+      //Terms in summation
+      s1 =    pow(       - 1     , k ) / factorial(k+1) *    pow( z, 2 + k * 2     ) *      // (-1)^k/(k+1)! x^(2k + 2)
+           tgamma(  ( 1. - 2.    * k ) / alpha        ) / tgamma(  0.5 - 1 / alpha );       // G(  (1-2k)/a ) / G( 1/2 - 1/a )
+
+      s2 =    pow(       - 1     , k ) / factorial(k  ) *    pow( z, 3 + k * alpha ) *      // (-1)^k/(k  )! x^(ak + 3)
+           tgamma( -( 3. + alpha * k ) / 2.           ) / tgamma(      - k * alpha / 2.0);  // G( -(3+ak)/2 ) / G( -ak/2 )
+
+      if ( ! (std::isinf( s1 ) || s1!=s1) )  sum1 += s1;
+      if ( ! (std::isinf( s2 ) || s2!=s2) )  sum2 += s2;
+
+      //totSum is term for current k
+      totSum = sum1 - alpha/2. * sum2;
+      //oldSum an average over all old sums
+      oldSum = ( totSum + oldSum * k ) / ( k + 1 );
+//printf("%12.3e,%12.3e %12.3e,%12.3e %12.3e,%12.3e    %12.3e\n",s1,sum1,s2,sum2,totSum,oldSum,fabs((totSum-oldSum)/oldSum));
+      if ( fabs((totSum-oldSum)/oldSum) < tolerance ){
+        converge +=1;
+      }
+      else{
+        converge = 0;
+      }
+  } while ( converge < 10 && k < 1e2 );
+
+  sum2 *= alpha/2.;
+
+  return sum1-sum2;
+}
+
+
+void generateEinRTS(
+                    double          *gArr ,  // RTS array to output
+                    lensProfile     &lens ,  // Input density profile to generate profile for
+                    haloInfo        &halo ,  // Actual information from the halo
+                    userInfo            u ,  // Information from the user
+                    double    *sourceSc   ,  // Critical surface density for the sources
+                    double    *sourceDist ){ // Projected distances between source and lens
+
+  //Arrays for binning
+  int      N_bin[u.N_bins];
+  double analRTS[u.N_bins];
+
+  //Set avg array values to 0 initially, will be adding upon
+  for (int i=0;i<u.N_bins;++i){
+      N_bin[i] = 0;
+    analRTS[i] = 0;
+  }
+
+  for (int i=0;i<u.N_sources;++i)
+    gArr[i] = 0;
+
+  //Distance converted to bins
+  double stepSize = halo.getRealFOV( u.angFOV )/2.0/u.N_bins;
+
+
+  //Constant part of kappa_c, divided by gamma(1/alpha) * sqrt pi, a constant for easier kappas
+  double temp = lens.getRho_o() * lens.getR_s  ()   * exp( 2./lens.getAlpha() )       *
+                             pow( lens.getAlpha()/2.,      1./lens.getAlpha() - 1.0 ) *
+                             sqrt( M_PI );
+
+  for ( int i = 0; i<u.N_bins; ++i )
+  {
+    double x        = sourceDist[i] / lens.getR_s();
+
+    //Modified kappa_c, kappa_c * sqrt(pi) / Gamma(1/alpha), just need to multiply by H function
+    double kappa_cM = temp / sourceSc[i];
+
+    double kappa    = kappa_cM * foxH2012( x*x, lens.getAlpha() );
+    double kappaAVG = kappa_cM * foxH2123( x*x, lens.getAlpha() );
+
+    int    binNum   = std::min(std::max(
+                      (int) round(sourceDist[i]/stepSize) ,0),u.N_bins-1);
+
+    //RTS avg across bin
+    analRTS[binNum] += ( kappaAVG - kappa ) / ( 1 - kappa );
+      N_bin[binNum] += 1;
+
+//printf("%12.3e %12.3e %12.3e\n", kappa, kappaAVG, (kappaAVG-kappa)/(1-kappa));
+  }
+
+  //Returning gArr
+  for ( int i=0; i < u.N_sources; ++i ){
+    if ( N_bin[i] > 0) gArr[i] = analRTS[i] / N_bin[i];
+  }
+
+  //Kappas are fox H functions
+
+  // |   | m, n [ (a_1,A_1) ... (a_n,A_n) ... (a_p,A_p)  |    ]
+  // |---|      [                                        |  Z ]
+  // |   | p, q [ (b_1,B_1) ... (b_m,B_m) ... (b_q,B_q)  |    ]
+
+  //            ^ Pj=  1, m Gamma(b_j + B_j s) Pj=  1, n Gamma(1 - a_j + A_j s)
+  //  1        |  -------------------------------------------------------------  Z^-s ds
+  // ----      |  Pj=m+1, p Gamma(a_j + A_j s) Pj=m+1, q Gamma(1 - b_j + A_j s)
+  // 2ipi     U L
+
+  //              2 0[              (0,1)     ]  const   ^ G(2/as)G(s-1/2)           -2s         [     (-1)^k G(1/a-2/a k)  2k        a(-1)^k G(-1/2-a/2 k)  ak+1 ]
+  // k = const* H    [                        ]= -----  |  ------------------------ X   ds= const[ Sum ------ ------------ X    + Sum ------- ------------- X     ]
+  //              1 2[(0,2/a)(-1/2,1)         ]  2pi i U            G( s )                       [ k=0 (k  )! G(1/2-    k)        k=1 2(k)!   G(    -a/2 k)       ]
+
+  // _            2 1[     (-1/2,1) (0,1)     ]  const   ^ G(2/as)G(s-1/2) G(3/2-s)  -2s         [     (-1)^k G(1/a-2/a k)  2k+2      a(-1)^k G(-3/2-a/2 k)  ak+3 ]
+  // k = const* H    [                        ]= -----  |  ------------------------ X   ds= const[ Sum ------ ------------ X    - Sum ------- ------------- X     ]
+  //              2 3[(0,2/a)(-1/2,1)(-3/2,1) ]  2pi i U   G(5/2-s) G( s )                       [ k=0 (k+1)! G(1/2-1/a  )        k=1 2(k)!   G(    -a/2 k)       ]
+}
+
 
 //Surface density at radius for NFW profile
-double    SDNFW( double r, double r_s, double rho_o ){
+double    SDNFW(
+                double   r   ,  // Input radius
+                double   r_s ,  // Scale radius, r_-2
+                double rho_o ){ // Initial density
 
-  double    x = r/r_s;
-  double temp = 2*r_s*rho_o;
+  double    x = r / r_s         ;
+  double temp = 2 * r_s * rho_o ;
+
   if      ( x < (1.0-1e-6) ){
-    return temp / ( x*x - 1 ) * ( 1 - 2./sqrt( 1 - x*x ) *
+    return temp / ( x*x - 1 ) * ( 1 - 2./sqrt(  1  - x*x ) *
         atanh( sqrt(( 1 - x ) / ( 1 + x )) ) );
+
   }
   else if ( x > (1.0+1e-6) ){
-    return temp / ( x*x - 1 ) * ( 1 - 2./sqrt( x*x - 1 ) *
+    return temp / ( x*x - 1 ) * ( 1 - 2./sqrt( x*x -  1  ) *
         atan ( sqrt(( x - 1 ) / ( 1 + x )) ) );
+
   }
   else{
     return temp/3.;
@@ -25,22 +204,27 @@ double    SDNFW( double r, double r_s, double rho_o ){
 }
 
 
-//Average surface density in radius for NFW
-double SDAvgNFW( double r, double r_s, double rho_o ){
+//Average surface density within radius for NFW
+double SDAvgNFW(
+                double     r ,  // Input radius
+                double   r_s ,  // Scale radius, r_-2
+                double rho_o ){ // Initial density
 
-  double    x = r/r_s;
-  double temp = 4*r_s*rho_o;
+  double    x = r / r_s         ;
+  double temp = 4 * r_s * rho_o ;
 
   if ( x < (1.0-1e-6) ){
-    return temp / (x*x) * ( 2./sqrt(   1 - x*x ) *
-                        atanh( sqrt((  1 - x )/( 1 + x )) ) + log(x/2.));
+    return temp / (x*x) * ( 2./sqrt(  1 - x*x )*
+                        atanh( sqrt(( 1 - x   )/( 1 + x )) ) + log(x/2.));
   }
+
   else if ( x > (1.0+1e-6) ){
-    return temp / (x*x) * ( 2./sqrt( x*x - 1 ) *
-                        atan ( sqrt((  x - 1 )/( 1 + x )) ) + log(x/2.));
+    return temp / (x*x) * ( 2./sqrt(  x*x - 1 )*
+                        atan ( sqrt((   x - 1 )/( 1 + x )) ) + log(x/2.));
   }
+
   else{
-    return temp * ( 1 + log(0.5) );
+    return temp * ( 1.0 + log(0.5) );
   }
 }
 
@@ -49,14 +233,17 @@ double SDAvgNFW( double r, double r_s, double rho_o ){
 Generates the radially averaged reduced tangential shear for
 an NFW profile for given input
 */
-void generateNFWRTS( double *gArr, lensProfile &lens, haloInfo &halo,                     userInfo   u, double *sourceSc, double *sourceDist ){
-
-  double rho_o = lens.getM_enc() / (4. * M_PI * pow( halo.getRmax(), 3 ) ) *
-                  pow(       lens.getC(), 3 ) /
-                  ( log( 1 + lens.getC() )    - lens.getC() / ( 1 + lens.getC() ));
+void generateNFWRTS(
+                    double          *gArr ,  // RTS array to output
+                    lensProfile     &lens ,  // Input density profile to generate profile for
+                    haloInfo        &halo ,  // Actual information from the halo
+                    userInfo            u ,  // Information from the user
+                    double    *sourceSc   ,  // Critical surface density for the sources
+                    double    *sourceDist ){ // Projected distances between source and lens
 
   int      N_bin[u.N_bins];
   double analRTS[u.N_bins];
+
   //Set avg array values to 0 initially, will be adding upon
   for (int i=0;i<u.N_bins;++i){
       N_bin[i] = 0;
@@ -71,8 +258,8 @@ void generateNFWRTS( double *gArr, lensProfile &lens, haloInfo &halo,           
 
   //Loop over all sources, determining predicted rts for a given source
   for ( int i=0; i < u.N_sources; ++i ){
-    double    SD =    SDNFW( sourceDist[i], lens.getR_s(), rho_o ); //At radius
-    double avgSD = SDAvgNFW( sourceDist[i], lens.getR_s(), rho_o ); //Average
+    double    SD =    SDNFW( sourceDist[i], lens.getR_s(), lens.getRho_o() ); //At radius
+    double avgSD = SDAvgNFW( sourceDist[i], lens.getR_s(), lens.getRho_o() ); //Average
     double SigCr = sourceSc[i];
 
     int   binNum = std::min(std::max(
@@ -121,9 +308,15 @@ void generateNFWRTS( double *gArr, lensProfile &lens, haloInfo &halo,           
   Can do NFW, needs modifications for Einasto
   Potential to fit NFW to < 1%
 */
-void fitDensProfile( lensProfile &densProfile, haloInfo &halo, userInfo u,
-                double *gArr,  double *dArr, double *gErrArr, double *sourceSigC,
-                double *sourceDist ){
+void fitDensProfile(
+                    lensProfile &densProfile ,  // Density profile we are outputting
+                    haloInfo    &       halo ,  // Info about parent halo
+                    userInfo               u ,  // Info from the user
+                    double       *      gArr ,  // RTS binned array we "observed"
+                    double       *      dArr ,  // Distance binned array
+                    double       *   gErrArr ,  // Error array in RTS
+                    double       *sourceSigC ,  // Crit surface densities of sources
+                    double       *sourceDist ){ // 2D distance from source to lens
 
 
   //Values used for comparing goodness of fits
@@ -137,29 +330,43 @@ void fitDensProfile( lensProfile &densProfile, haloInfo &halo, userInfo u,
   lensProfile         parent[ u.N_chromosomes], child[ u.N_chromosomes ];
   double      gAnalyticArray[ u.N_bins       ],  chi2[ u.N_chromosomes ];
 
+
+
+  //Initialize average arrays for diff threads
   double avgChiThreads[ u.num_threads ];
-  for (int i = 0; i  <  u.num_threads  ; ++i)
+  for (int i = 0; i  <  u.num_threads   ; ++i)
     avgChiThreads[i]=0;
 
-
-
+  //Set all parent R_maxes to the lens
+  for (int i = 0; i  <  u.N_chromosomes ; ++i){
+    parent[i].setR_max( halo.getRmax() );
+     child[i].setR_max( halo.getRmax() );
+  }
 
   //Generate first parent values
   #pragma omp parallel for
   for ( int i=0; i < u.N_chromosomes; ++i ){
 
-    //Generate initial parent values
-    parent[i].setC    (         randVal( u.cMin, u.cMax )  );
-    parent[i].setM_enc(pow( 10, randVal( u.mMin, u.mMax ) ));
-    parent[i].setR_s  ( halo.getRmax() / parent[i].getC()  );
+    //Generate initial parent values, if Ein profile need alpha parameter
+    if ( densProfile.getType() == 2 )
+    parent[i].setAlpha(         randVal( u.alphaMin, u.alphaMax )  );
+    parent[i].setC    (         randVal(     u.cMin,     u.cMax )  );
+    parent[i].setM_enc(pow( 10, randVal(     u.mMin,     u.mMax ) ));
 
-    //Gives analytic value for NFW halo, for source locations, radially averaged
-    generateNFWRTS( gAnalyticArray, parent[i], halo, u, sourceSigC, sourceDist);
 
+
+    //Gives analytic value for RTS, for source locations, radially averaged
+    if ( densProfile.getType() == 1 ){
+      generateNFWRTS( gAnalyticArray, parent[i], halo, u, sourceSigC, sourceDist);
+    } else{
+      generateEinRTS( gAnalyticArray, parent[i], halo, u, sourceSigC, sourceDist);
+    }
+
+    //Calc chi2 between theoretical predictions and real values
     chi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.N_bins );
-
     avgChiThreads[omp_get_thread_num()]+=chi2[i];
   }
+
   //Avg used for reproduction, randomly sample halos based on goodness / 1.5avg
   for (int i  = 0; i < u.num_threads; ++i){
     avgChi           += avgChiThreads[i];
@@ -167,6 +374,7 @@ void fitDensProfile( lensProfile &densProfile, haloInfo &halo, userInfo u,
   }
   avgChi  = avgChi / u.N_chromosomes;
 
+  //Reproduction time
   int loopCounter(0); //Counter of number of iterations, over 1e6 then stop
   int     counter(0); //Counter used to count number of times within tolerance
   double   totAvg(0); //Keeps running average, stop when converges
@@ -198,20 +406,28 @@ void fitDensProfile( lensProfile &densProfile, haloInfo &halo, userInfo u,
       }
 
 
+
       int aIndex, cIndex, mIndex;
 
       //Get indexes to use from parents, since parents are random doesn't
       //  matter which we select from, but if Einasto need to decide
       //  whether alpha coming from parent 1 or 2
-      if ( densProfile.getType() == 2.0 )
-      aIndex = parentIndex[ (int) round( randVal( 0, 1) )  ];
       cIndex = parentIndex[0];
       mIndex = parentIndex[1];
 
+      //If Einasto, another parameter needed
+      if ( densProfile.getType() == 2 ){
+      aIndex = parentIndex[ (int) round( randVal( 0, 1) )  ];
+
+
+      child[i].setAlpha( parent[aIndex].getAlpha() );
+      }
 
       //Set child values from parents
       child[i].setC    ( parent[cIndex].getC()     );
       child[i].setM_enc( parent[mIndex].getM_enc() );
+
+
 
 
       //Mutate values, with random chance. Needed to keep genes fresh
@@ -221,11 +437,16 @@ void fitDensProfile( lensProfile &densProfile, haloInfo &halo, userInfo u,
       if ( u.mutChance > randVal(0,1) )
         child[i].setM_enc( child[i].getM_enc() * randVal( 0.9, 1.1 ) );
 
-      child[i].setR_s  ( halo.getRmax()/child[i].getC()   );
 
 
-      //Generate analytic NFW for child
-      generateNFWRTS( gAnalyticArray, child[i], halo, u, sourceSigC, sourceDist);
+
+      //Generate analytic RTS for child
+      if ( densProfile.getType() == 1 ){
+        generateNFWRTS( gAnalyticArray, child[i], halo, u, sourceSigC, sourceDist);
+      } else{
+        generateEinRTS( gAnalyticArray, child[i], halo, u, sourceSigC, sourceDist);
+      }
+
 
       //chi2 for the children
       chi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.N_bins );
@@ -254,8 +475,8 @@ void fitDensProfile( lensProfile &densProfile, haloInfo &halo, userInfo u,
     else{
       counter  = 0;
     }
+//printf("%5i %12.3e         %12.3e %12.3e       %12.3e %5i\n",loopCounter,avgChi,totAvg,oldAvg,fabs(totAvg-oldAvg)/oldAvg,counter);
     ++loopCounter;
-
   } while ( u.consistent > counter && loopCounter < u.maxFitAttempts ) ;
 
   int    minIndex =              0; //index of lowest chi2

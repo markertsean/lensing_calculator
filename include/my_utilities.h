@@ -25,5 +25,8 @@ int       randVal(
 		  int     low,  //Lower limit on randVal
 		  int    high); //Upper limit on randVal
 
+int     factorial(
+                  int  facVal); //Value to calculate factorial of
+
 
 #endif

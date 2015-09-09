@@ -63,3 +63,14 @@ int      randVal(
   return (int) (randVal( (double) low, (double) high));
 }
 
+//Simple factorial function
+int     factorial(
+                  int  facVal){ //Value to calculate factorial of
+
+  int product(1);
+
+  for (int i=facVal; i>0; --i)
+    product *= i;
+
+  return product;
+}
