@@ -110,13 +110,24 @@ public:
   lensProfile  (             ){          type =    1; }
   lensProfile  ( int inpT    ){          type = inpT; }
 
-  void setR_max( double inpR ){         r_max = inpR; }
   void setAlpha( double inpA ){         alpha = inpA; }
 
+
+  void setR_max( double inpR ){         r_max = inpR;
+                                          modR_s  ();
+                                          modC    ();
+                                          modM_enc();
+                                          modRho_o(); }
+
   void setC    ( double inpC ){ concentration = inpC;
-                                            modR_s(); }
+                                          modR_s  ();
+                                          modM_enc();
+                                          modRho_o(); }
+
   void setR_s  ( double inpR ){           r_s = inpR;
-                                            modC  (); }
+                                          modC    ();
+                                          modM_enc();
+                                          modRho_o(); }
 
   void setRho_o( double inpR ){         rho_o = inpR;
                                           modM_enc(); }
@@ -182,7 +193,7 @@ private:
       if ( type == 1 ){
         rho_o   =  M_enc / (4. * M_PI * r_max*r_max*r_max )  *
                    concentration*concentration*concentration /
-                  (log( 1 + concentration ) - concentration / ( 1 + concentration) );
+                  ( log( 1 + concentration ) - concentration / ( 1 + concentration) );
       }
       else {
         rho_o   =   M_enc    *alpha / (4. * M_PI * r_s * r_s * r_s ) /
@@ -195,12 +206,12 @@ private:
   void modM_enc(){
     if ( rho_o > 0 && r_max > 0 && concentration > 0){ //All needed parameters def
       if ( type == 1 ){
-        M_enc   =  rho_o / (4. * M_PI * r_max*r_max*r_max )  *
-                   concentration*concentration*concentration /
-                  (log( 1 + concentration ) - concentration / ( 1 + concentration) );
+        M_enc   =  rho_o * (4. * M_PI * r_max*r_max*r_max )  /
+                   concentration*concentration*concentration *
+                  ( log( 1 + concentration ) - concentration / ( 1 + concentration) );
       }
       else {
-        M_enc   =  rho_o   * 4. * M_PI * r_s * r_s * r_s *    exp( 4./alpha ) *
+        M_enc   =  rho_o  * 4. * M_PI * r_s * r_s * r_s *    exp( 4./alpha ) *
                   pow( alpha/2., 3./alpha)   /     alpha * tgamma( 3./alpha );
       }
     }
@@ -231,7 +242,7 @@ public:
   int          model =  0;  //Flag to do model analysis
   int          nbody =  0;  //Flag to do nbody analysis
   int   N_partSmooth =  5;  //Number of particles nearby for glamer smoothing
-  int   N_edgepixels =  2;  //Gap in distance between sources
+  int   N_edgepixels =  3;  //Gap in distance between sources
   double nearestSourceNeighbor = 1.5; //Number of pixels to leave on an edge
 
   std::string readFile = " ";
