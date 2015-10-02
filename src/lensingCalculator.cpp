@@ -65,9 +65,14 @@ int main(int arg,char **argv){
   PixelMap  alphaMap(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);
   PixelMap alpha1Map(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);
   PixelMap alpha2Map(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);
-  PixelMap  kappaMap(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);  PixelMap  gammaMap(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);  PixelMap gamma1Map(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);  PixelMap gamma2Map(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);  PixelMap invMagMap(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);
+  PixelMap  kappaMap(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);
+  PixelMap  gammaMap(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);
+  PixelMap gamma1Map(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);
+  PixelMap gamma2Map(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);
+  PixelMap invMagMap(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);
   PixelMap  g_tanMap(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);
-  PixelMap  g_aziMap(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);  PixelMap   distMap(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);
+  PixelMap  g_aziMap(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);
+  PixelMap   distMap(center,userParams.N_pixels,userParams.angFOV/userParams.N_pixels);
 
   /*
   ///////////////////////CONSTRUCT LENS//////////////////////
@@ -139,9 +144,11 @@ int main(int arg,char **argv){
                     tempErrArr, userParams, center );
   radialSourceAverage( gTanArr,    gErrArr, indexes, g_tanMap,
                     tempErrArr, userParams, center );
+exit(0);
 printf("GLAMER\n");
 for (int i=0;i<userParams.N_bins;++i)
 printf("%5.2lf %12.3e\n",distArr[i],gTanArr[i]);
+printf("\n");
   /*
     Have radial averages of sources,
     need to compare vs predictions,
@@ -152,17 +159,19 @@ printf("%5.2lf %12.3e\n",distArr[i],gTanArr[i]);
 
 lensProfile densProfile;
 densProfile.setR_max( lensInfo.getRmax() );
-densProfile.setC    (  3.0  );
-densProfile.setM_enc( 1e14  );
+densProfile.setC    (  5.0  );
+densProfile.setM_enc( 1e15  );
+double gTanArr2[userParams.N_sources];
 
-for (int i=0;i<userParams.N_sources;++i)
-printf("%12.3e\n",sourceDArr[i]);
+//for (int i=0;i<userParams.N_sources;++i)
+//printf("%12.3e\n",sourceDArr[i]);
 
 //Generate mock NFW for testing purposes
-generateNFWRTS(gTanArr, densProfile, lensInfo, userParams, tempSCRArr, sourceDArr);
+generateNFWRTS( gTanArr2, densProfile, lensInfo, userParams, tempSCRArr, sourceDArr);
+
 printf("\nAnalytic NFW\n");
 for (int i=0;i<userParams.N_bins;++i)
-printf("%5.2lf %12.3e\n",distArr[i],gTanArr[i]);
+printf("%5.2lf %12.3e\n",distArr[i],gTanArr2[i]);
 
 /*
 lensProfile densProfile2(2);

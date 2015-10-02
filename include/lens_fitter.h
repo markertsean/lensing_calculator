@@ -29,13 +29,21 @@ void generateEinRTS(
 		    double       *sourceSc,  //Critical surface density of a source
 		    double     *sourceDist); //Projected radial distance of sources to lens centers
 
-
 double    SDNFW(
+                double               r ,  //Input radius to calc SD at
+                lensProfile inpProfile ); //Input NFW profile
+
+double    SDAvgNFW(
+                double               r ,  //Input radius to calc SD at
+                lensProfile inpProfile ); //Input NFW profile
+
+
+double    SDNFWFull(
 		double     r,  //Distance to evaluate SD of NFW profile at
 		double   r_s,  //Scale radius of profile
 		double rho_o); //Initial density of profile
 
-double SDAvgNFW(
+double SDAvgNFWFull(
 		double     r,  //Distance to evaluate SD of NFW profile at
 		double   r_s,  //Scale radius of profile
 		double rho_o); //Initial density of profile

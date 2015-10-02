@@ -1,9 +1,11 @@
 #include <slsimlib.h>
+
 #include <image_processing.h>
 #include <grid_maintenance.h>
 #include <astro_constants.h>
 #include <lensing_classes.h>
 #include <pixelmap_functions.h>
+#include <lens_fitter.h>
 
 
 //Get array of distances for sources
@@ -196,28 +198,74 @@ void calcLensMaps(
     //g_tan = -g1*cos - g2*sin
     //g_sec =  g1*sin - g2*cos
     //glamer produces negative value for g1, swap signs in eqtns
-    g_tanMap[k] = ( gamma1Map[k]*cos(2*phi)-gamma2Map[k]*sin(2*phi)) / (1-kappaMap[k]);//gamma1 swapped
-    g_aziMap[k] = (-gamma1Map[k]*sin(2*phi)-gamma2Map[k]*cos(2*phi)) / (1-kappaMap[k]);
+    g_tanMap[k] = ( gamma1Map[k]*cos(2*phi)-gamma2Map[k]*sin(2*phi)); // (1-kappaMap[k]);//gamma1 swapped
+    g_aziMap[k] = (-gamma1Map[k]*sin(2*phi)-gamma2Map[k]*cos(2*phi)); // (1-kappaMap[k]);
   }
   }
+
+//Kappa seems to be ok, just uses average over whole pixel, not radius of pixel
+
+lensProfile densProfile;
+densProfile.setR_max(  2.0 );
+densProfile.setM_enc( 1e15 );
+densProfile.setR_s  (  0.4 );
+
+double myRho_o = 1.297e15;
+//(float  my_mass, float my_Rmax, PosType my_zlens, float my_rscale, float my_fratio, float my_pa, int my_stars_N, EllipMethod my_ellip_method=Pseudo)
+float   myMass = 1e15;
+float   myRmax = 2.0;
+PosType myZlen = 1.0;
+float   myRs   = 0.4;
+float   myFrat = 1.0;
+float   myPa   = 0.0;
+int     myStar = 0;
+
+LensHaloNFW nfwLens( myMass, myRmax, myZlen, myRs, myFrat, myPa, myStar );
+// (PosType *x, PosType Rtrunc, PosType mass, PosType r_scale, PosType *center, PosType Sigma_crit)
+PosType Rt  = 2.7;
+PosType Ma  = 1e15;
+PosType Rs  = myRs;
+PosType C[2]={0,0};
+PosType Sc  = 2.715e15;
+double alpha = 0.15;
 
 /*
   for (int i=0;i<N_pixels;++i){
   for (int j=0;j<N_pixels;++j){
     int k = j+i*N_pixels;
-    printf("%12.3e ",g_tanMap[k]);
+//    if (fabs(gamma1Map[k])<1e-10) gamma2Map[k] = 0;
+    printf("%12.3g ",distMap[k]/myRs);//gamma2Map[k]);//sqrt(gamma1Map[k]*gamma1Map[k]+gamma2Map[k]*gamma2Map[k]))/(1-kappaMap[k]);
+//    printf("%12.3g ",kappaMap[k]*Sc);//*2.715e15/(2*5.188e14));
   }
     printf("\n");
-  }//
+  }
     printf("\n");
-  for (int i=0;i<N_pixels;++i){
-  for (int j=0;j<N_pixels;++j){
+//*/
+//double temp = densProfile.getRho_o() * densProfile.getR_s  ()   * exp( 2./alpha ) * pow( alpha/2., 1./alpha - 1.0 ) * sqrt( M_PI ) / Sc;
+//double kappa    = foxH2012( x, alpha );
+//double kappaAVG = temp * foxH2123( x, alpha );
+
+  for (int i=N_pixels/2;i<N_pixels/2+1;++i){//0;i<N_pixels;++i){
+  for (int j=N_pixels/2;j<N_pixels;++j){
     int k = j+i*N_pixels;
-    printf("%12.3g ",g_tanMap[k]/g_aziMap[k]);
+double x        = distMap[k]/densProfile.getR_s();
+if (kappaMap[k]>0)
+    printf("(%5.2f, %8.2e, %8.2e) ",x,kappaMap[k],SDNFW(distMap[k],densProfile)/Sc);
   }
     printf("\n");
   }
-  //*/
+    printf("\n");
+//*/
+/*
+  for (int i=N_pixels/2;i<N_pixels/2+1;++i){//0;i<N_pixels;++i){
+  for (int j=N_pixels/2;j<N_pixels;++j){
+    int k = j+i*N_pixels;
+if (SDNFW(distMap[k],densProfile)>0)
+    printf("%8.2e ",SDNFW(distMap[k],densProfile)/Sc);
+  }
+    printf("\n");
+  }
+//*/
 }
 
 
