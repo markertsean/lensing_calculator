@@ -41,7 +41,7 @@ double tempFactor = 1000.0;
 */
 void ReadInpFile( userInfo &inpInfo, std::string inputFile ){
   FILE *pFile;
-  char   inpC1[20],inpC2[20];
+  char   inpC1[35],inpC2[35];
 //  std::string inputFile="lensUserParams.dat";
 
   //Attempt to open file, if successful go line by line

@@ -59,6 +59,7 @@ int main(int arg,char **argv){
   lensType = userParams.model + userParams.nbody*2; //Either model 1 or nbody 2
   srand(seed);
 
+
   double Sigma_crit = sourceInfo.getSigmaCrit();
   double   lensDist =   lensInfo.getAngDist();
   double  realWidth =   lensInfo.getRealFOV( userParams.angFOV );
@@ -78,34 +79,57 @@ int main(int arg,char **argv){
   ///////////////////////CONSTRUCT LENS//////////////////////
   */
 
+
+//  Lens myLens( &seed, sourceInfo.getZ() );
   Lens myLens(params,&seed);
+  myLens.printMultiLens();
+
+/*
   std::cout << "Constructing lens..."       << std::endl;
   //1 model, 2 nbody input. Should almost exclusively use nbody
   if ( lensType==1 ){
     //mass, rmax, redshift, rs, axis ratio, position angle, number of stars
-    LensHaloNFW myNFWLens( lensInfo.getM(), lensInfo.getRmax(), lensInfo.getZ(), \
+    LensHaloNFW myNFWLens( lensInfo.getM(), lensInfo.getRmax(), lensInfo.getZ(),
                    lensInfo.getRscale(), 1.0, 0.0, 0 ); //Spherical, normal NFW
+
     myLens.insertMainHalo(&myNFWLens);
+//myLens.RevertSourcePlane();
   }
   else
   if ( lensType==2 ){
     //For rotating particles, could be useful for triaxiality
     Point_2d rotation_vector;
     rotation_vector *= 0;
-    LensHaloParticles pHalo(userParams.readFile    ,          lensInfo.getZ(), \
+    LensHaloParticles pHalo(userParams.readFile    ,          lensInfo.getZ(),
                             userParams.N_partSmooth, planck, rotation_vector);
+
+//    myLens.replaceMainHalos(&pHalo);
     myLens.insertMainHalo(&pHalo);
+    myLens.RevertSourcePlane();
+    myLens.printMultiLens();
   }
+
+//exit(0);*/
+Point_2d rotation_vector;
+rotation_vector *= 0;
+LensHaloParticles pHalo(userParams.readFile, lensInfo.getZ(), userParams.N_partSmooth, planck, rotation_vector);
+
+myLens.replaceMainHalos(&pHalo);
+
+
+
   std::cout << "Lens constructed."          << std::endl << std::endl;
 
   std::cout << "Constructing grid..."       << std::endl;
   Grid myGrid( &myLens, userParams.N_pixels, center, userParams.angFOV);
-  std::cout << "Grid constructed."          << std::endl << std::endl;
 
+
+  std::cout << "Grid constructed."          << std::endl << std::endl;
+//exit(0);
   calcLensMaps( myGrid,  alphaMap, alpha1Map, alpha2Map, kappaMap, gammaMap,
                         gamma1Map, gamma2Map, invMagMap, g_tanMap, g_aziMap,
                           distMap,  userParams.N_pixels,realWidth, center);
-
+exit(0);
   /*
   ///////////////////Generate source positions////////////////
   */
@@ -144,7 +168,7 @@ int main(int arg,char **argv){
                     tempErrArr, userParams, center );
   radialSourceAverage( gTanArr,    gErrArr, indexes, g_tanMap,
                     tempErrArr, userParams, center );
-exit(0);
+
 printf("GLAMER\n");
 for (int i=0;i<userParams.N_bins;++i)
 printf("%5.2lf %12.3e\n",distArr[i],gTanArr[i]);
