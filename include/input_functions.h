@@ -4,9 +4,9 @@
 #include <cosmo.h>
 #include <iostream>
 
-void ReadNbodyHalo( 
-		   PosType           **xpos,  //2D position of particles we will be filling in   
-		   IndexType        Npoints,  //Number of particles/lines to read
+void ReadNbodyHalo(
+		   double         xpos[][3],  //2D position of particles we will be filling in
+		   int              Npoints,  //Number of particles/lines to read
 		   std::string  inpFileName); //Name of the file to read
 
 
@@ -15,17 +15,17 @@ void   ReadInpFile(
 		   std::string userFileName); //Name of the file to read
 
 
-void setCosmoParameters( 
+void setCosmoParameters(
 			InputParams    params,  //Parameters used by GLAMER code
 			COSMOLOGY   &inpCosmo); //Cosmology, default defined by user
 
 
 
-void  setHaloParameters( 
-			InputParams    params, //Parameters used by GLAMER code    
+void  setHaloParameters(
+			InputParams    params, //Parameters used by GLAMER code
 			COSMOLOGY   &inpCosmo, //Cosmology, default defined by user
 			haloInfo     &inpInfo, //Object we are filling from input
- 
+
 			std::string   objType="lens"); //Default lens, can be source
 
 

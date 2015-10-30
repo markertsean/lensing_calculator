@@ -4,11 +4,11 @@
 #include <lensing_classes.h>
 #include <image_processing.h>
 
-void getRandomSourcesIndexes( 
+void getRandomSourcesIndexes(
 			     int *indexes,  //Array of pixelmap indexes
 			     userInfo   u); //Input user information
 
-void radialSourceAverage( 
+void radialSourceAverage(
 			 double     *avgArr,  //Output averaged array
 			 double     *errArr,  //Radial errors for value we are averaging
 			 int       *indexes,  //Index of the source pixels for inpMap
@@ -17,7 +17,7 @@ void radialSourceAverage(
 			 userInfo         u,  //Input user information
 			 double   center[2]); //Center pixels
 
-void printPixelMap(     
+void printPixelMap(
 		   PixelMap   &inpMap,  //input pixel map
 		   int       N_pixels); //Number of pixels on a side, assumes square map
 
@@ -33,11 +33,7 @@ void findRadialAverage(
 
 void calcLensMaps(
 		  Grid        &inpGrid,  //GLAMER grid to calc values on
-		  PixelMap   &alphaMap,  //Various input maps, only need g_tan/azi out
-		  PixelMap  &alpha1Map,
-		  PixelMap  &alpha2Map,
 		  PixelMap   &kappaMap,
-		  PixelMap   &gammaMap,
 		  PixelMap  &gamma1Map,
 		  PixelMap  &gamma2Map,
 		  PixelMap  &invMagMap,
@@ -61,44 +57,44 @@ void calcMapsFromKappa(
 		       double     realSize); //Real size on the 2D sky plane
 
 
-void sigmaMapCalc( 
-		  PixelMap   &inpMap, 
-		  PixelMap     &kMap, 
-		  int       N_pixels, 
+void sigmaMapCalc(
+		  PixelMap   &inpMap,
+		  PixelMap     &kMap,
+		  int       N_pixels,
 		  double  Sigma_crit);
 
 
-void   phiMapCalc( 
-		  PixelMap   &phiMap, 
-		  PixelMap &sigmaMap, 
-		  int       N_pixels, 
+void   phiMapCalc(
+		  PixelMap   &phiMap,
+		  PixelMap &sigmaMap,
+		  int       N_pixels,
 		  double    realSize);
 
 
-void   magMapCalc( 
-		  PixelMap   &magMap, 
-		  PixelMap     &kMap, 
-		  PixelMap     &gMap, 
+void   magMapCalc(
+		  PixelMap   &magMap,
+		  PixelMap     &kMap,
+		  PixelMap     &gMap,
 		  int       N_pixels);
 
 
-void  massMapCalc( 
-		  PixelMap  &massMap, 
-		  PixelMap   &phiMap, 
-		  PixelMap  &distMap, 
+void  massMapCalc(
+		  PixelMap  &massMap,
+		  PixelMap   &phiMap,
+		  PixelMap  &distMap,
 		  int       N_pixels);
 
 
-void  distMapCalc( 
-		  PixelMap  &distMap, 
-		  int       N_pixels, 
+void  distMapCalc(
+		  PixelMap  &distMap,
+		  int       N_pixels,
 		  double     inpSize,
 		  double   center[2]);
 
 
 void  distArrCalc(
 		  double *sourceDistArr,
-		  int          *indexes, 
+		  int          *indexes,
 		  userInfo            u,
                   double          scale,
 		  double      center[2]);

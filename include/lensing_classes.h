@@ -108,31 +108,32 @@ class lensProfile{
 public:
 
   lensProfile  (             ){          type =    1; }
-  lensProfile  ( int inpT    ){          type = inpT; }
+  lensProfile  ( double inpA ){         alpha = inpA;
+                                         type =    2; }
 
-  void setAlpha( double inpA ){         alpha = inpA; }
+  void setAlpha( double inpA ){         alpha = inpA;
+                                          modRho_o(); }
 
 
   void setR_max( double inpR ){         r_max = inpR;
                                           modR_s  ();
                                           modC    ();
-                                          modM_enc();
                                           modRho_o(); }
 
   void setC    ( double inpC ){ concentration = inpC;
                                           modR_s  ();
-                                          modM_enc();
                                           modRho_o(); }
 
   void setR_s  ( double inpR ){           r_s = inpR;
                                           modC    ();
-                                          modM_enc();
                                           modRho_o(); }
 
   void setRho_o( double inpR ){         rho_o = inpR;
                                           modM_enc(); }
   void setM_enc( double inpM ){         M_enc = inpM;
                                           modRho_o(); }
+
+  void resetM_enc(           ){           modM_enc(); }
 
   double getC() {
       if ( concentration==-1.0 )
@@ -196,14 +197,14 @@ private:
                   ( log( 1 + concentration ) - concentration / ( 1 + concentration) );
       }
       else {
-        rho_o   =   M_enc    *alpha / (4. * M_PI * r_s * r_s * r_s ) /
-                  (   exp( 4./alpha ) * pow( alpha/2., 3./alpha)   ) /
-                   tgamma( 3./alpha );
+        rho_o   =  M_enc / ( 2. * M_PI  *            r_s * r_s * r_s * exp( 4./alpha ) *
+                             pow( alpha / 2., 3. / alpha - 1 ) *    tgamma( 3./alpha ) );
       }
     }
   }
 
   void modM_enc(){
+
     if ( rho_o > 0 && r_max > 0 && concentration > 0){ //All needed parameters def
       if ( type == 1 ){
         M_enc   =  rho_o * (4. * M_PI * r_max*r_max*r_max )  /
@@ -211,10 +212,11 @@ private:
                   ( log( 1 + concentration ) - concentration / ( 1 + concentration) );
       }
       else {
-        M_enc   =  rho_o  * 4. * M_PI * r_s * r_s * r_s *    exp( 4./alpha ) *
-                  pow( alpha/2., 3./alpha)   /     alpha * tgamma( 3./alpha );
+        M_enc   = 2. * M_PI  *  rho_o *   r_s * r_s * r_s * exp( 4./alpha ) *
+                  pow( alpha / 2., 3. / alpha - 1 ) *    tgamma( 3./alpha );
       }
     }
+
   }
 
   void modR_s(){
@@ -234,6 +236,7 @@ private:
 class userInfo{
 public:
   double      angFOV = -1.0;//Angular size of image
+  double       R_max = -1.0;
   int    N_pixels    = -1;  //Number of pixels on grid
   int    N_bins      = -1;  //Number of bins for radial averaging
   int    N_sources   = -1;  //Number of sources to generate
@@ -249,16 +252,17 @@ public:
 
   //Chi2 & genetic algorithm fitting values
   double     cMin =  2.0;
-  double     cMax =  7.0;
-  double     mMin = 13.0;
-  double     mMax = 16.0;
+  double     cMax =  8.0;
+  double     mMin = 12.0;
+  double     mMax = 17.0;
   double alphaMin =  0.1;
   double alphaMax =  0.4;
 
-  int maxFitAttempts =  1e3    ; //Max attempts at fitting before abort
+  int maxFitAttempts =  1e4    ; //Max attempts at fitting before abort
   int  N_chromosomes = 1000    ; //Number of chromosomes in population
-  int     consistent =   10    ; //Number of times need avg below tolerance
-  double   tolerance =    0.001; //Average residual must be below tolerance
+  int     N_chiTrack =  100    ; //Number of chi's to track for convergence
+  int     consistent =   50    ; //Number of times need avg below tolerance
+  double   tolerance =    0.01 ; //Average residual must be below tolerance
   double   mutChance =    0.01 ; //Likelihood of mutation
   double  avgTestVal =    1.3  ; //chiAvg*this is random range
 };

@@ -1,12 +1,9 @@
 #include <slsimlib.h>
-
 #include <image_processing.h>
 #include <grid_maintenance.h>
 #include <astro_constants.h>
 #include <lensing_classes.h>
 #include <pixelmap_functions.h>
-#include <lens_fitter.h>
-
 
 //Get array of distances for sources
 void distArrCalc( double *sourceDistArr, int *indexes, userInfo u,
@@ -135,11 +132,7 @@ void getRandomSourcesIndexes( int *indexes, userInfo u ){
 */
 void calcLensMaps(
   Grid       &inpGrid,  //Grid to pull lensing quantities from
-  PixelMap  &alphaMap,  //Series of lensing pixel maps desired
-  PixelMap &alpha1Map,
-  PixelMap &alpha2Map,
   PixelMap  &kappaMap,
-  PixelMap  &gammaMap,
   PixelMap &gamma1Map,
   PixelMap &gamma2Map,
   PixelMap &invMagMap,
@@ -149,27 +142,10 @@ void calcLensMaps(
   int        N_pixels,
   double     realSize,
   double    center[2]){ //Center coordinates of grid, in Mpc
-/*  PixelMap    &phiMap,  //Grav potential map
-  PixelMap   &massMap,  //Mass in image, estimated by pixel
-  PixelMap   &distMap,  //Pixelvalue is distance from center
-  PixelMap  &sigmaMap,  //Surface density in pixel, from kappa
-  double    center[2],  //Center of image
-  userInfo    inpInfo,  //Contains input from user
-  haloInfo   lensInfo,  //Contains lens information
-  double    sigmaCrit,  //Sc from a source
-  double     realSize*/ //Physical size in Mpc of image
 
 //alpha,alpha1,alpha2,kappa,gamma,gamma1,gamma2,gamma3
-   alphaMap = inpGrid.writePixelMap( center, inpGrid.getInitNgrid(), \
-                     inpGrid.getInitRange()/inpGrid.getInitNgrid() ,ALPHA);
-  alpha1Map = inpGrid.writePixelMap( center, inpGrid.getInitNgrid(), \
-                     inpGrid.getInitRange()/inpGrid.getInitNgrid() ,ALPHA1);
-  alpha2Map = inpGrid.writePixelMap( center, inpGrid.getInitNgrid(), \
-                     inpGrid.getInitRange()/inpGrid.getInitNgrid() ,ALPHA2);
    kappaMap = inpGrid.writePixelMap( center, inpGrid.getInitNgrid(), \
                      inpGrid.getInitRange()/inpGrid.getInitNgrid() ,KAPPA);
-   gammaMap = inpGrid.writePixelMap( center, inpGrid.getInitNgrid(), \
-                     inpGrid.getInitRange()/inpGrid.getInitNgrid() ,GAMMA);
   gamma1Map = inpGrid.writePixelMap( center, inpGrid.getInitNgrid(), \
                      inpGrid.getInitRange()/inpGrid.getInitNgrid() ,GAMMA1);
   gamma2Map = inpGrid.writePixelMap( center, inpGrid.getInitNgrid(), \
@@ -184,87 +160,73 @@ void calcLensMaps(
 
   for (int i=0;i<N_pixels;++i){
     posArr[1] = (-i - 0.5 + N_pixels/2.0)-center[1];
-    //Distances off by 0.5, need to modulate based on pos/neg
-    if ( posArr[1] > 0 )  posArr[1] +=-0.5;
-    if ( posArr[1] < 0 )  posArr[1] += 0.5;
 
   for (int j=0;j<N_pixels;++j){
     posArr[0] = ( j + 0.5 - N_pixels/2.0)-center[0];
-    if ( posArr[0] > 0 )  posArr[0] +=-0.5;
-    if ( posArr[0] < 0 )  posArr[0] += 0.5;
 
     int k = j+i*N_pixels;
     phi = atan2(posArr[1],posArr[0]);
+    //gamma1  <0 |   >0 -
+    //gamma2  <0 \   >0 /
     //g_tan = -g1*cos - g2*sin
     //g_sec =  g1*sin - g2*cos
     //glamer produces negative value for g1, swap signs in eqtns
-    g_tanMap[k] = ( gamma1Map[k]*cos(2*phi)-gamma2Map[k]*sin(2*phi)); // (1-kappaMap[k]);//gamma1 swapped
-    g_aziMap[k] = (-gamma1Map[k]*sin(2*phi)-gamma2Map[k]*cos(2*phi)); // (1-kappaMap[k]);
+    double a = 2*phi;
+    g_tanMap[k] = ( gamma1Map[k]*cos(a)-gamma2Map[k]*sin(a)); // (1-kappaMap[k]);//gamma1 swapped
+    g_aziMap[k] = (-gamma1Map[k]*sin(a)-gamma2Map[k]*cos(a)); // (1-kappaMap[k]);
   }
   }
-
-//Kappa seems to be ok, just uses average over whole pixel, not radius of pixel
-
-lensProfile densProfile;
-densProfile.setR_max(  2.0 );
-densProfile.setM_enc( 1e15 );
-densProfile.setR_s  (  0.4 );
-
-double myRho_o = 1.297e15;
-//(float  my_mass, float my_Rmax, PosType my_zlens, float my_rscale, float my_fratio, float my_pa, int my_stars_N, EllipMethod my_ellip_method=Pseudo)
-float   myMass = 1e15;
-float   myRmax = 2.0;
-PosType myZlen = 1.0;
-float   myRs   = 0.4;
-float   myFrat = 1.0;
-float   myPa   = 0.0;
-int     myStar = 0;
-
-LensHaloNFW nfwLens( myMass, myRmax, myZlen, myRs, myFrat, myPa, myStar );
-// (PosType *x, PosType Rtrunc, PosType mass, PosType r_scale, PosType *center, PosType Sigma_crit)
-PosType Rt  = 2.7;
-PosType Ma  = 1e15;
-PosType Rs  = myRs;
-PosType C[2]={0,0};
-PosType Sc  = 2.715e15;
-double alpha = 0.15;
 
 /*
-  for (int i=0;i<N_pixels;++i){
-  for (int j=0;j<N_pixels;++j){
-    int k = j+i*N_pixels;
-//    if (fabs(gamma1Map[k])<1e-10) gamma2Map[k] = 0;
-    printf("%12.3g ",distMap[k]/myRs);//gamma2Map[k]);//sqrt(gamma1Map[k]*gamma1Map[k]+gamma2Map[k]*gamma2Map[k]))/(1-kappaMap[k]);
-//    printf("%12.3g ",kappaMap[k]*Sc);//*2.715e15/(2*5.188e14));
-  }
-    printf("\n");
-  }
-    printf("\n");
-//*/
 //double temp = densProfile.getRho_o() * densProfile.getR_s  ()   * exp( 2./alpha ) * pow( alpha/2., 1./alpha - 1.0 ) * sqrt( M_PI ) / Sc;
 //double kappa    = foxH2012( x, alpha );
 //double kappaAVG = temp * foxH2123( x, alpha );
 
-  for (int i=N_pixels/2;i<N_pixels/2+1;++i){//0;i<N_pixels;++i){
-  for (int j=N_pixels/2;j<N_pixels;++j){
+//sqrt( g_tanMap[k]* g_tanMap[k]+ g_aziMap[k]* g_aziMap[k])
+//sqrt(gamma1Map[k]*gamma1Map[k]+gamma2Map[k]*gamma2Map[k])
+//     gamma2Map[k]
+//     SDNFW( distMap[k], densProfile)/Sc
+// SDNFWFull( distMap[k], densProfile.getR_s(), densProfile.getRho_o())/Sc
+
+  for (int i=0;i<N_pixels;++i){
+  for (int j=0;j<N_pixels;++j){
     int k = j+i*N_pixels;
-double x        = distMap[k]/densProfile.getR_s();
-if (kappaMap[k]>0)
-    printf("(%5.2f, %8.2e, %8.2e) ",x,kappaMap[k],SDNFW(distMap[k],densProfile)/Sc);
+    printf("%12.3e ",
+g_tanMap[k]
+ );
   }
     printf("\n");
   }
     printf("\n");
-//*/
-/*
-  for (int i=N_pixels/2;i<N_pixels/2+1;++i){//0;i<N_pixels;++i){
-  for (int j=N_pixels/2;j<N_pixels;++j){
+    printf("\n");
+
+
+  for (int i=0;i<N_pixels;++i){
+  for (int j=0;j<N_pixels;++j){
     int k = j+i*N_pixels;
-if (SDNFW(distMap[k],densProfile)>0)
-    printf("%8.2e ",SDNFW(distMap[k],densProfile)/Sc);
+    printf("%12.3e ",
+g_aziMap[k]
+ );
   }
     printf("\n");
   }
+    printf("\n");
+    printf("\n");
+
+
+  for (int i=0;i<N_pixels;++i){
+  for (int j=0;j<N_pixels;++j){
+    int k = j+i*N_pixels;
+    printf("%12.3e ",
+g_tanMap[k]/
+sqrt( g_tanMap[k]* g_tanMap[k]+ g_aziMap[k]* g_aziMap[k])
+ );
+  }
+    printf("\n");
+  }
+    printf("\n");
+    printf("\n");
+
 //*/
 }
 

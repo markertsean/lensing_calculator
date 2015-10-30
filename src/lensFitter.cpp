@@ -17,11 +17,12 @@ double foxH2012(
 
   double sum1(0), sum2(0), oldSum(0), totSum(0), s1(0), s2(0);
 
-  int converge(0), k(-1);
+  int converge(0), k(0);
 
   //k = 0 term
-//     sum1 += tgamma( 1. / alpha ) / tgamma( 0.5 );
-//  oldSum  += sum1;
+     sum1 += tgamma( 1. / alpha ) / tgamma( 0.5 );
+  oldSum  += sum1;
+//printf("%12s,%12s %12s,%12s %12s,%12s    %12s\n\n","s1","sum1","s2","sum2","totSum","oldSum","differential");
 //printf("%12.3e,%12.3e %12.3e,%12.3e %12.3e,%12.3e    %12.3e\n",s1,sum1,s2,sum2,totSum,oldSum,fabs((totSum-oldSum)/oldSum));
   do {
       ++k;
@@ -29,9 +30,11 @@ double foxH2012(
       //Terms in summation
       s1 =    pow(       - 1     , k ) / factorial(k) *    pow( z, 2 * k ) *
            tgamma(  ( 1. - 2.    * k ) / alpha      ) / tgamma(  0.5 - k );
+
       s2 =    pow(       - 1     , k ) / factorial(k) *    pow( z, 1 + k * alpha ) *
            tgamma( -( 1. + alpha * k ) / 2.         ) / tgamma(      - k * alpha / 2.0);
 
+      //Don't include inf or NaN
       if ( ! (std::isinf( s1 ) || s1!=s1) )  sum1 += s1;
       if ( ! (std::isinf( s2 ) || s2!=s2) )  sum2 += s2;
 
@@ -121,7 +124,7 @@ void generateEinRTS(
     analRTS[i] = 0;
   }
 
-  for (int i=0;i<u.N_sources;++i)
+  for (int i=0;i<u.N_bins;++i)
     gArr[i] = 0;
 
   //Distance converted to bins
@@ -154,7 +157,7 @@ void generateEinRTS(
   }
 
   //Returning gArr
-  for ( int i=0; i < u.N_sources; ++i ){
+  for ( int i=0; i < u.N_bins; ++i ){
     if ( N_bin[i] > 0) gArr[i] = analRTS[i] / N_bin[i];
   }
 
@@ -245,14 +248,24 @@ double    SDAvgNFW(
   double      c =           inpProfile.getC  ()  ;
   double factor =       4 * inpProfile.getR_s() * inpProfile.getRho_o() / ( x*x );
 
-  //Outside of our integration radius, integral from 0 to 1 + integral from 1 to max radius, and take out their factors to use the current one
-  if ( x > inpProfile.getC() ){
-    return factor * ( SDAvgNFW( inpProfile.getR_s  (), inpProfile ) / ( 4 * inpProfile.getR_s  () * inpProfile.getRho_o() )
-                    + SDAvgNFW( inpProfile.getR_max(), inpProfile ) / ( 4 * inpProfile.getR_max() * inpProfile.getRho_o() / ( inpProfile.getC() * inpProfile.getC() ) ) );
 
+
+  //If very close to our max integration radius C, errors can occur.
+  //Therefore, need explicit solution for C
+  if ( fabs(  x - inpProfile.getC    () ) < 1e-4){
+    return factor * ( SDAvgNFW( inpProfile.getR_s  (), inpProfile ) / ( 4 * inpProfile.getR_s  () * inpProfile.getRho_o() )
+                  - 2.0 * sqrt( c*c - 1 ) / ( c + 1 )
+                  + 0.5 * log( ( 1  + 1   /   c * sqrt( c*c - 1 ) )
+                        /      ( 1  - 1   /   c * sqrt( c*c - 1 ) ) ) );
   }
 
-  //If within r_s, this is analytic solution integrating to a max value of the concentration
+  //Outside of C, integral from 0 to 1 + integral from 1 to C, and take out their factors to use the current one
+  else if ( x > inpProfile.getC() ){
+    return factor * ( SDAvgNFW( inpProfile.getR_s  (), inpProfile ) / ( 4 * inpProfile.getR_s  () * inpProfile.getRho_o() )
+                    + SDAvgNFW( inpProfile.getR_max(), inpProfile ) / ( 4 * inpProfile.getR_max() * inpProfile.getRho_o() / ( inpProfile.getC() * inpProfile.getC() ) ) );
+  }
+
+  //If within r_s, this is analytic solution integrating to a max value of r_s
   else if ( x < 1 ){
 
     return factor * ( ( sqrt( c*c - x*x )  - c )/( c + 1 )
@@ -266,7 +279,8 @@ double    SDAvgNFW(
                                              -   log( (          sqrt( ( c*c - x*x )/( 1. - x*x )   ) + 1 )
                                              /        (          sqrt( ( c*c - x*x )/( 1. - x*x )   ) - 1 ) )   ) );
   }
-  //Outside of r_s, integral from 0 to 1 + new component to a max of rmax/rs
+
+  //Outside of r_s but less than c, integral from 0 to 1 + new component to a max of rmax/rs
   else if ( x > 1 ){
     return factor * (  SDAvgNFW( inpProfile.getR_s(), inpProfile  ) / ( 4 * inpProfile.getR_s() * inpProfile.getRho_o() )
                     + ( ( sqrt( c*c - x*x ) - 2 * sqrt( c*c - 1 ) ) / ( c + 1 )
@@ -277,6 +291,7 @@ double    SDAvgNFW(
                     - 1.0 / sqrt( x*x - 1 ) * ( atan(  1. / c * sqrt( ( c*c - x*x )/( x*x - 1. )         ) )
                                             -   atan(           sqrt( ( c*c - x*x )/( x*x - 1. )         ) )   ) ));
   }
+
   //If close enough to r_s will integrate to 1, hyperbolic previous arctan component turns into sqrt component
   else {
     return factor * ( ( 2 * sqrt( c*c - 1 ) - c ) / ( c + 1 )
@@ -335,7 +350,7 @@ void generateNFWRTS(
     analRTS[i] = 0;
   }
 
-  for (int i=0;i<u.N_sources;++i)
+  for (int i=0;i<u.N_bins;++i)
     gArr[i] = 0;
 
   //Distance converted to bins
@@ -343,6 +358,7 @@ void generateNFWRTS(
 
   //Loop over all sources, determining predicted rts for a given source
   for ( int i=0; i < u.N_sources; ++i ){
+
     double    SD =    SDNFW( sourceDist[i], lens ); //At radius
     double avgSD = SDAvgNFW( sourceDist[i], lens ); //Average
     double SigCr = sourceSc[i];
@@ -357,7 +373,7 @@ void generateNFWRTS(
   }
 
   //Returning gArr
-  for ( int i=0; i < u.N_sources; ++i ){
+  for ( int i=0; i < u.N_bins; ++i ){
     if ( N_bin[i] > 0) gArr[i] = analRTS[i] / N_bin[i];
   }
 }
@@ -432,14 +448,13 @@ void fitDensProfile(
 
   //Generate first parent values
   #pragma omp parallel for
-  for ( int i=0; i < u.N_chromosomes; ++i ){
+  for ( int i=0; i<u.N_chromosomes; ++i ){
 
     //Generate initial parent values, if Ein profile need alpha parameter
     if ( densProfile.getType() == 2 )
     parent[i].setAlpha(         randVal( u.alphaMin, u.alphaMax )  );
     parent[i].setC    (         randVal(     u.cMin,     u.cMax )  );
     parent[i].setM_enc(pow( 10, randVal(     u.mMin,     u.mMax ) ));
-
 
 
     //Gives analytic value for RTS, for source locations, radially averaged
@@ -466,16 +481,29 @@ void fitDensProfile(
   int     counter(0); //Counter used to count number of times within tolerance
   double   totAvg(0); //Keeps running average, stop when converges
 
+  double convChiArray[ u.N_chiTrack ];
+
   do {
     //Reset chi^2 values
-    //Tot average is a running average over all runs, eventually should converge
+    //Tot average is a running average over recent runs, eventually should converge
     // to a fairly constant value
     //Old average saves the previous tot, to measure how much it is changing
     oldAvg  =   totAvg;
-    totAvg  = ( totAvg * loopCounter + avgChi) / ( loopCounter + 1 ) ;
+    totAvg  =  0;
+
+    //If tracking array not full, need to only loop over number we have
+    // Otherwise, we only keep track of N_chiTrack
+    int N_cT= std::min( u.N_chiTrack, loopCounter );
+
+    for (int i=0; i < N_cT; ++i)
+    totAvg += convChiArray[i];
+    totAvg  = totAvg/N_cT;
+
     testVal =   avgChi * u.avgTestVal;
     avgChi  =        0;
 
+    //Stores the child's chi2, before transfers to their children
+    double newChi2[ u.N_chromosomes ];
 
     //Generate new children
     #pragma omp parallel for
@@ -514,17 +542,13 @@ void fitDensProfile(
       child[i].setC    ( parent[cIndex].getC()     );
       child[i].setM_enc( parent[mIndex].getM_enc() );
 
-
-
-
-      //Mutate values, with random chance. Needed to keep genes fresh
+      //Mutate values, with random chance. Don't exceed possible max or min
+      //Needed to keep genes fresh
       if ( u.mutChance > randVal(0,1) )
-        child[i].setC    ( child[i].getC()     * randVal( 0.9, 1.1 )  );
+        child[i].setC    ( std::max( std::min( child[i].getC    () * randVal( 0.9, 1.1) ,        u.cMax ) ,        u.cMin ) );
 
       if ( u.mutChance > randVal(0,1) )
-        child[i].setM_enc( child[i].getM_enc() * randVal( 0.9, 1.1 ) );
-
-
+        child[i].setM_enc( std::max( std::min( child[i].getM_enc() * randVal( 0.9, 1.1) , pow(10,u.mMax)) , pow(10,u.mMin)) );
 
 
       //Generate analytic RTS for child
@@ -536,21 +560,27 @@ void fitDensProfile(
 
 
       //chi2 for the children
-      chi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.N_bins );
+      newChi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.N_bins );
+
 
       avgChiThreads[ omp_get_thread_num() ] += chi2[i];
     }
 
-    //Avg used for reproduction, randomly sample halos based on goodness / 1.5avg
+    //Avg used for reproduction, randomly sample halos based on goodness / avg
     for (int i  = 0; i < u.num_threads; ++i){
       avgChi           += avgChiThreads[i];
       avgChiThreads[i]  = 0;
     }
     avgChi  =  avgChi / u.N_chromosomes;
 
+    //Tracks the most recent N_ChiTrack generation's chi, to test
+    // whether converged to constant value
+    convChiArray[ loopCounter % u.N_chiTrack ] = avgChi;
+
     //Children replace parents
     for ( int i=0; i<u.N_chromosomes; ++i ){
-      parent[i] = child[i];
+      parent[i] =   child[i];
+        chi2[i] = newChi2[i];
     }
 
     //Need counter to be greater than u.consistent,
@@ -562,7 +592,12 @@ void fitDensProfile(
     else{
       counter  = 0;
     }
-//printf("%5i %12.3e         %12.3e %12.3e       %12.3e %5i\n",loopCounter,avgChi,totAvg,oldAvg,fabs(totAvg-oldAvg)/oldAvg,counter);
+/*
+printf("%5i %12.3e         %12.3e %12.3e       %12.3e %5i \n",
+loopCounter,avgChi,
+totAvg,oldAvg,
+fabs(totAvg-oldAvg)/oldAvg,counter
+);//*/
     ++loopCounter;
   } while ( u.consistent > counter && loopCounter < u.maxFitAttempts ) ;
 

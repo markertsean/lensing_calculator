@@ -12,20 +12,19 @@
 //      Positions of halos in xpos, PosType 2D object [xyz][index]
 //
 */
-void ReadNbodyHalo( PosType **xpos, IndexType Npoints, std::string inpFileName){
+void ReadNbodyHalo( double xpos[][3], int Npoints, std::string inpFileName){
 
   int  iNlines(Npoints);
 
   FILE * pFile;
   double x,y,z;
-double tempFactor = 1000.0;
   pFile = fopen(inpFileName.c_str(),"r");
 
   for (int ii=0;ii<iNlines;ii++){
     fscanf(pFile,"%10lf%10lf%10lf",&x,&y,&z);
-    xpos[ii][0]=x*tempFactor;
-    xpos[ii][1]=y*tempFactor;
-    xpos[ii][2]=z*tempFactor;
+    xpos[ii][0]=x;
+    xpos[ii][1]=y;
+    xpos[ii][2]=z;
   }
   fclose(pFile);
 }
@@ -80,6 +79,9 @@ void ReadInpFile( userInfo &inpInfo, std::string inputFile ){
       }
       else if ( inpS=="nbody"      ){
         inpInfo.nbody       = atoi(inpC2);
+      }
+      else if ( inpS=="R_max"      ){
+        inpInfo.R_max       = atof(inpC2);
       }
       else{
         std::cerr << " Couldn't recognize input from " << inputFile <<
