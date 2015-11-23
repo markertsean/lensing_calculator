@@ -9,6 +9,9 @@
 //Holds info on lens, source, any halo for easy access
 class haloInfo{
 public:
+
+  inline haloInfo();
+
     void setZ      (      double inpZ ){  setAngDist(inpZ);
                                                  z = inpZ; }
     void setM      (      double inpM ){         m = inpM; }
@@ -83,18 +86,18 @@ public:
     }
 
 private:
-    double       z=-1.0;             //redshift
-    double       m=-1.0;             //mass Msun
-    double       c=-1.0;             //concentration
-    double      rs=-1.0;             //scale radius of nfw
-    double    rmax=-1.0;             //max radius Mpc
-    double   lensZ=-1.0;             //redshift of lens, if this is a source
-    double  sigmaC=-1.0;             //Sc only for source
-    double angDist=-1.0;             //ang diam distance Mpc
+    double       z;             //redshift
+    double       m;             //mass Msun
+    double       c;             //concentration
+    double      rs;             //scale radius of nfw
+    double    rmax;             //max radius Mpc
+    double   lensZ;             //redshift of lens, if this is a source
+    double  sigmaC;             //Sc only for source
+    double angDist;             //ang diam distance Mpc
 
 
     COSMOLOGY cosmo;
-    std::string profile="NULL";      //If there is a profile IE NFW
+    std::string profile;      //If there is a profile IE NFW
 
     void setRscale (                  ){      rs = rmax/c             ; }
     void setAngDist(      double inpZ ){ angDist = cosmo.angDist(inpZ); }
@@ -103,13 +106,27 @@ private:
     }
 };
 
+haloInfo::haloInfo(){
+
+  profile="NULL";
+       z=-1.0;
+       m=-1.0;
+       c=-1.0;
+      rs=-1.0;
+    rmax=-1.0;
+   lensZ=-1.0;
+  sigmaC=-1.0;
+ angDist=-1.0;
+
+}
+
+
 //Holds info on density profile, concentration, mass, shape param, etc
 class lensProfile{
 public:
 
-  lensProfile  (             ){          type =    1; }
-  lensProfile  ( double inpA ){         alpha = inpA;
-                                         type =    2; }
+  inline lensProfile();
+  inline lensProfile( double inpA );
 
   void setAlpha( double inpA ){         alpha = inpA;
                                           modRho_o(); }
@@ -177,13 +194,13 @@ public:
 
 
 private:
-  double concentration = -1.0;
-  double alpha         = -1.0;
-  double rho_o         = -1.0;
-  double r_s           = -1.0;
-  double r_max         = -1.0;
-  double M_enc         = -1.0;
-  int    type          =    1; //1 NFW, 2 Einasto
+  double concentration;
+  double alpha        ;
+  double rho_o        ;
+  double r_s          ;
+  double r_max        ;
+  double M_enc        ;
+  int    type         ; //1 NFW, 2 Einasto
 
   void   unDefVar( std::string inpS ){
     std::cerr<<"WARNING: variable "<<inpS<<" undefined in <lensProfile>"<<std::endl;
@@ -231,41 +248,96 @@ private:
 
 };
 
+lensProfile::lensProfile(){
+  concentration = -1.0;
+  alpha         = -1.0;
+  rho_o         = -1.0;
+  r_s           = -1.0;
+  r_max         = -1.0;
+  M_enc         = -1.0;
+  type          =    1;
+}
+
+
+lensProfile::lensProfile( double inpA ){
+  concentration = -1.0;
+  alpha         = inpA;
+  rho_o         = -1.0;
+  r_s           = -1.0;
+  r_max         = -1.0;
+  M_enc         = -1.0;
+  type          =    2;
+}
 
 //Holds info on what user wants, whether binning, running model or Nbody, etc
 class userInfo{
 public:
-  double      angFOV = -1.0;//Angular size of image
-  double       R_max = -1.0;
-  int    N_pixels    = -1;  //Number of pixels on grid
-  int    N_bins      = -1;  //Number of bins for radial averaging
-  int    N_sources   = -1;  //Number of sources to generate
-  int    N_particles = -1;  //Number of particles in simulation
-  int    num_threads =  1;  //Number of threads for parallel processing
-  int          model =  0;  //Flag to do model analysis
-  int          nbody =  0;  //Flag to do nbody analysis
-  int   N_partSmooth =  5;  //Number of particles nearby for glamer smoothing
-  int   N_edgepixels =  3;  //Gap in distance between sources
-  double nearestSourceNeighbor = 1.5; //Number of pixels to leave on an edge
 
-  std::string readFile = " ";
+  inline userInfo();
+
+  double      angFOV;//Angular size of image
+  double       R_max;
+  int    N_pixels   ;  //Number of pixels on grid
+  int    N_bins     ;  //Number of bins for radial averaging
+  int    N_sources  ;  //Number of sources to generate
+  int    N_particles;  //Number of particles in simulation
+  int    num_threads;  //Number of threads for parallel processing
+  int          model;  //Flag to do model analysis
+  int          nbody;  //Flag to do nbody analysis
+  int   N_partSmooth;  //Number of particles nearby for glamer smoothing
+  int   N_edgepixels;  //Gap in distance between sources
+  double nearestSourceNeighbor; //Number of pixels to leave on an edge
+
+  std::string readFile;
 
   //Chi2 & genetic algorithm fitting values
-  double     cMin =  2.0;
-  double     cMax =  8.0;
-  double     mMin = 12.0;
-  double     mMax = 17.0;
-  double alphaMin =  0.1;
-  double alphaMax =  0.4;
+  double     cMin;
+  double     cMax;
+  double     mMin;
+  double     mMax;
+  double alphaMin;
+  double alphaMax;
 
-  int maxFitAttempts =  1e4    ; //Max attempts at fitting before abort
-  int  N_chromosomes = 1000    ; //Number of chromosomes in population
-  int     N_chiTrack =  100    ; //Number of chi's to track for convergence
-  int     consistent =   50    ; //Number of times need avg below tolerance
-  double   tolerance =    0.01 ; //Average residual must be below tolerance
-  double   mutChance =    0.01 ; //Likelihood of mutation
-  double  avgTestVal =    1.3  ; //chiAvg*this is random range
+  int maxFitAttempts; //Max attempts at fitting before abort
+  int  N_chromosomes; //Number of chromosomes in population
+  int     N_chiTrack; //Number of chi's to track for convergence
+  int     consistent; //Number of times need avg below tolerance
+  double   tolerance; //Average residual must be below tolerance
+  double   mutChance; //Likelihood of mutation
+  double  avgTestVal; //chiAvg*this is random range
 };
 
+userInfo::userInfo(){
+      angFOV = -1.;
+       R_max = -1.;
+ N_pixels    = -1;
+ N_bins      = -1;
+ N_sources   = -1;
+ N_particles = -1;
+ num_threads =  1;
+       model =  0;
+       nbody =  0;
+N_partSmooth =  5;
+N_edgepixels =  3;
+
+nearestSourceNeighbor = 1.5;
+readFile = " ";
+
+    cMin =  2.0;
+    cMax =  8.0;
+    mMin = 12.0;
+    mMax = 17.0;
+alphaMin =  0.1;
+alphaMax =  0.4;
+
+maxFitAttempts =  1e4    ;
+ N_chromosomes = 1000    ;
+    N_chiTrack =  100    ;
+    consistent =   50    ;
+     tolerance =    0.01 ;
+     mutChance =    0.01 ;
+    avgTestVal =    1.3  ;
+
+}
 
 #endif
