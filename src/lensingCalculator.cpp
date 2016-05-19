@@ -15,10 +15,10 @@
 //My files
 #include "astro_constants.h"
 #include "lensing_classes.h"
-#include "my_utilities.h"
-#include "input_functions.h"
-#include "lens_fitter.h"
-#include "pixelmap_functions.h"
+//#include "my_utilities.h"
+//#include "input_functions.h"
+//#include "lens_fitter.h"
+//#include "pixelmap_functions.h"
 
 
 
@@ -26,7 +26,6 @@ int main(int arg,char **argv){
 
   long    seed    = -1827674;
   double center[] =    {0,0}; // Center of grid
-  int  lensType   =        0; // Will serve as flag, 1 model 2 nbody input, 3 fits input
 
 
   //////////////////////////////////
@@ -40,9 +39,9 @@ int main(int arg,char **argv){
       Also sets cosmology, defaults to plank 1 yr
   */
 
-/*
 
-  //File names
+/*
+  // File names
   userInfo userParams;
   std::string userFile  = "lensUserParams.dat";
   std::string paramfile = "paramfile";
@@ -70,8 +69,8 @@ int main(int arg,char **argv){
 
 
   lensInfo.setRmax( userParams.R_max );
-
 */
+
 
 
 
