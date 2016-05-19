@@ -282,8 +282,9 @@ public:
   int    N_sources  ;  //Number of sources to generate
   int    N_particles;  //Number of particles in simulation
   int    num_threads;  //Number of threads for parallel processing
-  int          model;  //Flag to do model analysis
-  int          nbody;  //Flag to do nbody analysis
+  int          model;  //Flag to do model   analysis
+  int          nbody;  //Flag to do nbody   analysis
+  int        massMap;  //Flag to do massMap analysis
   int   N_partSmooth;  //Number of particles nearby for glamer smoothing
   int   N_edgepixels;  //Gap in distance between sources
   double nearestSourceNeighbor; //Number of pixels to leave on an edge
@@ -317,6 +318,7 @@ userInfo::userInfo(){
  num_threads =  1;
        model =  0;
        nbody =  0;
+     massMap =  0;
 N_partSmooth =  5;
 N_edgepixels =  3;
 

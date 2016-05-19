@@ -80,6 +80,9 @@ void ReadInpFile( userInfo &inpInfo, std::string inputFile ){
       else if ( inpS=="nbody"      ){
         inpInfo.nbody       = atoi(inpC2);
       }
+      else if ( inpS=="massMap"    ){
+        inpInfo.nbody       = atoi(inpC2);
+      }
       else if ( inpS=="R_max"      ){
         inpInfo.R_max       = atof(inpC2);
       }
