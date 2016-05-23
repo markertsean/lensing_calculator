@@ -12,6 +12,8 @@
 #include "grid_maintenance.h"
 #include "gridmap.h"
 
+#include <CCfits/CCfits>
+
 //My files
 #include "astro_constants.h"
 #include "lensing_classes.h"
@@ -39,22 +41,47 @@ int main(int arg,char **argv){
       Also sets cosmology, defaults to plank 1 yr
   */
 
+  std::string MOKA_input_file = "BoxMDP_000095461_20.0_0033.0.FITS";
 
-/*
+		std::auto_ptr<CCfits::FITS> ff(new CCfits::FITS(MOKA_input_file, CCfits::Read));
+
+		CCfits::PHDU* h0 = &ff->pHDU();
+
+    std::string catalog;
+    int N_pixels_v, N_pixels_h, id;
+    float fov, mass, r_vir, c, ba, ca, phi, theta, integ;
+
+    h0->readKey( "CATALOG"      , catalog    );
+    h0->readKey( "FOV"          , fov        );
+    h0->readKey( "N_pixels_v"   , N_pixels_h );
+    h0->readKey( "N_pixels_h"   , N_pixels_v );
+    h0->readKey( "ID"           , id         );
+    h0->readKey( "MASS"         , mass       );
+    h0->readKey( "RVIR"         , r_vir      );
+    h0->readKey( "C"            , c          );
+    h0->readKey( "b/a"          , ba         );
+    h0->readKey( "c/a"          , ca         );
+    h0->readKey( "PHI"          , phi        );
+    h0->readKey( "THETA"        , theta      );
+    h0->readKey( "INTEG"        , integ      );
+//*/
+
+
+//exit(0);
   // File names
-  userInfo userParams;
-  std::string userFile  = "lensUserParams.dat";
+//  userInfo userParams;
+//  std::string userFile  = "lensUserParams.dat";
   std::string paramfile = "paramfile";
 
 
   // Read input of what this source code will be doing, nbins outputfiles etc.
   //COSMOLOGY    planck;         // Comment if initialized Planck1yr
   COSMOLOGY planck(Planck1yr); // Comment if initialized user read in
-  haloInfo   lensInfo, sourceInfo;
+//  haloInfo   lensInfo, sourceInfo;
 
 
-  std::cout << "Using parameter file: " << paramfile << std::endl;
-  std::cout << "Using user lens file: " <<  userFile << std::endl << std::endl;
+//  std::cout << "Using parameter file: " << paramfile << std::endl;
+//  std::cout << "Using user lens file: " <<  userFile << std::endl << std::endl;
 
 
 //  ReadInpFile( userParams, userFile );
@@ -63,16 +90,22 @@ int main(int arg,char **argv){
 
   // Read in values of cosmology, lens, and source properties from paramfile
   //setCosmoParameters( params, planck ); // Comment if initialized Planck1yr
-  setHaloParameters ( params, planck,   lensInfo);
-  setHaloParameters ( params, planck, sourceInfo, "source");
-  std::cout << std::endl;
+//  setHaloParameters ( params, planck,   lensInfo);
+//  setHaloParameters ( params, planck, sourceInfo, "source");
+//  std::cout << std::endl;
 
 
-  lensInfo.setRmax( userParams.R_max );
-*/
+//  lensInfo.setRmax( userParams.R_max );
 
-
-
+size_t Ninit=1024;
+double range=0.3*M_PI/180.;
+std::cout<<std::endl<<std::endl;
+std::cout<<"Constructing grid"<<std::endl;
+Lens lens(params,&seed);
+std::cout<<"Lens constructed"<<std::endl;
+Grid grid(&lens,Ninit,center,range);
+std::cout<<"Grid constructed"<<std::endl;
+exit(0);
 
   ///////////////////////////////////////////////////
   /////////////INITIALIZE NEEDED PARAMETERS//////////
