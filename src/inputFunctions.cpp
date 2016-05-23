@@ -90,18 +90,9 @@ void readFitsHeader( const std::string inputFile ,  // Name of the FITS file
 
 
 
-
-
-/*Read parameters not included in paramfile (Nbins, inpfile, etc.)
-//
-//input:
-//     userInfo class object to overwrite
-//
-//output:
-//     void, overwrite inpInfo
-//
-*//*
-void ReadInpFile( userInfo &inpInfo, const std::string inputFile ){
+// Read parameters not included in paramfile (Nbins, Nthreads, etc.)
+void readInpFile(          userInfo  &inpInfo  ,   // Info needed for the rest of the code
+                  const std::string  inputFile ){  // Input file name
   FILE *pFile;
   char   inpC1[35],inpC2[35];
 
@@ -111,35 +102,38 @@ void ReadInpFile( userInfo &inpInfo, const std::string inputFile ){
   pFile = fopen(inputFile.c_str(),"r");
 
   if (pFile!=NULL){
+
+                std::cout << "Reading file: " << inputFile << std::endl;
+    logMessage( std::string( "Reading file: ") + inputFile );
+
+    // Scan variables
     while ( fscanf(pFile,"%s%s",inpC1,inpC2) != EOF ){
       std::string inpS = std::string(inpC1);
-      if      ( inpS=="angFOV"      ){        inpInfo.angFOV      = atof(inpC2);      }
-      else if ( inpS=="N_pixels"    ){        inpInfo.N_pixels    = atoi(inpC2);      }
-      else if ( inpS=="N_bins"      ){        inpInfo.N_bins      = atoi(inpC2);      }
-      else if ( inpS=="N_sources"   ){        inpInfo.N_sources   = atoi(inpC2);      }
-      else if ( inpS=="N_particles" ){        inpInfo.N_particles = atoi(inpC2);      }
-      else if ( inpS=="N_partSmooth"){        inpInfo.N_partSmooth= atoi(inpC2);      }
-      else if ( inpS=="num_threads" ){        inpInfo.num_threads = atoi(inpC2);      }
-      else if ( inpS=="model"       ){        inpInfo.model       = atoi(inpC2);      }
-      else if ( inpS=="nbody"       ){        inpInfo.nbody       = atoi(inpC2);      }
-      else if ( inpS=="massMap"     ){        inpInfo.nbody       = atoi(inpC2);      }
-      else if ( inpS=="R_max"       ){        inpInfo.R_max       = atof(inpC2);      }
-      else if ( inpS=="readFile"    ){        inpS                = std::string(inpC2);        inpInfo.readFile    =      inpS  ;      }
+           if ( inpS=="N_bins"      ){        inpInfo.setNbins    ( atoi(inpC2) );      }
+      else if ( inpS=="N_sources"   ){        inpInfo.setNsrc     ( atoi(inpC2) );      }
+      else if ( inpS=="N_threads"   ){        inpInfo.setNthreads ( atoi(inpC2) );      }
+      else if ( inpS=="R_max"       ){        inpInfo.setRmax     ( atof(inpC2) );      }
       else{
-          std::cerr << " Couldn't recognize input from " << inputFile <<
+
+          // Abort if unrecognized variables
+
+          std::cout << " Couldn't recognize input from " << inputFile <<
                      ": " << inpS << std::endl << std::endl;
-        exit(0);
+          logMessage( std::string("Unrecognized input: ") + inpS );
+        exit(1);
       }
     }
     fclose(pFile);
   }
+  // Abort if couldn't open file
   else{
-    std::cerr << "Couldn't find file: lensuserParams.dat" << std::endl;
-    exit(0);
+                std::cout << "Couldn't find file: " << inputFile << std::endl;
+    logMessage( std::string( "Couldn't find file: ") + inputFile );
+    logMessage( std::string( "Aborting." ) );
+    exit(1);
   }
 
 }
-*/
 
 /*Reads Nbody particle input, only takes position "f10f10f10"
 //

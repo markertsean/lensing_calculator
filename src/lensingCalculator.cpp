@@ -43,6 +43,15 @@ int main(int arg,char **argv){
   ////////////READ IN///////////////
   //////////////////////////////////
 
+
+  haloInfo    myHalo;  // Contains all the info on our halo
+  userInfo userInput;  // Contains all the info from the user
+
+
+  std::string   userFile = "lensUserParams.dat" ; // User specified input
+  std::string  paramfile = "paramfile"          ; // Glamer input
+
+
 //Edit these
   // File for glamer read in, contains information used by the library
   // Must contain variables:
@@ -52,7 +61,6 @@ int main(int arg,char **argv){
   //  pixelmaps_input_file
   //  pixelmaps_on
 
-  std::string      paramfile = "paramfile"   ;
   InputParams      params     ( paramfile   );
   logMessage( std::string("Read paramfile: ") + paramfile );
 
@@ -60,17 +68,14 @@ int main(int arg,char **argv){
 
 
   // Determine our FITS file name, will read the header for parameters
-
-  std::string                                    fitsFileName;
+  std::string                                    fitsFileName  ;
   params.get(          "pixelmaps_input_file"  , fitsFileName );
   logMessage( std::string("Using FITS file: ") + fitsFileName );
 
 
 
-  // Data types that hold the important data for our code
-
-  haloInfo    myHalo;  // Contains all the info on our halo
-  userInfo userInput;  // Contains all the info from the user
+  // Reads info from user file
+  readInpFile( userInput, userFile );
 
   // Read FITS image, populates halo and user inputs
   readFitsHeader( fitsFileName, myHalo, userInput );

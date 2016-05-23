@@ -10,10 +10,10 @@ void readFitsHeader( const std::string inputFile ,  // Name of the FITS file
                            userInfo   &userInput ); // User info to take from header
 
 
-/*
-void   ReadInpFile( 	      userInfo        &inpInfo ,  // Object we write to, contains parameters governing options
-                   const std::string    userFileName ); // Name of the file to read
-*/
+
+void readInpFile   (  	      userInfo        &inpInfo ,  // Object we write to, contains parameters governing options
+                    const std::string     userFileName ); // Name of the file to read
+
 
 
 /*

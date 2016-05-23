@@ -227,13 +227,9 @@ class userInfo{
 
     void setMinNeighborDist ( int    inpI ) { nearestSourceNeighbor = inpI; }
     void setFOV             ( double inpF ) {   angFOV       = inpF ; }
-    void setRmax            ( double inpF ) {   R_max        = inpF ; }
     void setNpix            ( int    inpI ) {   N_pixels     = inpI ; }
-    void setNsrc            ( int    inpI ) {   N_sources    = inpI ; }
-    void setNbins           ( int    inpI ) {   N_bins       = inpI ; }
     void setNpart           ( int    inpI ) {   N_particles  = inpI ; }
     void setEdgePix         ( int    inpI ) {   N_edgepixels = inpI ; }
-    void setNthreads        ( int    inpI ) {   num_threads  = inpI ; }
     void setChiMin          ( double inpF ) {           cMin = inpF ; }
     void setChiMax          ( double inpF ) {           cMax = inpF ; }
     void setMassMin         ( double inpF ) {           mMin = inpF ; }
@@ -250,6 +246,10 @@ class userInfo{
 
 
 
+    void setNbins           ( int    inpI ) {   N_bins       = inpI ; }
+    void setNsrc            ( int    inpI ) {   N_sources    = inpI ; }
+    void setNthreads        ( int    inpI ) {   num_threads  = inpI ; }
+    void setRmax            ( double inpF ) {   R_max        = inpF ; }
     void setNpixH           ( int    inpI ) {   N_pixels_h   = inpI ; }
     void setNpixV           ( int    inpI ) {   N_pixels_v   = inpI ; }
     void setIntegLength     ( double inpF ) {   integLength  = inpF ; }
@@ -262,6 +262,11 @@ class userInfo{
     int    getNpixV           () { return  N_pixels_v    ; }
     double getPhysFOV         () { return  physFOV       ; }
     double getAngFOV          () { return  angFOV        ; }
+    double getRmax            () { return   R_max        ; }
+    int    getNpix            () { return   N_pixels     ; }
+    int    getNsrc            () { return   N_sources    ; }
+    int    getNbins           () { return   N_bins       ; }
+    int    getNthreads        () { return    num_threads ; }
     std::string getCatType    () { return  catType       ; }
 
 
@@ -269,13 +274,8 @@ class userInfo{
 
     int    getMinNeighborDist () { return nearestSourceNeighbor ; }
     double getFOV             () { return   angFOV       ; }
-    double getRmax            () { return   R_max        ; }
-    int    getNpix            () { return   N_pixels     ; }
-    int    getNsrc            () { return   N_sources    ; }
-    int    getNbins           () { return   N_bins       ; }
     int    getNpart           () { return   N_particles  ; }
     int    getEdgePix         () { return   N_edgepixels ; }
-    int    getNthreads        () { return    num_threads ; }
     double getChiMin          () { return           cMin ; }
     double getChiMax          () { return           cMax ; }
     double getMassMin         () { return           mMin ; }
