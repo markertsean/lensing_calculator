@@ -23,23 +23,45 @@
 //#include "pixelmap_functions.h"
 
 
+// Name of the code log file
+std::string logFileName = "";
+
 
 int main(int arg,char **argv){
 
+  // Initializes the log file, generates logfiles directory
+  //  and a file name based on current time
+  initLogFile();
+
   long    seed    = -1827674;
   double center[] =    {0,0}; // Center of grid
+
+
 
 
   //////////////////////////////////
   ////////////READ IN///////////////
   //////////////////////////////////
 
-  /*
-      Reads input from two files, lensUserParams & paramfile
-      paramfile is for glamer information
-      lensUserParams is for adjusting this code
-      Also sets cosmology, defaults to plank 1 yr
-  */
+//Edit these
+  // File for glamer read in, contains information used by the library
+  // Must contain variables:
+  //  field_off
+  //  z_source
+  //  main_halo_on
+  //  pixelmaps_input_file
+  //  pixelmaps_on
+
+  std::string        paramfile = "paramfile";
+  InputParams params(paramfile);
+
+
+  std::string fitsFileName;
+  params.get("pixelmaps_input_file", fitsFileName);
+std::cout<<fitsFileName<<std::endl;
+  // Now read FITS image
+exit(0);
+
 
   std::string MOKA_input_file = "BoxMDP_000095461_20.0_0033.0.FITS";
 
@@ -64,6 +86,8 @@ int main(int arg,char **argv){
     h0->readKey( "PHI"          , phi        );
     h0->readKey( "THETA"        , theta      );
     h0->readKey( "INTEG"        , integ      );
+
+//params.get("parameter")
 //*/
 
 
@@ -71,7 +95,6 @@ int main(int arg,char **argv){
   // File names
 //  userInfo userParams;
 //  std::string userFile  = "lensUserParams.dat";
-  std::string paramfile = "paramfile";
 
 
   // Read input of what this source code will be doing, nbins outputfiles etc.
@@ -85,7 +108,6 @@ int main(int arg,char **argv){
 
 
 //  ReadInpFile( userParams, userFile );
-  InputParams params(paramfile);
 
 
   // Read in values of cosmology, lens, and source properties from paramfile

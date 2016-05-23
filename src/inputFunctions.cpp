@@ -2,6 +2,55 @@
 #include <slsimlib.h>
 #include <lensing_classes.h>
 
+
+/*Read parameters not included in paramfile (Nbins, inpfile, etc.)
+//
+//input:
+//     userInfo class object to overwrite
+//
+//output:
+//     void, overwrite inpInfo
+//
+*/
+void ReadInpFile( userInfo &inpInfo, std::string inputFile ){
+  FILE *pFile;
+  char   inpC1[35],inpC2[35];
+
+  // Attempt to open file, if successful go line by line
+  //  finding the variable name and value
+
+  pFile = fopen(inputFile.c_str(),"r");
+
+  if (pFile!=NULL){
+    while ( fscanf(pFile,"%s%s",inpC1,inpC2) != EOF ){
+      std::string inpS = std::string(inpC1);
+      if      ( inpS=="angFOV"      ){        inpInfo.angFOV      = atof(inpC2);      }
+      else if ( inpS=="N_pixels"    ){        inpInfo.N_pixels    = atoi(inpC2);      }
+      else if ( inpS=="N_bins"      ){        inpInfo.N_bins      = atoi(inpC2);      }
+      else if ( inpS=="N_sources"   ){        inpInfo.N_sources   = atoi(inpC2);      }
+      else if ( inpS=="N_particles" ){        inpInfo.N_particles = atoi(inpC2);      }
+      else if ( inpS=="N_partSmooth"){        inpInfo.N_partSmooth= atoi(inpC2);      }
+      else if ( inpS=="num_threads" ){        inpInfo.num_threads = atoi(inpC2);      }
+      else if ( inpS=="model"       ){        inpInfo.model       = atoi(inpC2);      }
+      else if ( inpS=="nbody"       ){        inpInfo.nbody       = atoi(inpC2);      }
+      else if ( inpS=="massMap"     ){        inpInfo.nbody       = atoi(inpC2);      }
+      else if ( inpS=="R_max"       ){        inpInfo.R_max       = atof(inpC2);      }
+      else if ( inpS=="readFile"    ){        inpS                = std::string(inpC2);        inpInfo.readFile    =      inpS  ;      }
+      else{
+          std::cerr << " Couldn't recognize input from " << inputFile <<
+                     ": " << inpS << std::endl << std::endl;
+        exit(0);
+      }
+    }
+    fclose(pFile);
+  }
+  else{
+    std::cerr << "Couldn't find file: lensuserParams.dat" << std::endl;
+    exit(0);
+  }
+
+}
+
 /*Reads Nbody particle input, only takes position "f10f10f10"
 //
 //input:
@@ -11,7 +60,7 @@
 //      void
 //      Positions of halos in xpos, PosType 2D object [xyz][index]
 //
-*/
+*//*
 void ReadNbodyHalo( double xpos[][3], int Npoints, std::string inpFileName){
 
   int  iNlines(Npoints);
@@ -27,87 +76,8 @@ void ReadNbodyHalo( double xpos[][3], int Npoints, std::string inpFileName){
     xpos[ii][2]=z;
   }
   fclose(pFile);
-}
+}*/
 
-/*Read parameters not included in paramfile (Nbins, inpfile, etc.)
-//
-//input:
-//     userInfo class object to overwrite
-//
-//output:
-//     void, overwrite inpInfo
-//
-*/
-void ReadInpFile( userInfo &inpInfo, std::string inputFile ){
-  FILE *pFile;
-  char   inpC1[35],inpC2[35];
-//  std::string inputFile="lensUserParams.dat";
-
-  //Attempt to open file, if successful go line by line
-  // finding the variable name and value
-  pFile = fopen(inputFile.c_str(),"r");
-  if (pFile!=NULL){
-    while ( fscanf(pFile,"%s%s",inpC1,inpC2) != EOF ){
-      std::string inpS = std::string(inpC1);
-      if      ( inpS=="angFOV"     ){
-        inpInfo.angFOV      = atof(inpC2);
-      }
-      else if ( inpS=="N_pixels"   ){
-        inpInfo.N_pixels    = atoi(inpC2);
-      }
-      else if ( inpS=="N_bins"     ){
-        inpInfo.N_bins      = atoi(inpC2);
-      }
-      else if ( inpS=="N_sources"  ){
-        inpInfo.N_sources   = atoi(inpC2);
-      }
-      else if ( inpS=="N_particles"){
-        inpInfo.N_particles = atoi(inpC2);
-      }
-      else if ( inpS=="N_partSmooth"){
-        inpInfo.N_partSmooth= atoi(inpC2);
-      }
-      else if ( inpS=="readFile"   ){
-        inpS = std::string(inpC2);
-        inpInfo.readFile    =      inpS  ;
-      }
-      else if ( inpS=="num_threads"){
-        inpInfo.num_threads = atoi(inpC2);
-      }
-      else if ( inpS=="model"      ){
-        inpInfo.model       = atoi(inpC2);
-      }
-      else if ( inpS=="nbody"      ){
-        inpInfo.nbody       = atoi(inpC2);
-      }
-      else if ( inpS=="massMap"    ){
-        inpInfo.nbody       = atoi(inpC2);
-      }
-      else if ( inpS=="R_max"      ){
-        inpInfo.R_max       = atof(inpC2);
-      }
-      else{
-        std::cerr << " Couldn't recognize input from " << inputFile <<
-                     ": " << inpS << std::endl << std::endl;
-        exit(0);
-      }
-    }
-    fclose(pFile);
-  }
-  else{
-    std::cerr << "Couldn't find file: lensuserParams.dat" << std::endl;
-    exit(0);
-  }
-  //Need to have either model or nbody
-  if ( (inpInfo.model+inpInfo.nbody) == 2){
-    std::cerr << "model=nbody=1, can't have both" << std::endl;
-    exit(0);
-  }
-  if ( (inpInfo.model+inpInfo.nbody) == 0){
-    std::cerr << "model=nbody=0, need one" << std::endl;
-    exit(0);
-  }
-}
 
 /*gets cosmo parameters from paramfile, puts in cosmology object
 //
@@ -118,6 +88,7 @@ void ReadInpFile( userInfo &inpInfo, std::string inputFile ){
 //     void, inpCosmo to write to
 //
 */
+/*
 void setCosmoParameters( InputParams params, COSMOLOGY &inpCosmo ){
   double tempVal;
   std::string tempStr;
@@ -249,7 +220,7 @@ void setCosmoParameters( InputParams params, COSMOLOGY &inpCosmo ){
   params.get("field_prof_internal_slope_pl"     ,tempVal);
   params.get("field_prof_internal_slope_pnfw"   ,tempVal);
 
-}
+}*/
 
 /*Read in from paramfile halo info, redshift mass etc
 //
@@ -259,7 +230,7 @@ void setCosmoParameters( InputParams params, COSMOLOGY &inpCosmo ){
 //output:
 //     void, inpInfo overwritten
 //
-*/
+*//*
 void setHaloParameters(InputParams params, COSMOLOGY &inpCosmo, haloInfo &inpInfo, std::string objType){
   double tempVal;
   std::string tempStr;
@@ -386,3 +357,4 @@ void setHaloParameters(InputParams params, COSMOLOGY &inpCosmo, haloInfo &inpInf
   params.get("field_prof_internal_slope_pl"     ,tempVal);
   params.get("field_prof_internal_slope_pnfw"   ,tempVal);
 }
+*/

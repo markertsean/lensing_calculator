@@ -2,9 +2,68 @@
 #define MY_LENSING_CLASSES
 
 #include <iostream>
+#include <cstring>
+#include <ctime>
 #include <cosmo.h>
 #include <math.h>
 #include <astro_constants.h>
+
+
+
+
+// Log file name
+extern std::string logFileName;
+
+
+// Generates log files, printing text to file
+inline void logMessage( const std::string &text ){
+
+    std::ofstream log_file(  logFileName, std::ios_base::out | std::ios_base::app );
+    log_file << text << std::endl;
+
+}
+
+// Initializes log file, making directory and file name
+inline void initLogFile(){
+
+  // Sets up the times
+  int execution_start = clock();
+  time_t      nowTime =      time(        0 );
+  tm       *startTime = localtime( &nowTime );
+
+  // Logfile name & directory
+  char logFileNameC[100];
+  struct stat sb;
+  char str[] = "mkdir logfiles";
+
+  // Create logfiles directory, if one does not exist
+  if ( stat( "logfiles/", &sb) != 0 ){
+    system( str );
+  }
+
+  // Log file name is mostly the date
+  sprintf( logFileNameC, "logfiles/lensCalc.%4i.%02i.%02i.%02i.%02i.%02i.log",
+    (*startTime).tm_year+1900,
+    (*startTime).tm_mon ,
+    (*startTime).tm_mday,
+    (*startTime).tm_hour,
+    (*startTime).tm_min ,
+    (*startTime).tm_sec );
+
+  logFileName= std::string(logFileNameC) ;
+
+  // First line of the log file is the time
+  logMessage( (std::string(                "Code initialized at ")+
+               std::to_string( (long long) (*startTime).tm_hour  )+
+               std::string(                ":"                   )+
+               std::to_string( (long long) (*startTime).tm_min   )+
+               std::string(                ":"                   )+
+               std::to_string( (long long) (*startTime).tm_sec   )));
+
+
+}
+
+
 
 //Holds info on lens, source, any halo for easy access
 class haloInfo{
