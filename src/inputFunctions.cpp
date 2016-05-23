@@ -1,6 +1,95 @@
 #include <cstring>
+#include <CCfits/CCfits>
 #include <slsimlib.h>
 #include <lensing_classes.h>
+
+
+
+
+// Read the FITS header of our file
+void readFitsHeader( const std::string inputFile ,  // Name of the FITS file
+                           haloInfo      &myHalo ,  // Halo to put info into
+                           userInfo   &userInput ){ // User info to take from header
+
+
+  // Opens fits file to read header
+  std::auto_ptr<CCfits::FITS> ff(new CCfits::FITS(inputFile, CCfits::Read));
+	CCfits::PHDU* h0 = &ff->pHDU();
+
+  // Values to read in
+  std::string catalog;
+  int N_pixels_v, N_pixels_h, id;
+  float fov, redshift, mass, r_vir, c, ba, ca, phi, theta, integ, physicalsize;
+
+  // Attempt to read header items, if fail abort
+  try {
+    h0->readKey( "CATALOG"      , catalog      );
+    h0->readKey( "FOV"          , fov          );
+    h0->readKey( "N_pixels_v"   , N_pixels_h   );
+    h0->readKey( "N_pixels_h"   , N_pixels_v   );
+    h0->readKey( "PHYSICALSIZE" , physicalsize );
+    h0->readKey( "REDSHIFT"     , redshift     );
+    h0->readKey( "ID"           , id           );
+    h0->readKey( "MASS"         , mass         );
+    h0->readKey( "RVIR"         , r_vir        );
+    h0->readKey( "C"            , c            );
+    h0->readKey( "b/a"          , ba           );
+    h0->readKey( "c/a"          , ca           );
+    h0->readKey( "PHI"          , phi          );
+    h0->readKey( "THETA"        , theta        );
+    h0->readKey( "INTEG"        , integ        );
+  }
+  catch (...) {
+
+    std::string aborting = std::string("FITS header must contain: " )+
+                           std::string("CATALOG, "      )+
+                           std::string("FOV, "          )+
+                           std::string("N_pixels_v, "   )+
+                           std::string("N_pixels_h, "   )+
+                           std::string("PHYSICALSIZE, " )+
+                           std::string("REDSHIFT, "     )+
+                           std::string("ID, "           )+
+                           std::string("MASS, "         )+
+                           std::string("RVIR, "         )+
+                           std::string("C, "            )+
+                           std::string("b/a, "          )+
+                           std::string("c/a, "          )+
+                           std::string("PHI, "          )+
+                           std::string("THETA, "        )+
+                           std::string("INTEG, "        );
+
+    std::cout << aborting << std::endl << "Aborting." << std::endl;
+
+    logMessage(  aborting   );
+    logMessage( "Aborting." );
+    exit(1);
+  }
+
+  // Put halo values into halo data type
+  myHalo.setID    (       id );
+  myHalo.setM     (     mass );
+  myHalo.setZ     ( redshift );
+  myHalo.setRmax  (    r_vir );
+  myHalo.setC     (        c );
+  myHalo.setBA    (       ba );
+  myHalo.setCA    (       ca );
+  myHalo.setPhi   (      phi );
+  myHalo.setTheta (    theta );
+
+  // Put values of image into the user input data type
+  userInput.setCatType    ( catalog      );
+  userInput.setIntegLength( integ        );
+  userInput.setPhysFOV    ( fov          );
+  userInput.setAngFOV     ( physicalsize );
+  userInput.setNpixV      ( N_pixels_v   );
+  userInput.setNpixH      ( N_pixels_h   );
+  userInput.setNpix       ( N_pixels_h   *
+                            N_pixels_v   );
+
+}
+
+
+
 
 
 /*Read parameters not included in paramfile (Nbins, inpfile, etc.)
@@ -11,8 +100,8 @@
 //output:
 //     void, overwrite inpInfo
 //
-*/
-void ReadInpFile( userInfo &inpInfo, std::string inputFile ){
+*//*
+void ReadInpFile( userInfo &inpInfo, const std::string inputFile ){
   FILE *pFile;
   char   inpC1[35],inpC2[35];
 
@@ -50,6 +139,7 @@ void ReadInpFile( userInfo &inpInfo, std::string inputFile ){
   }
 
 }
+*/
 
 /*Reads Nbody particle input, only takes position "f10f10f10"
 //

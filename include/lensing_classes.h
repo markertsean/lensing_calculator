@@ -248,6 +248,25 @@ class userInfo{
     void setNtrack          ( int    inpI ) {  N_chiTrack    = inpI ; }
     void setNConsistent     ( int    inpI ) {  consistent    = inpI ; }
 
+
+
+    void setNpixH           ( int    inpI ) {   N_pixels_h   = inpI ; }
+    void setNpixV           ( int    inpI ) {   N_pixels_v   = inpI ; }
+    void setIntegLength     ( double inpF ) {   integLength  = inpF ; }
+    void setPhysFOV         ( double inpF ) {   physFOV      = inpF ; }
+    void setAngFOV          ( double inpF ) {   angFOV       = inpF ; }
+    void setCatType         ( std::string inpS ) {   catType = inpS ; }
+
+    double getIntegLength     () { return  integLength   ; }
+    int    getNpixH           () { return  N_pixels_h    ; }
+    int    getNpixV           () { return  N_pixels_v    ; }
+    double getPhysFOV         () { return  physFOV       ; }
+    double getAngFOV          () { return  angFOV        ; }
+    std::string getCatType    () { return  catType       ; }
+
+
+
+
     int    getMinNeighborDist () { return nearestSourceNeighbor ; }
     double getFOV             () { return   angFOV       ; }
     double getRmax            () { return   R_max        ; }
@@ -276,8 +295,12 @@ class userInfo{
 
     // Stuff to read in
     double      angFOV;  // Angular size of image
+    double     physFOV;  // Physical size of image
+    double integLength;  // Integration length
     double       R_max;
     int    N_pixels   ;  // Number of pixels on grid
+    int    N_pixels_h ;
+    int    N_pixels_v ;
     int    N_bins     ;  // Number of bins for radial averaging
     int    N_sources  ;  // Number of sources to generate
     int    N_particles;  // Number of particles in simulation
@@ -286,6 +309,7 @@ class userInfo{
     double nearestSourceNeighbor; // Number of pixels to leave on an edge
 
   std::string readFile;
+  std::string catType;
 
   // Chi2 & genetic algorithm fitting values
   double     cMin;
@@ -306,8 +330,11 @@ class userInfo{
 
 userInfo::userInfo(){
         angFOV = -1.;
+       physFOV = -1.;
          R_max = -1.;
    N_pixels    = -1;
+   N_pixels_h  = -1;
+   N_pixels_v  = -1;
    N_bins      = -1;
    N_sources   = -1;
    N_particles = -1;
@@ -316,6 +343,7 @@ userInfo::userInfo(){
 
   nearestSourceNeighbor = 1.5;
   readFile = " ";
+  catType  = " ";
 
       cMin =  2.0;
       cMax =  8.0;

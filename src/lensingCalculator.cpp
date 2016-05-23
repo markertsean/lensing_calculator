@@ -18,7 +18,7 @@
 #include "astro_constants.h"
 #include "lensing_classes.h"
 //#include "my_utilities.h"
-//#include "input_functions.h"
+#include "input_functions.h"
 //#include "lens_fitter.h"
 //#include "pixelmap_functions.h"
 
@@ -34,9 +34,9 @@ int main(int arg,char **argv){
   initLogFile();
 
   long    seed    = -1827674;
-  double center[] =    {0,0}; // Center of grid
 
 
+  logMessage( std::string("Seed = ") + std::to_string( (long long) seed ) );
 
 
   //////////////////////////////////
@@ -52,44 +52,31 @@ int main(int arg,char **argv){
   //  pixelmaps_input_file
   //  pixelmaps_on
 
-  std::string        paramfile = "paramfile";
-  InputParams params(paramfile);
+  std::string      paramfile = "paramfile"   ;
+  InputParams      params     ( paramfile   );
+  logMessage( std::string("Read paramfile: ") + paramfile );
 
 
-  std::string fitsFileName;
-  params.get("pixelmaps_input_file", fitsFileName);
-std::cout<<fitsFileName<<std::endl;
-  // Now read FITS image
+
+
+  // Determine our FITS file name, will read the header for parameters
+
+  std::string                                    fitsFileName;
+  params.get(          "pixelmaps_input_file"  , fitsFileName );
+  logMessage( std::string("Using FITS file: ") + fitsFileName );
+
+
+
+  // Data types that hold the important data for our code
+
+  haloInfo    myHalo;  // Contains all the info on our halo
+  userInfo userInput;  // Contains all the info from the user
+
+  // Read FITS image, populates halo and user inputs
+  readFitsHeader( fitsFileName, myHalo, userInput );
+
+
 exit(0);
-
-
-  std::string MOKA_input_file = "BoxMDP_000095461_20.0_0033.0.FITS";
-
-		std::auto_ptr<CCfits::FITS> ff(new CCfits::FITS(MOKA_input_file, CCfits::Read));
-
-		CCfits::PHDU* h0 = &ff->pHDU();
-
-    std::string catalog;
-    int N_pixels_v, N_pixels_h, id;
-    float fov, mass, r_vir, c, ba, ca, phi, theta, integ;
-
-    h0->readKey( "CATALOG"      , catalog    );
-    h0->readKey( "FOV"          , fov        );
-    h0->readKey( "N_pixels_v"   , N_pixels_h );
-    h0->readKey( "N_pixels_h"   , N_pixels_v );
-    h0->readKey( "ID"           , id         );
-    h0->readKey( "MASS"         , mass       );
-    h0->readKey( "RVIR"         , r_vir      );
-    h0->readKey( "C"            , c          );
-    h0->readKey( "b/a"          , ba         );
-    h0->readKey( "c/a"          , ca         );
-    h0->readKey( "PHI"          , phi        );
-    h0->readKey( "THETA"        , theta      );
-    h0->readKey( "INTEG"        , integ      );
-
-//params.get("parameter")
-//*/
-
 
 //exit(0);
   // File names
@@ -108,6 +95,7 @@ exit(0);
 
 
 //  ReadInpFile( userParams, userFile );
+  double center[] =    {0,0}; // Center of grid
 
 
   // Read in values of cosmology, lens, and source properties from paramfile
