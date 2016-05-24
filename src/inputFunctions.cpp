@@ -65,6 +65,24 @@ void readFitsHeader( const std::string inputFile ,  // Name of the FITS file
     exit(1);
   }
 
+  logMessage(  std::string("FITS header contains: " )+
+               std::string("CATALOG, "      )+                              catalog        + std::string("\n") +
+               std::string("FOV, "          )+ std::to_string((long double) fov          ) + std::string("\n") +
+               std::string("N_pixels_v, "   )+ std::to_string((long long  ) N_pixels_v   ) + std::string("\n") +
+               std::string("N_pixels_h, "   )+ std::to_string((long long  ) N_pixels_h   ) + std::string("\n") +
+               std::string("PHYSICALSIZE, " )+ std::to_string((long double) physicalsize ) + std::string("\n") +
+               std::string("REDSHIFT, "     )+ std::to_string((long double) redshift     ) + std::string("\n") +
+               std::string("ID, "           )+ std::to_string((long long  ) id           ) + std::string("\n") +
+               std::string("MASS, "         )+ std::to_string((long double) mass         ) + std::string("\n") +
+               std::string("RVIR, "         )+ std::to_string((long double) r_vir        ) + std::string("\n") +
+               std::string("C, "            )+ std::to_string((long double) c            ) + std::string("\n") +
+               std::string("b/a, "          )+ std::to_string((long double) ba           ) + std::string("\n") +
+               std::string("c/a, "          )+ std::to_string((long double) ca           ) + std::string("\n") +
+               std::string("PHI, "          )+ std::to_string((long double) phi          ) + std::string("\n") +
+               std::string("THETA, "        )+ std::to_string((long double) theta        ) + std::string("\n") +
+               std::string("INTEG, "        )+ std::to_string((long double) integ        ) );
+
+
   // Put halo values into halo data type
   myHalo.setID    (       id );
   myHalo.setM     (     mass );
@@ -103,7 +121,6 @@ void readInpFile(          userInfo  &inpInfo  ,   // Info needed for the rest o
 
   if (pFile!=NULL){
 
-                std::cout << "Reading file: " << inputFile << std::endl;
     logMessage( std::string( "Reading file: ") + inputFile );
 
     // Scan variables
@@ -112,7 +129,6 @@ void readInpFile(          userInfo  &inpInfo  ,   // Info needed for the rest o
            if ( inpS=="N_bins"      ){        inpInfo.setNbins    (        atoi(inpC2) );      }
       else if ( inpS=="N_sources"   ){        inpInfo.setNsrc     (        atoi(inpC2) );      }
       else if ( inpS=="N_threads"   ){        inpInfo.setNthreads (        atoi(inpC2) );      }
-      else if ( inpS=="R_max"       ){        inpInfo.setRmax     (        atof(inpC2) );      }
       else if ( inpS=="cosmo"       ){        inpInfo.setCosmology( std::string(inpC2) );      }
       else{
 
@@ -150,7 +166,10 @@ void readInpFile(          userInfo  &inpInfo  ,   // Info needed for the rest o
     exit(1);
   }
 
-  if ( inpInfo.getNbins() || inpInfo.getNsrc () == -1 ) inpInfo.setNsrc ( 10 );
+  logMessage( std::string("N_bins    = ") + std::to_string((long long) inpInfo.getNbins()     ) +
+              std::string("N_sources = ") + std::to_string((long long) inpInfo.getNsrc()      ) +
+              std::string("N_threads = ") + std::to_string((long long) inpInfo.getNthreads()  ) +
+              std::string("cosmo     = ") + std::string   (            inpInfo.getCosmology() ) );
 
 }
 

@@ -224,7 +224,7 @@ class userInfo{
 
     inline userInfo();
 
-
+    void setRmax            ( double inpF ) {   R_max        = inpF ; }
     void setMinNeighborDist ( int    inpI ) { nearestSourceNeighbor = inpI; }
     void setFOV             ( double inpF ) {   angFOV       = inpF ; }
     void setNpix            ( int    inpI ) {   N_pixels     = inpI ; }
@@ -249,7 +249,6 @@ class userInfo{
     void setNbins           ( int    inpI ) {   N_bins       = inpI ; }
     void setNsrc            ( int    inpI ) {   N_sources    = inpI ; }
     void setNthreads        ( int    inpI ) {   num_threads  = inpI ; }
-    void setRmax            ( double inpF ) {   R_max        = inpF ; }
     void setNpixH           ( int    inpI ) {   N_pixels_h   = inpI ; }
     void setNpixV           ( int    inpI ) {   N_pixels_v   = inpI ; }
     void setIntegLength     ( double inpF ) {   integLength  = inpF ; }
@@ -263,7 +262,6 @@ class userInfo{
     int    getNpixV           () { return  N_pixels_v    ; }
     double getPhysFOV         () { return  physFOV       ; }
     double getAngFOV          () { return  angFOV        ; }
-    double getRmax            () { return   R_max        ; }
     int    getNpix            () { return   N_pixels     ; }
     int    getNsrc            () { return   N_sources    ; }
     int    getNbins           () { return   N_bins       ; }
@@ -290,6 +288,7 @@ class userInfo{
     int    getNchrome         () { return  N_chromosomes ; }
     int    getNtrack          () { return  N_chiTrack    ; }
     int    getNConsistent     () { return  consistent    ; }
+    double getRmax            () { return   R_max        ; }
 
 
   private:

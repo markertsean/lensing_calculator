@@ -51,7 +51,7 @@ int main(int arg,char **argv){
 
 
   std::string   userFile = "lensUserParams.dat" ; // User specified input
-  std::string  paramfile = "paramfile"          ; // Glamer input
+  std::string  paramFile = "paramfile"          ; // Glamer input
 
 
 //Edit these
@@ -63,9 +63,13 @@ int main(int arg,char **argv){
   //  pixelmaps_input_file
   //  pixelmaps_on
 
-  InputParams      params     ( paramfile   );
-  logMessage( std::string("Read paramfile: ") + paramfile );
+  std::cout << "Reading file: "              << std::endl;
+  std::cout << "              " << paramFile << std::endl;
 
+  InputParams      params     ( paramFile   );
+  logMessage( std::string("Read paramfile: ") + paramFile );
+
+  std::cout << "               Done." << std::endl << std::endl;
 
 
 
@@ -76,12 +80,25 @@ int main(int arg,char **argv){
 
 
 
+
+
+  std::cout << "Reading file: "              << std::endl;
+  std::cout << "              " << userFile  << std::endl;
+
   // Reads info from user file
   readInpFile( userInput, userFile );
+
+  std::cout << "               Done." << std::endl << std::endl;
+
+
+
+  std::cout << "Reading file: "                  << std::endl;
+  std::cout << "              " << fitsFileName  << std::endl;
 
   // Read FITS image, populates halo and user inputs
   readFitsHeader( fitsFileName, myHalo, userInput );
 
+  std::cout << "               Done." << std::endl << std::endl;
 
 /*
 std::cout<<std::endl<<std::endl;
@@ -92,6 +109,7 @@ Grid grid(&lens,Ninit,center,range);
 std::cout<<"Grid constructed"<<std::endl;
 exit(0);
 */
+
   ///////////////////////////////////////////////////
   /////////////INITIALIZE NEEDED PARAMETERS//////////
   ///////////////////////////////////////////////////
@@ -105,10 +123,18 @@ exit(0);
 
   // Read in from lensUserParams, sets the cosmology for glamer
   if ( userInput.getCosmology() == "PLANCK" ) {
+
     cosmo = Planck1yr;
+    logMessage( std::string( "Using Planck cosmology") );
+                std::cout << "Using Planck cosmology"   << std::endl << std::endl;
+
   } else
   if ( userInput.getCosmology() == "WMAP"   ) {
+
     cosmo = WMAP5yr;
+    logMessage( std::string( "Using WMAP 5yr cosmology") );
+                std::cout << "Using WMAP 5yr cosmology" << std::endl << std::endl;
+
   } else {
                 std::cout << "Unrecognized cosmology: " << userInput.getCosmology() << std::endl;
     logMessage( std::string( "Unrecognized cosmology: ") + userInput.getCosmology() );
@@ -123,12 +149,16 @@ exit(0);
   omp_set_num_threads( userInput.getNthreads() );  // For parallelization, default 1
 
 
+  logMessage( std::string("range = "           ) + std::to_string((long double)  range    ));
+  logMessage( std::string("realWidth = "       ) + std::to_string((long double)  realWidth));
+  logMessage( std::string("omp_num_threads = " ) + std::to_string((long double)  userInput.getNthreads()));
 
 /*
   double Sigma_crit = sourceInfo.getSigmaCrit();                   // Critital surface density
   double   lensDist =   lensInfo.getAngDist();                     // Ang diam distance to lens
 */
 
+  std::cout << "Constructing PixelMaps..." << std::endl;
 
   // PixelMaps constructed to contain lensing parameters
   PixelMap  kappaMap( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
@@ -139,91 +169,46 @@ exit(0);
   PixelMap  g_aziMap( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
   PixelMap   distMap( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
 
+  std::cout << "               Done." << std::endl;
 
+  logMessage( std::string("PixelMaps allocated") );
 
 
   ///////////////////////////////////////////////////////////
   ///////////////////////CONSTRUCT LENS//////////////////////
   ///////////////////////////////////////////////////////////
 
-  /*
-
-      Constructs a lens based on input from paramfile
-      if a model or nbody particle run, need to generate new halo and replace
-
-  */
 
 
-/*
-  //Generates lens from paramfile
+  std::cout <<                           std::endl << std::endl;
+  std::cout << "Constructing lens..." << std::endl << std::endl;
+
+  // Generates lens from paramfile, glamer side
   Lens myLens( params, &seed );
-//myLens.printMultiLens();
-
-  std::cout <<                    std::endl << std::endl;
-  std::cout << "Constructing lens..."       << std::endl;
 
 
-  //1 model, 2 nbody input, 3 massMap
-  if ( lensType==1 ){
-    //mass, rmax, redshift, rs, axis ratio, position angle, number of stars
-    LensHaloNFW myNFWLens(  lensInfo.getM()     ,
-                            lensInfo.getRmax()  ,
-                            lensInfo.getZ()     ,
-                            lensInfo.getRscale(),
-                                             1.0,
-                                             0.0,
-                                             0  ); //Spherical, normal NFW
+  std::cout <<                                        std::endl;
+  std::cout << "Lens constructed."    << std::endl << std::endl;
 
-    myLens.insertMainHalo( &myNFWLens);
-  }
-
-  else
-  if ( lensType==2 ){
-    //For rotating particles, could be useful for triaxiality
-    Point_2d rotation_vector;
-    rotation_vector *= 0;
-    LensHaloParticles pHalo(  userParams.readFile    ,
-
-                                      lensInfo.getZ(),
-
-                              userParams.N_partSmooth,
-                                               planck,
-                                      rotation_vector);
-
-    myLens.replaceMainHalos( &pHalo);
-  }
-
-  else
-  if ( lensType==3 ){
-    //Nothing to do if it's SD?
-  }
-
-  else{
-  std::cout << " Error: lensType="<<lensType<< std::endl << std::endl;
-  exit(0);
-  }
-
-  std::cout << "Lens constructed."          << std::endl << std::endl;
-*/
+  logMessage( std::string("Lens constructed") );
 
 
-
-  /*
   //////////////////////////////////////////////////////
   //////////////////CONSTRUCT GRID//////////////////////
   //////////////////////////////////////////////////////
 
-  Generates a grid, and fills the pixel maps in
-  */
 
+
+
+  std::cout << "Constructing grid..." << std::endl;
+
+  Grid myGrid( &myLens, userInput.getNpixH(), center, userInput.getPhysFOV() );
+
+  std::cout << "Grid constructed."    << std::endl << std::endl;
+
+  logMessage( std::string("Grid constructed") );
 
 /*
-  std::cout << "Constructing grid..."       << std::endl;
-
-  Grid myGrid( &myLens, userParams.N_pixels, center, userParams.angFOV);
-
-  std::cout << "Grid constructed."          << std::endl << std::endl;
-
   calcLensMaps( myGrid,
                          kappaMap,
                         gamma1Map,
