@@ -33,11 +33,13 @@ int main(int arg,char **argv){
   //  and a file name based on current time
   initLogFile();
 
+  // Default values that will not be changing
   long    seed    = -1827674;
-
+  double center[] =    {0,0}; // Center of grid
 
   logMessage( std::string("Seed = ") + std::to_string( (long long) seed ) );
 
+  srand(seed); // Sets random seed
 
   //////////////////////////////////
   ////////////READ IN///////////////
@@ -81,9 +83,27 @@ int main(int arg,char **argv){
   readFitsHeader( fitsFileName, myHalo, userInput );
 
 
+/*
+std::cout<<std::endl<<std::endl;
+std::cout<<"Constructing grid"<<std::endl;
+Lens lens(params,&seed);
+std::cout<<"Lens constructed"<<std::endl;
+Grid grid(&lens,Ninit,center,range);
+std::cout<<"Grid constructed"<<std::endl;
+exit(0);
+*/
+  ///////////////////////////////////////////////////
+  /////////////INITIALIZE NEEDED PARAMETERS//////////
+  ///////////////////////////////////////////////////
+
+  //
+  //    Sets some parameters, and initializes pixelmaps for later use
+  //
+
+
   COSMOLOGY cosmo;
 
-  // Read in from lensUserParams
+  // Read in from lensUserParams, sets the cosmology for glamer
   if ( userInput.getCosmology() == "PLANCK" ) {
     cosmo = Planck1yr;
   } else
@@ -98,72 +118,27 @@ int main(int arg,char **argv){
 
 
 
-exit(0);
-//  std::cout << "Using parameter file: " << paramfile << std::endl;
-//  std::cout << "Using user lens file: " <<  userFile << std::endl << std::endl;
+  double      range =  userInput.getAngFOV  ()  ;  // Angular field of view, in degrees
+  double  realWidth =  userInput.getPhysFOV ()  ;  // Field of view in Mpc
+  omp_set_num_threads( userInput.getNthreads() );  // For parallelization, default 1
 
 
-//  ReadInpFile( userParams, userFile );
-  double center[] =    {0,0}; // Center of grid
 
-
-  // Read in values of cosmology, lens, and source properties from paramfile
-  //setCosmoParameters( params, planck ); // Comment if initialized Planck1yr
-//  setHaloParameters ( params, planck,   lensInfo);
-//  setHaloParameters ( params, planck, sourceInfo, "source");
-//  std::cout << std::endl;
-
-
-//  lensInfo.setRmax( userParams.R_max );
-
-size_t Ninit=1024;
-double range=0.3*M_PI/180.;
-std::cout<<std::endl<<std::endl;
-std::cout<<"Constructing grid"<<std::endl;
-Lens lens(params,&seed);
-std::cout<<"Lens constructed"<<std::endl;
-Grid grid(&lens,Ninit,center,range);
-std::cout<<"Grid constructed"<<std::endl;
-exit(0);
-
-  ///////////////////////////////////////////////////
-  /////////////INITIALIZE NEEDED PARAMETERS//////////
-  ///////////////////////////////////////////////////
-
-  /*
-      Sets some parameters, and initializes pixelmaps for later use
-  */
 /*
-  srand(seed);                                           // Sets random seed
-
-  omp_set_num_threads( userParams.num_threads );         // For parallelization, default 1
-
-  lensType = userParams.model   + userParams.nbody * 2 + // Either model 1 or nbody 2 or mass map 3
-             userParams.massMap * 3;
-
-  if ( lensType!=1 ||  // Can only have 1 lens type
-       lensType!=2 ||
-       lensType!=3 ){
-
-    std::cout << "Error: LensType = " << lensType << std::endl;
-    exit(0);
-
-  }
-
-
   double Sigma_crit = sourceInfo.getSigmaCrit();                   // Critital surface density
   double   lensDist =   lensInfo.getAngDist();                     // Ang diam distance to lens
-  double  realWidth =   lensInfo.getRealFOV( userParams.angFOV );  // Field of view in Mpc
-
-
-  PixelMap  kappaMap( center, userParams.N_pixels, userParams.angFOV / userParams.N_pixels );
-  PixelMap gamma1Map( center, userParams.N_pixels, userParams.angFOV / userParams.N_pixels );
-  PixelMap gamma2Map( center, userParams.N_pixels, userParams.angFOV / userParams.N_pixels );
-  PixelMap invMagMap( center, userParams.N_pixels, userParams.angFOV / userParams.N_pixels );
-  PixelMap  g_tanMap( center, userParams.N_pixels, userParams.angFOV / userParams.N_pixels );
-  PixelMap  g_aziMap( center, userParams.N_pixels, userParams.angFOV / userParams.N_pixels );
-  PixelMap   distMap( center, userParams.N_pixels, userParams.angFOV / userParams.N_pixels );
 */
+
+
+  // PixelMaps constructed to contain lensing parameters
+  PixelMap  kappaMap( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
+  PixelMap gamma1Map( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
+  PixelMap gamma2Map( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
+  PixelMap invMagMap( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
+  PixelMap  g_tanMap( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
+  PixelMap  g_aziMap( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
+  PixelMap   distMap( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
+
 
 
 
