@@ -109,10 +109,11 @@ void readInpFile(          userInfo  &inpInfo  ,   // Info needed for the rest o
     // Scan variables
     while ( fscanf(pFile,"%s%s",inpC1,inpC2) != EOF ){
       std::string inpS = std::string(inpC1);
-           if ( inpS=="N_bins"      ){        inpInfo.setNbins    ( atoi(inpC2) );      }
-      else if ( inpS=="N_sources"   ){        inpInfo.setNsrc     ( atoi(inpC2) );      }
-      else if ( inpS=="N_threads"   ){        inpInfo.setNthreads ( atoi(inpC2) );      }
-      else if ( inpS=="R_max"       ){        inpInfo.setRmax     ( atof(inpC2) );      }
+           if ( inpS=="N_bins"      ){        inpInfo.setNbins    (        atoi(inpC2) );      }
+      else if ( inpS=="N_sources"   ){        inpInfo.setNsrc     (        atoi(inpC2) );      }
+      else if ( inpS=="N_threads"   ){        inpInfo.setNthreads (        atoi(inpC2) );      }
+      else if ( inpS=="R_max"       ){        inpInfo.setRmax     (        atof(inpC2) );      }
+      else if ( inpS=="cosmo"       ){        inpInfo.setCosmology( std::string(inpC2) );      }
       else{
 
           // Abort if unrecognized variables
@@ -132,6 +133,24 @@ void readInpFile(          userInfo  &inpInfo  ,   // Info needed for the rest o
     logMessage( std::string( "Aborting." ) );
     exit(1);
   }
+
+  // Required parameters, abort if missing
+  if ( inpInfo.getCosmology() == " " ||
+       inpInfo.getNbins    () == -1  ||
+       inpInfo.getNsrc     () == -1  ){
+
+    std::cout << inputFile <<             " must contain cosmo     = WMAP or PLANCK" << std::endl <<
+                                          "              N_bins    = #"              << std::endl <<
+                                          "              N_sources = #"              << std::endl ;
+
+    logMessage(  inputFile + std::string( " must contain cosmo=WMAP or PLANCK" ) );
+    logMessage(  inputFile + std::string( " must contain N_bins=#" ) );
+    logMessage(  inputFile + std::string( " must contain N_sources=#" ) );
+    logMessage(              std::string( "Aborting." ) );
+    exit(1);
+  }
+
+  if ( inpInfo.getNbins() || inpInfo.getNsrc () == -1 ) inpInfo.setNsrc ( 10 );
 
 }
 

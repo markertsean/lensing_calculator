@@ -81,20 +81,24 @@ int main(int arg,char **argv){
   readFitsHeader( fitsFileName, myHalo, userInput );
 
 
+  COSMOLOGY cosmo;
+
+  // Read in from lensUserParams
+  if ( userInput.getCosmology() == "PLANCK" ) {
+    cosmo = Planck1yr;
+  } else
+  if ( userInput.getCosmology() == "WMAP"   ) {
+    cosmo = WMAP5yr;
+  } else {
+                std::cout << "Unrecognized cosmology: " << userInput.getCosmology() << std::endl;
+    logMessage( std::string( "Unrecognized cosmology: ") + userInput.getCosmology() );
+    logMessage( "Aborting." );
+    exit(1);
+  }
+
+
+
 exit(0);
-
-//exit(0);
-  // File names
-//  userInfo userParams;
-//  std::string userFile  = "lensUserParams.dat";
-
-
-  // Read input of what this source code will be doing, nbins outputfiles etc.
-  //COSMOLOGY    planck;         // Comment if initialized Planck1yr
-  COSMOLOGY planck(Planck1yr); // Comment if initialized user read in
-//  haloInfo   lensInfo, sourceInfo;
-
-
 //  std::cout << "Using parameter file: " << paramfile << std::endl;
 //  std::cout << "Using user lens file: " <<  userFile << std::endl << std::endl;
 

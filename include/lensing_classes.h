@@ -256,6 +256,7 @@ class userInfo{
     void setPhysFOV         ( double inpF ) {   physFOV      = inpF ; }
     void setAngFOV          ( double inpF ) {   angFOV       = inpF ; }
     void setCatType         ( std::string inpS ) {   catType = inpS ; }
+    void setCosmology       ( std::string inpS ) {     cosmo = inpS ; }
 
     double getIntegLength     () { return  integLength   ; }
     int    getNpixH           () { return  N_pixels_h    ; }
@@ -268,7 +269,7 @@ class userInfo{
     int    getNbins           () { return   N_bins       ; }
     int    getNthreads        () { return    num_threads ; }
     std::string getCatType    () { return  catType       ; }
-
+    std::string getCosmology  () { return  cosmo         ; }
 
 
 
@@ -309,7 +310,8 @@ class userInfo{
     double nearestSourceNeighbor; // Number of pixels to leave on an edge
 
   std::string readFile;
-  std::string catType;
+  std::string catType ;
+  std::string cosmo   ;
 
   // Chi2 & genetic algorithm fitting values
   double     cMin;
@@ -344,6 +346,7 @@ userInfo::userInfo(){
   nearestSourceNeighbor = 1.5;
   readFile = " ";
   catType  = " ";
+  cosmo    = " ";
 
       cMin =  2.0;
       cMax =  8.0;
