@@ -1,163 +1,40 @@
 #include <slsimlib.h>
 #include <image_processing.h>
+#include <gridmap.h>
 #include <grid_maintenance.h>
 #include <astro_constants.h>
 #include <lensing_classes.h>
 #include <pixelmap_functions.h>
 
-//Get array of distances for sources
-void distArrCalc( double *sourceDistArr, int *indexes, userInfo u,
-                  double          scale, double center[2] ){
-  double posArr[2];
-  for(int i=0;i<u.N_sources;++i){
-
-    //0 is y, or row
-    //1 is x, or columns
-    //Pixel numbers, from top corner
-    posArr[0] =  indexes[i]              % u.N_pixels;
-    posArr[1] = (indexes[i] - posArr[0]) / u.N_pixels;
-    //Pixel coordinates relative to center
-    posArr[0] = ( posArr[0] - 0.5 - u.N_pixels/2.0 ) - center[1]+1;
-    posArr[1] = (-posArr[1] + 0.5 + u.N_pixels/2.0 ) - center[0]-1;
-    //Get position from pixel coordinates
-    sourceDistArr[i] = scale*sqrt(posArr[0]*posArr[0]+posArr[1]*posArr[1]);
-  }
-
-}
-
-/*
-  Radially average pixelmap values for given source positions
-*/
-void radialSourceAverage( double *avgArr, double *errArr,    int *indexes,
-         PixelMap inpMap, double *errors,     userInfo u, double center[2] ){
-
-  int    iBin;
-  double dist;
-  double posArr[2]={0,0};
-
-  int N_countsArr[u.N_bins];
-  //Make sure average is 0 to start
-  for(int i=0;i<u.N_bins;++i){
-         avgArr[i]=0;
-         errArr[i]=0;
-    N_countsArr[i]=0;
-  }
-
-  for(int i=0;i<u.N_sources;++i){
-
-    //0 is y, or row
-    //1 is x, or columns
-    //Pixel numbers, from top corner
-    posArr[0] =  indexes[i]              % u.N_pixels;
-    posArr[1] = (indexes[i] - posArr[0]) / u.N_pixels;
-    //Pixel coordinates relative to center
-    posArr[0] = ( posArr[0] - 0.5 - u.N_pixels/2.0 ) - center[1]+1;
-    posArr[1] = (-posArr[1] + 0.5 + u.N_pixels/2.0 ) - center[0]-1;
-
-    //Get position from pixel coordinates
-    dist = sqrt(posArr[0]*posArr[0]+posArr[1]*posArr[1]);
-    iBin = round(std::min(std::max(
-            dist/u.N_pixels*2.0 * u.N_bins ,0.0),1.0*u.N_bins));
-
-    //To the bin, add the map value of this index, sum errors in quadrature
-         avgArr[iBin] += inpMap[indexes[i]];
-         errArr[iBin] += errors[i]*errors[i];
-    N_countsArr[iBin] += 1;
-  }
-
-  for(int i=0;i<u.N_bins;++i){
-    if (N_countsArr[i]==0){
-      avgArr[i] = -1.0;
-    }
-    else{
-      avgArr[i] =      avgArr[i]/N_countsArr[i] ;
-      errArr[i] = sqrt(errArr[i]/N_countsArr[i]);
-    }
-  }
-}
-
-
-/*
-  Get random indexes to use as source positions, sources not allowed within some pixels
-*/
-void getRandomSourcesIndexes( int *indexes, userInfo u ){
-  //Will use 2d points, convert to one index later
-  int xPos[u.N_sources], yPos[u.N_sources], counter;
-  //Initialize so we can compare, not use same index twice or too close
-  for(int i=0;i<u.N_sources;++i){
-       xPos[i] = -5;
-       yPos[i] = -5;
-    indexes[i] = -1;
-  }
-  bool accept;
-  //Fill in each source
-  //Assume point is good when pick point
-  //Compare to all previous points
-  //If any points too close
-  //Dont accept, repeat
-  for(int i=0;i<u.N_sources;++i){
-    counter=0;
-    do{
-      accept=true;
-
-      xPos[i] =floor(rand()/(float)RAND_MAX * (u.N_pixels-2*u.N_edgepixels))
-                +u.N_edgepixels;
-      yPos[i] =floor(rand()/(float)RAND_MAX * (u.N_pixels-2*u.N_edgepixels))
-                +u.N_edgepixels;
-      //Compare against previous points
-      for(int j=i-1;j>=0;--j){
-        if(  sqrt( (xPos[i]-xPos[j])*(xPos[i]-xPos[j])
-                 + (yPos[i]-yPos[j])*(yPos[i]-yPos[j]) ) < u.nearestSourceNeighbor )
-        accept=false;
-      }
-      //Abort if have too hard a time fitting sources into grid
-      ++counter;
-      if (counter>1e6){
-        printf("Error: Unable to fit %4i sources in %4i square pixelmap\n",u.N_sources,
-                                                                           u.N_pixels);
-        printf(" Nearest neighbor tolerance: %5.2lf, Edgedist: %4i\n",
-                                              u.nearestSourceNeighbor,
-                                              u.N_edgepixels);
-        exit(0);
-      }
-    }while(accept==false);
-    indexes[i] = xPos[i] + yPos[i] * u.N_pixels;
-  }
-}
 
 
 /*
   Calculate the lensing quantities from the grid
   Overwrites all the input maps
 */
-void calcLensMaps(
-  Grid       &inpGrid,  //Grid to pull lensing quantities from
-  PixelMap  &kappaMap,
-  PixelMap &gamma1Map,
-  PixelMap &gamma2Map,
-  PixelMap &invMagMap,
-  PixelMap  &g_tanMap,
-  PixelMap  &g_aziMap,
-  PixelMap   &distMap,
-  int        N_pixels,
-  double     realSize,
-  double    center[2]){ //Center coordinates of grid, in Mpc
+void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
+                    PixelMap   &kappaMap ,
+                    PixelMap  &gamma1Map ,
+                    PixelMap  &gamma2Map ,
+                    PixelMap  &invMagMap ,
+                    PixelMap   &g_tanMap ,
+                    PixelMap   &g_aziMap ,
+                    PixelMap    &distMap ,
+                    int       N_pixels_h ,  //Number of pixels on a side
+                    int       N_pixels_v ,  //Number of pixels on a side
+                    double      realSize ,  //Real width on the 2D sky plane
+                    double     center[2] ){ //Center location of halo
+   kappaMap = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, KAPPA);
+  gamma1Map = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, GAMMA1);
+  gamma2Map = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, GAMMA2);
+  invMagMap = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, INVMAG);
 
-//alpha,alpha1,alpha2,kappa,gamma,gamma1,gamma2,gamma3
-   kappaMap = inpGrid.writePixelMap( center, inpGrid.getInitNgrid(), \
-                     inpGrid.getInitRange()/inpGrid.getInitNgrid() ,KAPPA);
-  gamma1Map = inpGrid.writePixelMap( center, inpGrid.getInitNgrid(), \
-                     inpGrid.getInitRange()/inpGrid.getInitNgrid() ,GAMMA1);
-  gamma2Map = inpGrid.writePixelMap( center, inpGrid.getInitNgrid(), \
-                     inpGrid.getInitRange()/inpGrid.getInitNgrid() ,GAMMA2);
-  invMagMap = inpGrid.writePixelMap( center, inpGrid.getInitNgrid(), \
-                     inpGrid.getInitRange()/inpGrid.getInitNgrid() ,INVMAG);
 
-  distMapCalc( distMap, N_pixels, realSize, center);
+//  distMapCalc( distMap, N_pixels, realSize, center);
 
   double posArr[2]={0,0};
   double phi=0;
-
+/*
   for (int i=0;i<N_pixels;++i){
     posArr[1] = (-i - 0.5 + N_pixels/2.0)-center[1];
 
@@ -176,7 +53,8 @@ void calcLensMaps(
     g_aziMap[k] = (-gamma1Map[k]*sin(a)-gamma2Map[k]*cos(a)); // (1-kappaMap[k]);
   }
   }
-
+*/
+}
 /*
 //double temp = densProfile.getRho_o() * densProfile.getR_s  ()   * exp( 2./alpha ) * pow( alpha/2., 1./alpha - 1.0 ) * sqrt( M_PI ) / Sc;
 //double kappa    = foxH2012( x, alpha );
@@ -228,7 +106,164 @@ sqrt( g_tanMap[k]* g_tanMap[k]+ g_aziMap[k]* g_aziMap[k])
     printf("\n");
 
 //*/
+
+
+
+void printPixelMap( PixelMap   &inpMap ,
+                    int       N_pixels ){
+  printPixelMap( inpMap, N_pixels, N_pixels);
 }
+
+void printPixelMap( PixelMap   &inpMap   ,  //input pixel map
+                    int       N_pixels_h ,
+                    int       N_pixels_v ){ //Number of pixels on a side
+  std::cout << std::endl;
+  for( int i=0; i<N_pixels_v; i++){
+  for( int j=0; j<N_pixels_h; j++){
+    printf("%12.3e", inpMap[j+i*N_pixels_h]);
+  }
+    std::cout<<std::endl;
+  }
+}
+
+
+
+
+
+
+/*
+//Get array of distances for sources
+void distArrCalc( double *sourceDistArr ,
+                  int          *indexes ,
+                  userInfo            u ,
+                  double          scale ,
+                  double      center[2] ){
+  double posArr[2];
+  for(int i=0;i<u.N_sources;++i){
+
+    //0 is y, or row
+    //1 is x, or columns
+    //Pixel numbers, from top corner
+    posArr[0] =  indexes[i]              % u.N_pixels;
+    posArr[1] = (indexes[i] - posArr[0]) / u.N_pixels;
+    //Pixel coordinates relative to center
+    posArr[0] = ( posArr[0] - 0.5 - u.N_pixels/2.0 ) - center[1]+1;
+    posArr[1] = (-posArr[1] + 0.5 + u.N_pixels/2.0 ) - center[0]-1;
+    //Get position from pixel coordinates
+    sourceDistArr[i] = scale*sqrt(posArr[0]*posArr[0]+posArr[1]*posArr[1]);
+  }
+
+}
+*/
+/*
+  Radially average pixelmap values for given source positions
+*//*
+void radialSourceAverage( double  *avgArr  ,
+                          double  *errArr  ,
+                          int    *indexes  ,
+                          PixelMap  inpMap ,
+                          double   *errors ,
+                          userInfo       u ,
+                          double center[2] ){
+
+  int    iBin;
+  double dist;
+  double posArr[2]={0,0};
+
+  int N_countsArr[u.N_bins];
+  //Make sure average is 0 to start
+  for(int i=0;i<u.N_bins;++i){
+         avgArr[i]=0;
+         errArr[i]=0;
+    N_countsArr[i]=0;
+  }
+
+  for(int i=0;i<u.N_sources;++i){
+
+    //0 is y, or row
+    //1 is x, or columns
+    //Pixel numbers, from top corner
+    posArr[0] =  indexes[i]              % u.N_pixels;
+    posArr[1] = (indexes[i] - posArr[0]) / u.N_pixels;
+    //Pixel coordinates relative to center
+    posArr[0] = ( posArr[0] - 0.5 - u.N_pixels/2.0 ) - center[1]+1;
+    posArr[1] = (-posArr[1] + 0.5 + u.N_pixels/2.0 ) - center[0]-1;
+
+    //Get position from pixel coordinates
+    dist = sqrt(posArr[0]*posArr[0]+posArr[1]*posArr[1]);
+    iBin = round(std::min(std::max(
+            dist/u.N_pixels*2.0 * u.N_bins ,0.0),1.0*u.N_bins));
+
+    //To the bin, add the map value of this index, sum errors in quadrature
+         avgArr[iBin] += inpMap[indexes[i]];
+         errArr[iBin] += errors[i]*errors[i];
+    N_countsArr[iBin] += 1;
+  }
+
+  for(int i=0;i<u.N_bins;++i){
+    if (N_countsArr[i]==0){
+      avgArr[i] = -1.0;
+    }
+    else{
+      avgArr[i] =      avgArr[i]/N_countsArr[i] ;
+      errArr[i] = sqrt(errArr[i]/N_countsArr[i]);
+    }
+  }
+}
+
+*/
+/*
+  Get random indexes to use as source positions, sources not allowed within some pixels
+*//*
+void getRandomSourcesIndexes( int     *indexes ,
+                              userInfo       u ){
+
+  //Will use 2d points, convert to one index later
+  int xPos[u.N_sources], yPos[u.N_sources], counter;
+  //Initialize so we can compare, not use same index twice or too close
+  for(int i=0;i<u.N_sources;++i){
+       xPos[i] = -5;
+       yPos[i] = -5;
+    indexes[i] = -1;
+  }
+  bool accept;
+  //Fill in each source
+  //Assume point is good when pick point
+  //Compare to all previous points
+  //If any points too close
+  //Dont accept, repeat
+  for(int i=0;i<u.N_sources;++i){
+    counter=0;
+    do{
+      accept=true;
+
+      xPos[i] =floor(rand()/(float)RAND_MAX * (u.N_pixels-2*u.N_edgepixels))
+                +u.N_edgepixels;
+      yPos[i] =floor(rand()/(float)RAND_MAX * (u.N_pixels-2*u.N_edgepixels))
+                +u.N_edgepixels;
+      //Compare against previous points
+      for(int j=i-1;j>=0;--j){
+        if(  sqrt( (xPos[i]-xPos[j])*(xPos[i]-xPos[j])
+                 + (yPos[i]-yPos[j])*(yPos[i]-yPos[j]) ) < u.nearestSourceNeighbor )
+        accept=false;
+      }
+      //Abort if have too hard a time fitting sources into grid
+      ++counter;
+      if (counter>1e6){
+        printf("Error: Unable to fit %4i sources in %4i square pixelmap\n",u.N_sources,
+                                                                           u.N_pixels);
+        printf(" Nearest neighbor tolerance: %5.2lf, Edgedist: %4i\n",
+                                              u.nearestSourceNeighbor,
+                                              u.N_edgepixels);
+        exit(0);
+      }
+    }while(accept==false);
+    indexes[i] = xPos[i] + yPos[i] * u.N_pixels;
+  }
+}
+
+*/
+
 
 
 
@@ -247,14 +282,14 @@ sqrt( g_tanMap[k]* g_tanMap[k]+ g_aziMap[k]* g_aziMap[k])
 //           average, distance array overwritten
 //
 */
-void findRadialAverage(
-  PixelMap     &inpMap,
-  int         N_pixels,
-  int           N_bins,
-  double  *avgInpArray,
-  double *distInpArray,
-  double      realSize,
-  double     center[2]){
+/*
+void findRadialAverage(  PixelMap      &inpMap ,
+                         int          N_pixels ,
+                         int            N_bins ,
+                         double   *avgInpArray ,
+                         double  *distInpArray ,
+                         double       realSize ,
+                         double      center[2] ){
 
   int iBin;
   double averageArray[N_bins], NinsideArray[N_bins], distArray[N_bins];
@@ -293,6 +328,7 @@ void findRadialAverage(
     distInpArray[i] =(distInpArray[i+1]-distInpArray[i-1])/2.0;
   }
 }
+*/
 
 /*Prints double ** in 2d
 //
@@ -300,15 +336,8 @@ void findRadialAverage(
 //     square pixel map, number of pixels on a side
 //
 */
-void printPixelMap( PixelMap &inpMap, int N_pixels){
-  std::cout << std::endl;
-  for( int i=0; i<N_pixels; i++){
-  for( int j=0; j<N_pixels; j++){
-    printf("%12.3e", inpMap[j+i*N_pixels]);
-  }
-    std::cout<<std::endl;
-  }
-}
+/*
+*/
 
 /*Calculate surface density in one of the square pixel maps
 //
@@ -319,7 +348,11 @@ void printPixelMap( PixelMap &inpMap, int N_pixels){
 //     inpMap/SD
 //
 */
-void sigmaMapCalc(PixelMap &inpMap,PixelMap &kMap,int N_pixels, double Sigma_crit){
+/*
+void sigmaMapCalc( PixelMap  &inpMap ,
+                   PixelMap    &kMap ,
+                   int      N_pixels ,
+                   double Sigma_crit ){
   #pragma omp parallel for
   for (int i=0; i<N_pixels; ++i){
   for (int j=0; j<N_pixels; ++j){
@@ -327,6 +360,7 @@ void sigmaMapCalc(PixelMap &inpMap,PixelMap &kMap,int N_pixels, double Sigma_cri
   }
   }
 }
+*/
 
 /*Calculates grav potential based on mass distribution in image, phi=-GM/r
 //
@@ -337,7 +371,11 @@ void sigmaMapCalc(PixelMap &inpMap,PixelMap &kMap,int N_pixels, double Sigma_cri
 //     void, potential Map
 //
 */
-void phiMapCalc(PixelMap &phiMap,PixelMap &sigmaMap, int N_pixels, double realSize){
+/*
+void phiMapCalc( PixelMap   &phiMap ,
+                 PixelMap &sigmaMap ,
+                 int       N_pixels ,
+                 double    realSize ){
 
   //Physical size of pixel
   double pixelSize   = ( realSize * realSize ) / ( N_pixels * N_pixels );
@@ -372,6 +410,7 @@ void phiMapCalc(PixelMap &phiMap,PixelMap &sigmaMap, int N_pixels, double realSi
   }
 
 }
+*/
 
 /*Generates mag map using lensing parameters
 //
@@ -382,7 +421,11 @@ void phiMapCalc(PixelMap &phiMap,PixelMap &sigmaMap, int N_pixels, double realSi
 //          magMap
 //
 */
-void magMapCalc( PixelMap &magMap, PixelMap &kMap, PixelMap &gMap, int N_pixels){
+/*
+void magMapCalc( PixelMap  &magMap ,
+                 PixelMap    &kMap ,
+                 PixelMap    &gMap ,
+                 int      N_pixels ){
   #pragma omp parallel for
   for (int i = 0; i<N_pixels; ++i){
   for (int j = 0; j<N_pixels; ++j){
@@ -392,6 +435,7 @@ void magMapCalc( PixelMap &magMap, PixelMap &kMap, PixelMap &gMap, int N_pixels)
   }
   }
 }
+*/
 
 /*Calculates the mass ENCLOSED TO CENTER BY A PIXEL
 //
@@ -402,7 +446,11 @@ void magMapCalc( PixelMap &magMap, PixelMap &kMap, PixelMap &gMap, int N_pixels)
 //     void, massMap
 //
 */
-void massMapCalc(PixelMap &massMap,PixelMap &phiMap,PixelMap &distMap,int N_pixels){
+/*
+void massMapCalc( PixelMap   &massMap ,
+                  PixelMap    &phiMap ,
+                  PixelMap   &distMap ,
+                  int        N_pixels ){
   #pragma omp for
   for(int i=0;i<N_pixels;++i){
   for(int j=0;j<N_pixels;++j){
@@ -410,6 +458,7 @@ void massMapCalc(PixelMap &massMap,PixelMap &phiMap,PixelMap &distMap,int N_pixe
   }
   }
 }
+*/
 
 /*Puts distance from center in double **
 //
@@ -420,7 +469,12 @@ void massMapCalc(PixelMap &massMap,PixelMap &phiMap,PixelMap &distMap,int N_pixe
 //     distMap
 //
 */
-void distMapCalc(PixelMap &distMap, int N_pixels, double inpSize,double center[2]){
+/*
+void distMapCalc( PixelMap  &distMap ,
+                  int       N_pixels ,
+                  double     inpSize ,
+                  double   center[2] ){
+
   double posArr[2]={0,0};
   double step     = inpSize/N_pixels;
   #pragma omp parallel for private(posArr)
@@ -433,13 +487,14 @@ void distMapCalc(PixelMap &distMap, int N_pixels, double inpSize,double center[2
   }
   }
 }
-
+*/
 
 /*
   Calculates some values onto pixel maps, uses convergence at all pixels
   Due to nature, only can be done with simulated data/models, otherwise
     impossible to detect in observations
 */
+/*
 void calcMapsFromKappa(
   PixelMap  &kappaMap,  //Convergence map to pull from
   PixelMap    &phiMap,  //Potential in pixel
@@ -462,3 +517,4 @@ void calcMapsFromKappa(
   std::cout << " -mass  map constructed" << std::endl;
 
 }
+*/

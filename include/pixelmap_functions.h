@@ -2,47 +2,52 @@
 #define PIXELMAP_FUNCTIONS
 
 #include <lensing_classes.h>
+#include <gridmap.h>
 #include <image_processing.h>
 
-void getRandomSourcesIndexes(
-			     int *indexes,  //Array of pixelmap indexes
-			     userInfo   u); //Input user information
-
-void radialSourceAverage(
-			 double     *avgArr,  //Output averaged array
-			 double     *errArr,  //Radial errors for value we are averaging
-			 int       *indexes,  //Index of the source pixels for inpMap
-			 PixelMap    inpMap,  //The input map we are radially averaging
-			 double     *inpErr,  //The errors in the quantities we are averging
-			 userInfo         u,  //Input user information
-			 double   center[2]); //Center pixels
-
-void printPixelMap(
-		   PixelMap   &inpMap,  //input pixel map
-		   int       N_pixels); //Number of pixels on a side, assumes square map
-
-void findRadialAverage(
-		       PixelMap      &inpMap,   //input map to average
-		       int          N_pixels,   //Number of pixels on a side, assumes square map
-		       int            N_bins,   //Number of bins to average to
-		       double   *avgInpArray,   //Output array to store average in
-		       double  *distInpArray,   //Outpput array to store distances in
-		       double       realSize,   //Real size on the plane of the FOV
-		       double      center[2]);  //Center coordinates
 
 
-void calcLensMaps(
-		  Grid        &inpGrid,  //GLAMER grid to calc values on
-		  PixelMap   &kappaMap,
-		  PixelMap  &gamma1Map,
-		  PixelMap  &gamma2Map,
-		  PixelMap  &invMagMap,
-		  PixelMap   &g_tanMap,
-		  PixelMap   &g_aziMap,
-		  PixelMap    &distMap,
-		  int         N_pixels,  //Number of pixels on a side, assumes square map
-		  double      realSize,  //Real width on the 2D sky plane
-		  double     center[2]); //Center location of halo
+void calcLensMaps(  GridMap     &inpGrid,  //GLAMER grid to calc values on
+                    PixelMap   &kappaMap,
+                    PixelMap  &gamma1Map,
+                    PixelMap  &gamma2Map,
+                    PixelMap  &invMagMap,
+                    PixelMap   &g_tanMap,
+                    PixelMap   &g_aziMap,
+                    PixelMap    &distMap,
+                    int       N_pixels_h,  //Number of pixels on a side
+                    int       N_pixels_v,  //Number of pixels on a side
+                    double      realSize,  //Real width on the 2D sky plane
+                    double     center[2]); //Center location of halo
+
+
+void printPixelMap( PixelMap   &inpMap ,  //input pixel map
+                    int       N_pixels ); //Number of pixels on a side, assumes square map
+
+void printPixelMap( PixelMap   &inpMap   ,  //input pixel map
+                    int       N_pixels_h ,
+                    int       N_pixels_v ); //Number of pixels on a side
+
+/*
+void getRandomSourcesIndexes( int      *indexes ,  //Array of pixelmap indexes
+                              userInfo        u ); //Input user information
+
+void radialSourceAverage(	 double     *avgArr,  //Output averaged array
+                           double     *errArr,  //Radial errors for value we are averaging
+                           int       *indexes,  //Index of the source pixels for inpMap
+                           PixelMap    inpMap,  //The input map we are radially averaging
+                           double     *inpErr,  //The errors in the quantities we are averging
+                           userInfo         u,  //Input user information
+                           double   center[2]); //Center pixels
+
+
+void findRadialAverage( PixelMap      &inpMap,   //input map to average
+                        int          N_pixels,   //Number of pixels on a side, assumes square map
+                        int            N_bins,   //Number of bins to average to
+                        double   *avgInpArray,   //Output array to store average in
+                        double  *distInpArray,   //Outpput array to store distances in
+                        double       realSize,   //Real size on the plane of the FOV
+                        double      center[2]);  //Center coordinates
 
 
 void calcMapsFromKappa(
@@ -98,6 +103,6 @@ void  distArrCalc(
 		  userInfo            u,
                   double          scale,
 		  double      center[2]);
-
+*/
 
 #endif

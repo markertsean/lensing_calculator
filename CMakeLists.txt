@@ -17,7 +17,7 @@ include_directories(include)
 ####
 
 #set(SOURCES lensingCalculator.cpp myUtilities.cpp inputFunctions.cpp lensFitter.cpp pixelmapFunctions.cpp)
-file(GLOB SOURCES "src/lensingCalculator.cpp" "src/inputFunctions.cpp")
+file(GLOB SOURCES "src/lensingCalculator.cpp" "src/inputFunctions.cpp" "src/pixelmapFunctions.cpp")
 
 ####
 # dependencies

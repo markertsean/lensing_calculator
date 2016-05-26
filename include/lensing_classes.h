@@ -251,6 +251,7 @@ class userInfo{
     void setNthreads        ( int    inpI ) {   num_threads  = inpI ; }
     void setNpixH           ( int    inpI ) {   N_pixels_h   = inpI ; }
     void setNpixV           ( int    inpI ) {   N_pixels_v   = inpI ; }
+    void setNgridPoints     ( int    inpI ) {   N_gridPoints = inpI ; }
     void setIntegLength     ( double inpF ) {   integLength  = inpF ; }
     void setPhysFOV         ( double inpF ) {   physFOV      = inpF ; }
     void setAngFOV          ( double inpF ) {   angFOV       = inpF ; }
@@ -266,6 +267,7 @@ class userInfo{
     int    getNsrc            () { return   N_sources    ; }
     int    getNbins           () { return   N_bins       ; }
     int    getNthreads        () { return    num_threads ; }
+    int    getNgridPoints     () { return   N_gridPoints ; }
     std::string getCatType    () { return  catType       ; }
     std::string getCosmology  () { return  cosmo         ; }
 
@@ -304,6 +306,7 @@ class userInfo{
     int    N_bins     ;  // Number of bins for radial averaging
     int    N_sources  ;  // Number of sources to generate
     int    N_particles;  // Number of particles in simulation
+    int    N_gridPoints; // Number of grid points to interpolate mass to
     int    num_threads;  // Number of threads for parallel processing
     int   N_edgepixels;  // Gap in distance between sources
     double nearestSourceNeighbor; // Number of pixels to leave on an edge

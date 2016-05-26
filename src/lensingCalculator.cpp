@@ -20,7 +20,7 @@
 //#include "my_utilities.h"
 #include "input_functions.h"
 //#include "lens_fitter.h"
-//#include "pixelmap_functions.h"
+#include "pixelmap_functions.h"
 
 
 // Name of the code log file
@@ -35,7 +35,6 @@ int main(int arg,char **argv){
 
   // Default values that will not be changing
   long    seed    = -1827674;
-  double center[] =    {0,0}; // Center of grid
 
   logMessage( std::string("Seed = ") + std::to_string( (long long) seed ) );
 
@@ -54,14 +53,15 @@ int main(int arg,char **argv){
   std::string  paramFile = "paramfile"          ; // Glamer input
 
 
-//Edit these
   // File for glamer read in, contains information used by the library
   // Must contain variables:
-  //  field_off
-  //  z_source
-  //  main_halo_on
-  //  pixelmaps_input_file
-  //  pixelmaps_on
+  //    deflection_off          0
+  //    field_off               1
+  //    lensing_off             0
+  //    main_halo_on            0
+  //    pixelmaps_input_file    ???.FITS
+  //    pixelmaps_on            1
+  //    z_source                #
 
   std::cout << "Reading file: "              << std::endl;
   std::cout << "              " << paramFile << std::endl;
@@ -69,7 +69,7 @@ int main(int arg,char **argv){
   InputParams      params     ( paramFile   );
   logMessage( std::string("Read paramfile: ") + paramFile );
 
-  std::cout << "               Done." << std::endl << std::endl;
+  std::cout << "              Done."  << std::endl << std::endl;
 
 
 
@@ -88,7 +88,7 @@ int main(int arg,char **argv){
   // Reads info from user file
   readInpFile( userInput, userFile );
 
-  std::cout << "               Done." << std::endl << std::endl;
+  std::cout << "              Done."  << std::endl << std::endl;
 
 
 
@@ -98,25 +98,12 @@ int main(int arg,char **argv){
   // Read FITS image, populates halo and user inputs
   readFitsHeader( fitsFileName, myHalo, userInput );
 
-  std::cout << "               Done." << std::endl << std::endl;
+  std::cout << "              Done."  << std::endl << std::endl;
 
-/*
-std::cout<<std::endl<<std::endl;
-std::cout<<"Constructing grid"<<std::endl;
-Lens lens(params,&seed);
-std::cout<<"Lens constructed"<<std::endl;
-Grid grid(&lens,Ninit,center,range);
-std::cout<<"Grid constructed"<<std::endl;
-exit(0);
-*/
 
   ///////////////////////////////////////////////////
   /////////////INITIALIZE NEEDED PARAMETERS//////////
   ///////////////////////////////////////////////////
-
-  //
-  //    Sets some parameters, and initializes pixelmaps for later use
-  //
 
 
   COSMOLOGY cosmo;
@@ -144,13 +131,16 @@ exit(0);
 
 
 
-  double      range =  userInput.getAngFOV  ()  ;  // Angular field of view, in degrees
-  double  realWidth =  userInput.getPhysFOV ()  ;  // Field of view in Mpc
-  omp_set_num_threads( userInput.getNthreads() );  // For parallelization, default 1
+  double   angRange =   userInput.getAngFOV  ()  * M_PI/180  ;  // Angular field of view, in degrees
+  double  realWidth =   userInput.getPhysFOV ()              ;  // Field of view in Mpc
+  omp_set_num_threads ( userInput.getNthreads()             );  // For parallelization, default 1
+  double center[]   = { 0, 0 };                                 // Center of grid, 0,0 aligns grid right
+
+  userInput.setNgridPoints( userInput.getNpixH() * 2       );   // Number of gridpoints, in reality want it more refined
 
 
-  logMessage( std::string("range = "           ) + std::to_string((long double)  range    ));
-  logMessage( std::string("realWidth = "       ) + std::to_string((long double)  realWidth));
+  logMessage( std::string("angRange = "        ) + std::to_string((long double)  angRange    ));
+  logMessage( std::string("realWidth = "       ) + std::to_string((long double)  realWidth   ));
   logMessage( std::string("omp_num_threads = " ) + std::to_string((long double)  userInput.getNthreads()));
 
 /*
@@ -161,13 +151,13 @@ exit(0);
   std::cout << "Constructing PixelMaps..." << std::endl;
 
   // PixelMaps constructed to contain lensing parameters
-  PixelMap  kappaMap( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
-  PixelMap gamma1Map( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
-  PixelMap gamma2Map( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
-  PixelMap invMagMap( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
-  PixelMap  g_tanMap( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
-  PixelMap  g_aziMap( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
-  PixelMap   distMap( center, userInput.getNpixH(), userInput.getNpixV(), userInput.getAngFOV() / userInput.getNpixH() );
+  PixelMap  kappaMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+  PixelMap gamma1Map( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+  PixelMap gamma2Map( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+  PixelMap invMagMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+  PixelMap  g_tanMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+  PixelMap  g_aziMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+  PixelMap   distMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
 
   std::cout << "               Done." << std::endl;
 
@@ -184,46 +174,47 @@ exit(0);
   std::cout << "Constructing lens..." << std::endl << std::endl;
 
   // Generates lens from paramfile, glamer side
-  Lens myLens( params, &seed );
-
+  Lens myLens( params, &seed, cosmo );
 
   std::cout <<                                        std::endl;
   std::cout << "Lens constructed."    << std::endl << std::endl;
 
   logMessage( std::string("Lens constructed") );
 
-
   //////////////////////////////////////////////////////
   //////////////////CONSTRUCT GRID//////////////////////
   //////////////////////////////////////////////////////
 
-
-
-
   std::cout << "Constructing grid..." << std::endl;
 
-  Grid myGrid( &myLens, userInput.getNpixH(), center, userInput.getPhysFOV() );
+  // Construct grid using physical units of Mpch
+  GridMap myGrid( &myLens                    ,
+                  userInput.getNgridPoints() ,
+                  center                     ,
+                  angRange                   ,
+                  angRange                   *
+                  userInput.getNpixV()       /
+                  userInput.getNpixH()       );
 
   std::cout << "Grid constructed."    << std::endl << std::endl;
 
   logMessage( std::string("Grid constructed") );
 
-/*
   calcLensMaps( myGrid,
-                         kappaMap,
-                        gamma1Map,
-                        gamma2Map,
-                        invMagMap,
-                         g_tanMap,
-                         g_aziMap,
-                          distMap,
-              userParams.N_pixels,
-                        realWidth,
-                           center);
-*/
+                         kappaMap ,
+                        gamma1Map ,
+                        gamma2Map ,
+                        invMagMap ,
+                         g_tanMap ,
+                         g_aziMap ,
+                          distMap ,
+             userInput.getNpixH() ,
+             userInput.getNpixV() ,
+                        realWidth ,
+                           center );
 
 
-
+exit(0);
   /*
   ////////////////////////////////////////////////////////////
   ///////////////////Generate source positions////////////////
