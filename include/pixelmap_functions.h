@@ -7,6 +7,14 @@
 
 
 
+void  distMapCalc(  PixelMap  &distMap,
+                    int      N_pixelsH,
+                    int      N_pixelsV,
+                    double     inpSize,
+                    double   center[2]);
+
+
+
 void calcLensMaps(  GridMap     &inpGrid,  //GLAMER grid to calc values on
                     PixelMap   &kappaMap,
                     PixelMap  &gamma1Map,
@@ -89,12 +97,6 @@ void  massMapCalc(
 		  PixelMap  &distMap,
 		  int       N_pixels);
 
-
-void  distMapCalc(
-		  PixelMap  &distMap,
-		  int       N_pixels,
-		  double     inpSize,
-		  double   center[2]);
 
 
 void  distArrCalc(

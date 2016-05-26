@@ -8,40 +8,69 @@
 
 
 
-/*
-  Calculate the lensing quantities from the grid
-  Overwrites all the input maps
-*/
+
+
+
+//
+//
+//
+void distMapCalc( PixelMap  &distMap ,  // pixelmap to output
+                  int      N_pixelsH ,  // Number of pixels on a side
+                  int      N_pixelsV ,  // Number of pixels on a side
+                  double     inpSize ,  // Angular size of x side
+                  double   center[2] ){ // Center values
+
+  double posArr[2]={0,0};
+  double step     = inpSize/N_pixelsH;
+  #pragma omp parallel for private(posArr)
+  for (int i=0;i<N_pixelsV;++i){
+    posArr[1] = -i - 0.5 + N_pixelsV/2.0;
+  for (int j=0;j<N_pixelsH;++j){
+    posArr[0] =  j + 0.5 - N_pixelsH/2.0;
+    distMap[j+i*N_pixelsH]= step * \
+              sqrt( pow( posArr[0]-center[0] ,2) + pow( posArr[1]-center[1] ,2) );
+  }
+  }
+}
+
+
+
+//
+//  Calculate the lensing quantities from the grid
+//  Overwrites all the input PixelMaps
+//
 void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
                     PixelMap   &kappaMap ,
                     PixelMap  &gamma1Map ,
                     PixelMap  &gamma2Map ,
                     PixelMap  &invMagMap ,
                     PixelMap   &g_tanMap ,
-                    PixelMap   &g_aziMap ,
+                    PixelMap   &g_secMap ,
                     PixelMap    &distMap ,
-                    int       N_pixels_h ,  //Number of pixels on a side
-                    int       N_pixels_v ,  //Number of pixels on a side
-                    double      realSize ,  //Real width on the 2D sky plane
-                    double     center[2] ){ //Center location of halo
+                    int       N_pixels_h ,  // Number of pixels on a side
+                    int       N_pixels_v ,  // Number of pixels on a side
+                    double      realSize ,  // Angular width in horizontal direction
+                    double     center[2] ){ // Center location of halo
+
+
    kappaMap = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, KAPPA);
   gamma1Map = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, GAMMA1);
   gamma2Map = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, GAMMA2);
   invMagMap = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, INVMAG);
 
 
-//  distMapCalc( distMap, N_pixels, realSize, center);
+  distMapCalc( distMap, N_pixels_h, N_pixels_v, realSize, center);
 
-  double posArr[2]={0,0};
-  double phi=0;
-/*
-  for (int i=0;i<N_pixels;++i){
-    posArr[1] = (-i - 0.5 + N_pixels/2.0)-center[1];
+  double posArr[2]= { 0, 0 }; // Pixel position
+  double phi      =   0;      // Position angle
 
-  for (int j=0;j<N_pixels;++j){
-    posArr[0] = ( j + 0.5 - N_pixels/2.0)-center[0];
+  for (int i=0;i<N_pixels_v;++i){
+    posArr[1] = (-i - 0.5 + N_pixels_v/2.0)-center[1];
 
-    int k = j+i*N_pixels;
+  for (int j=0;j<N_pixels_h;++j){
+    posArr[0] = ( j + 0.5 - N_pixels_h/2.0)-center[0];
+
+    int k = j+i*N_pixels_h;
     phi = atan2(posArr[1],posArr[0]);
     //gamma1  <0 |   >0 -
     //gamma2  <0 \   >0 /
@@ -49,11 +78,21 @@ void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
     //g_sec =  g1*sin - g2*cos
     //glamer produces negative value for g1, swap signs in eqtns
     double a = 2*phi;
-    g_tanMap[k] = ( gamma1Map[k]*cos(a)-gamma2Map[k]*sin(a)); // (1-kappaMap[k]);//gamma1 swapped
-    g_aziMap[k] = (-gamma1Map[k]*sin(a)-gamma2Map[k]*cos(a)); // (1-kappaMap[k]);
+    g_tanMap[k] = ( gamma1Map[k]*cos(a)-gamma2Map[k]*sin(a)) / (1-kappaMap[k]);//gamma1 swapped
+    g_secMap[k] = (-gamma1Map[k]*sin(a)-gamma2Map[k]*cos(a)) / (1-kappaMap[k]);
   }
   }
+
+/*
+  printPixelMap(   distMap, N_pixels_h, N_pixels_v );
+
+  printPixelMap(  kappaMap, N_pixels_h, N_pixels_v );
+
+  printPixelMap( gamma1Map, N_pixels_h, N_pixels_v );
+
+  printPixelMap( gamma2Map, N_pixels_h, N_pixels_v );
 */
+
 }
 /*
 //double temp = densProfile.getRho_o() * densProfile.getR_s  ()   * exp( 2./alpha ) * pow( alpha/2., 1./alpha - 1.0 ) * sqrt( M_PI ) / Sc;
@@ -460,34 +499,6 @@ void massMapCalc( PixelMap   &massMap ,
 }
 */
 
-/*Puts distance from center in double **
-//
-//input:
-//     map to put distances in, number of pixels, angular/real size in rad/Mpc
-//
-//output:
-//     distMap
-//
-*/
-/*
-void distMapCalc( PixelMap  &distMap ,
-                  int       N_pixels ,
-                  double     inpSize ,
-                  double   center[2] ){
-
-  double posArr[2]={0,0};
-  double step     = inpSize/N_pixels;
-  #pragma omp parallel for private(posArr)
-  for (int i=0;i<N_pixels;++i){
-    posArr[1] = -i - 0.5 + N_pixels/2.0;
-  for (int j=0;j<N_pixels;++j){
-    posArr[0] =  j + 0.5 - N_pixels/2.0;
-    distMap[j+i*N_pixels]= step * \
-              sqrt( pow( posArr[0]-center[0] ,2) + pow( posArr[1]-center[1] ,2) );
-  }
-  }
-}
-*/
 
 /*
   Calculates some values onto pixel maps, uses convergence at all pixels

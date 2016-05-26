@@ -148,6 +148,8 @@ int main(int arg,char **argv){
   double   lensDist =   lensInfo.getAngDist();                     // Ang diam distance to lens
 */
 
+userInput.setNpixH( 9 );
+userInput.setNpixV( 9 );
   std::cout << "Constructing PixelMaps..." << std::endl;
 
   // PixelMaps constructed to contain lensing parameters
@@ -156,7 +158,7 @@ int main(int arg,char **argv){
   PixelMap gamma2Map( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
   PixelMap invMagMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
   PixelMap  g_tanMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
-  PixelMap  g_aziMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+  PixelMap  g_secMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
   PixelMap   distMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
 
   std::cout << "               Done." << std::endl;
@@ -206,7 +208,7 @@ int main(int arg,char **argv){
                         gamma2Map ,
                         invMagMap ,
                          g_tanMap ,
-                         g_aziMap ,
+                         g_secMap ,
                           distMap ,
              userInput.getNpixH() ,
              userInput.getNpixV() ,
