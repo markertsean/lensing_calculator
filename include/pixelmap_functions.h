@@ -7,26 +7,34 @@
 
 
 
-void  distMapCalc(  PixelMap  &distMap,
-                    int      N_pixelsH,
-                    int      N_pixelsV,
-                    double     inpSize,
-                    double   center[2]);
+void  distArrCalc(  double *sourceDistArr ,
+                    int          *indexes ,
+                    userInfo            u ,
+                    double          scale ,
+                    double      center[2] );
 
 
 
-void calcLensMaps(  GridMap     &inpGrid,  //GLAMER grid to calc values on
-                    PixelMap   &kappaMap,
-                    PixelMap  &gamma1Map,
-                    PixelMap  &gamma2Map,
-                    PixelMap  &invMagMap,
-                    PixelMap   &g_tanMap,
-                    PixelMap   &g_aziMap,
-                    PixelMap    &distMap,
-                    int       N_pixels_h,  //Number of pixels on a side
-                    int       N_pixels_v,  //Number of pixels on a side
-                    double      realSize,  //Real width on the 2D sky plane
-                    double     center[2]); //Center location of halo
+void  distMapCalc(  PixelMap  &distMap ,
+                    int      N_pixelsH ,
+                    int      N_pixelsV ,
+                    double     inpSize ,
+                    double   center[2] );
+
+
+
+void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
+                    PixelMap   &kappaMap ,
+                    PixelMap  &gamma1Map ,
+                    PixelMap  &gamma2Map ,
+                    PixelMap  &invMagMap ,
+                    PixelMap   &g_tanMap ,
+                    PixelMap   &g_aziMap ,
+                    PixelMap    &distMap ,
+                    int       N_pixels_h ,  //Number of pixels on a side
+                    int       N_pixels_v ,  //Number of pixels on a side
+                    double      realSize ,  //Real width on the 2D sky plane
+                    double     center[2] ); //Center location of halo
 
 
 void printPixelMap( PixelMap   &inpMap ,  //input pixel map
@@ -36,10 +44,10 @@ void printPixelMap( PixelMap   &inpMap   ,  //input pixel map
                     int       N_pixels_h ,
                     int       N_pixels_v ); //Number of pixels on a side
 
-/*
+
 void getRandomSourcesIndexes( int      *indexes ,  //Array of pixelmap indexes
                               userInfo        u ); //Input user information
-
+/*
 void radialSourceAverage(	 double     *avgArr,  //Output averaged array
                            double     *errArr,  //Radial errors for value we are averaging
                            int       *indexes,  //Index of the source pixels for inpMap
@@ -99,12 +107,6 @@ void  massMapCalc(
 
 
 
-void  distArrCalc(
-		  double *sourceDistArr,
-		  int          *indexes,
-		  userInfo            u,
-                  double          scale,
-		  double      center[2]);
 */
 
 #endif

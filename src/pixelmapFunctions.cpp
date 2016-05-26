@@ -12,7 +12,95 @@
 
 
 //
+// Get array of distances for sources
 //
+void distArrCalc( double *sourceDistArr ,
+                  int          *indexes ,
+                  userInfo            u ,
+                  double          scale ,
+                  double      center[2] ){
+
+  double posArr[2];
+  for(int i = 0 ; i < u.getNsrc() ; ++i ){
+
+    // 0 is y, or row
+    // 1 is x, or columns
+    // Pixel numbers, from top corner
+    posArr[0] =  indexes[i]              % u.getNpixH();
+    posArr[1] = (indexes[i] - posArr[0]) / u.getNpixH();
+
+    // Pixel coordinates relative to center
+    posArr[0] = ( posArr[0] - u.getNpixV()/2.0 ) - center[1] ;
+    posArr[1] = ( posArr[1] - u.getNpixH()/2.0 ) - center[0] ;
+
+    // Get position from pixel coordinates
+    sourceDistArr[i] = scale*sqrt(posArr[0]*posArr[0]+posArr[1]*posArr[1]);
+  }
+
+}
+
+
+
+//
+//  Get random indexes to use as source positions, sources not allowed within some pixels
+//
+void getRandomSourcesIndexes( int     *indexes ,
+                              userInfo       u ){
+
+  //Will use 2d points, convert to one index later
+  int xPos[ u.getNsrc() ], yPos[ u.getNsrc() ], counter;
+  //Initialize so we can compare, not use same index twice or too close
+  for(int i = 0; i < u.getNsrc(); ++i ){
+       xPos[i] = -5;
+       yPos[i] = -5;
+    indexes[i] = -1;
+  }
+  bool accept;
+
+  // Fill in each source
+  // Assume point is good when pick point
+  // Compare to all previous points
+  // If any points too close, dont accept, repeat
+  // Closeness can be specified by user
+
+  for(int i = 0 ; i < u.getNsrc() ; ++i ){
+    counter = 0;
+
+    do{
+      accept=true;
+
+      // Generate random source pixels, within edge buffer
+      xPos[i] =floor( rand()/(float)RAND_MAX * ( u.getNpixH() - 2*u.getEdgePix() )) + u.getEdgePix();
+      yPos[i] =floor( rand()/(float)RAND_MAX * ( u.getNpixV() - 2*u.getEdgePix() )) + u.getEdgePix();
+
+      // Compare against previous points
+      for(int j=i-1;j>=0;--j){
+        if(  sqrt( (xPos[i]-xPos[j])*(xPos[i]-xPos[j])
+                 + (yPos[i]-yPos[j])*(yPos[i]-yPos[j]) ) < u.getMinNeighborDist() )
+        accept=false;
+      }
+      // Abort if have too hard a time fitting sources into grid
+      ++counter;
+      if ( counter > 1e6 ){
+        printf("Error: Unable to fit %4i sources in %4i x %4i pixelmap\n", u.getNsrc()  ,
+                                                                           u.getNpixH() ,
+                                                                           u.getNpixV() );
+        printf(" Nearest neighbor tolerance: %5.2lf, Edgedist: %4i\n",     u.getMinNeighborDist(),
+                                                                           u.getEdgePix());
+        exit(0);
+      }
+    }while(accept==false);
+
+    indexes[i] = xPos[i] + yPos[i] * u.getNpixH();
+
+  }
+}
+
+
+
+
+//
+// Determines distance as function from center of pixelmap, in ang units
 //
 void distMapCalc( PixelMap  &distMap ,  // pixelmap to output
                   int      N_pixelsH ,  // Number of pixels on a side
@@ -171,30 +259,6 @@ void printPixelMap( PixelMap   &inpMap   ,  //input pixel map
 
 
 /*
-//Get array of distances for sources
-void distArrCalc( double *sourceDistArr ,
-                  int          *indexes ,
-                  userInfo            u ,
-                  double          scale ,
-                  double      center[2] ){
-  double posArr[2];
-  for(int i=0;i<u.N_sources;++i){
-
-    //0 is y, or row
-    //1 is x, or columns
-    //Pixel numbers, from top corner
-    posArr[0] =  indexes[i]              % u.N_pixels;
-    posArr[1] = (indexes[i] - posArr[0]) / u.N_pixels;
-    //Pixel coordinates relative to center
-    posArr[0] = ( posArr[0] - 0.5 - u.N_pixels/2.0 ) - center[1]+1;
-    posArr[1] = (-posArr[1] + 0.5 + u.N_pixels/2.0 ) - center[0]-1;
-    //Get position from pixel coordinates
-    sourceDistArr[i] = scale*sqrt(posArr[0]*posArr[0]+posArr[1]*posArr[1]);
-  }
-
-}
-*/
-/*
   Radially average pixelmap values for given source positions
 *//*
 void radialSourceAverage( double  *avgArr  ,
@@ -247,57 +311,6 @@ void radialSourceAverage( double  *avgArr  ,
       avgArr[i] =      avgArr[i]/N_countsArr[i] ;
       errArr[i] = sqrt(errArr[i]/N_countsArr[i]);
     }
-  }
-}
-
-*/
-/*
-  Get random indexes to use as source positions, sources not allowed within some pixels
-*//*
-void getRandomSourcesIndexes( int     *indexes ,
-                              userInfo       u ){
-
-  //Will use 2d points, convert to one index later
-  int xPos[u.N_sources], yPos[u.N_sources], counter;
-  //Initialize so we can compare, not use same index twice or too close
-  for(int i=0;i<u.N_sources;++i){
-       xPos[i] = -5;
-       yPos[i] = -5;
-    indexes[i] = -1;
-  }
-  bool accept;
-  //Fill in each source
-  //Assume point is good when pick point
-  //Compare to all previous points
-  //If any points too close
-  //Dont accept, repeat
-  for(int i=0;i<u.N_sources;++i){
-    counter=0;
-    do{
-      accept=true;
-
-      xPos[i] =floor(rand()/(float)RAND_MAX * (u.N_pixels-2*u.N_edgepixels))
-                +u.N_edgepixels;
-      yPos[i] =floor(rand()/(float)RAND_MAX * (u.N_pixels-2*u.N_edgepixels))
-                +u.N_edgepixels;
-      //Compare against previous points
-      for(int j=i-1;j>=0;--j){
-        if(  sqrt( (xPos[i]-xPos[j])*(xPos[i]-xPos[j])
-                 + (yPos[i]-yPos[j])*(yPos[i]-yPos[j]) ) < u.nearestSourceNeighbor )
-        accept=false;
-      }
-      //Abort if have too hard a time fitting sources into grid
-      ++counter;
-      if (counter>1e6){
-        printf("Error: Unable to fit %4i sources in %4i square pixelmap\n",u.N_sources,
-                                                                           u.N_pixels);
-        printf(" Nearest neighbor tolerance: %5.2lf, Edgedist: %4i\n",
-                                              u.nearestSourceNeighbor,
-                                              u.N_edgepixels);
-        exit(0);
-      }
-    }while(accept==false);
-    indexes[i] = xPos[i] + yPos[i] * u.N_pixels;
   }
 }
 

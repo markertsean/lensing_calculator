@@ -225,11 +225,9 @@ class userInfo{
     inline userInfo();
 
     void setRmax            ( double inpF ) {   R_max        = inpF ; }
-    void setMinNeighborDist ( int    inpI ) { nearestSourceNeighbor = inpI; }
     void setFOV             ( double inpF ) {   angFOV       = inpF ; }
     void setNpix            ( int    inpI ) {   N_pixels     = inpI ; }
     void setNpart           ( int    inpI ) {   N_particles  = inpI ; }
-    void setEdgePix         ( int    inpI ) {   N_edgepixels = inpI ; }
     void setChiMin          ( double inpF ) {           cMin = inpF ; }
     void setChiMax          ( double inpF ) {           cMax = inpF ; }
     void setMassMin         ( double inpF ) {           mMin = inpF ; }
@@ -245,7 +243,8 @@ class userInfo{
     void setNConsistent     ( int    inpI ) {  consistent    = inpI ; }
 
 
-
+    void setEdgePix         ( int    inpI ) {   N_edgepixels = inpI ; }
+    void setMinNeighborDist ( int    inpI ) { nearestSourceNeighbor = inpI; }
     void setNbins           ( int    inpI ) {   N_bins       = inpI ; }
     void setNsrc            ( int    inpI ) {   N_sources    = inpI ; }
     void setNthreads        ( int    inpI ) {   num_threads  = inpI ; }
@@ -268,15 +267,15 @@ class userInfo{
     int    getNbins           () { return   N_bins       ; }
     int    getNthreads        () { return    num_threads ; }
     int    getNgridPoints     () { return   N_gridPoints ; }
+    double getMinNeighborDist () { return nearestSourceNeighbor ; }
+    int    getEdgePix         () { return   N_edgepixels ; }
     std::string getCatType    () { return  catType       ; }
     std::string getCosmology  () { return  cosmo         ; }
 
 
 
-    int    getMinNeighborDist () { return nearestSourceNeighbor ; }
     double getFOV             () { return   angFOV       ; }
     int    getNpart           () { return   N_particles  ; }
-    int    getEdgePix         () { return   N_edgepixels ; }
     double getChiMin          () { return           cMin ; }
     double getChiMax          () { return           cMax ; }
     double getMassMin         () { return           mMin ; }
@@ -298,18 +297,20 @@ class userInfo{
     // Stuff to read in
     double      angFOV;  // Angular size of image
     double     physFOV;  // Physical size of image
-    double integLength;  // Integration length
-    double       R_max;
+    double integLength;  // Integration length of current image
+    double       R_max;  // ?
     int    N_pixels   ;  // Number of pixels on grid
-    int    N_pixels_h ;
-    int    N_pixels_v ;
+    int    N_pixels_h ;  // Number of pixels on x-axis
+    int    N_pixels_v ;  // Number of pixels on y-axis
+
     int    N_bins     ;  // Number of bins for radial averaging
     int    N_sources  ;  // Number of sources to generate
     int    N_particles;  // Number of particles in simulation
     int    N_gridPoints; // Number of grid points to interpolate mass to
     int    num_threads;  // Number of threads for parallel processing
-    int   N_edgepixels;  // Gap in distance between sources
-    double nearestSourceNeighbor; // Number of pixels to leave on an edge
+    int   N_edgepixels;  // Number of pixels to leave on an edge
+
+    double nearestSourceNeighbor; // Gap in distance between sources
 
   std::string readFile;
   std::string catType ;

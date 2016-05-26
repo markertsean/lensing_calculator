@@ -150,6 +150,7 @@ int main(int arg,char **argv){
 
 userInput.setNpixH( 9 );
 userInput.setNpixV( 9 );
+userInput.setNpix( 9*9);
   std::cout << "Constructing PixelMaps..." << std::endl;
 
   // PixelMaps constructed to contain lensing parameters
@@ -166,10 +167,10 @@ userInput.setNpixV( 9 );
   logMessage( std::string("PixelMaps allocated") );
 
 
+  {
   ///////////////////////////////////////////////////////////
   ///////////////////////CONSTRUCT LENS//////////////////////
   ///////////////////////////////////////////////////////////
-
 
 
   std::cout <<                           std::endl << std::endl;
@@ -215,43 +216,36 @@ userInput.setNpixV( 9 );
                         realWidth ,
                            center );
 
-
-exit(0);
-  /*
-  ////////////////////////////////////////////////////////////
-  ///////////////////Generate source positions////////////////
-  ////////////////////////////////////////////////////////////
-
-  Generates random source positions, distances, and errors for the shape measurements
-  Random positions are stored in a 1D array, with pixelmap index
-  Distance is also stored in a 1D array
-NEED TO CHANGE SOURCE ERRORS
-  */
-
-
-
-/*
-  int indexes[ userParams.N_sources ];
-  getRandomSourcesIndexes( indexes, userParams);
-
-////////////////////////////////
-////////////////////////////////
-////////////////////////////////
-//False errors and redshifts, for now
-  double  tempErrArr[ userParams.N_sources ];
-  double  tempSCRArr[ userParams.N_sources ];
-  double  sourceDArr[ userParams.N_sources ];
-
-
-  for (int i = 0; i < userParams.N_sources; ++i ){
-    tempErrArr[i] = 0.3;                                                    //Errors all a temporary 0.3
-    tempSCRArr[i] = planck.SigmaCrit( lensInfo.getZ(), sourceInfo.getZ() ); //Just fills an array with Sigma Crit
   }
 
-  //Determine distances of the sources from center of cluster
-  distArrCalc( sourceDArr, indexes, userParams, realWidth/userParams.N_pixels, center );
-*/
+//This section needs work
+  ////////////////////////////////////////////////////////////
+  ///////////////////Generate sources/////////////////////////
+  ////////////////////////////////////////////////////////////
 
+
+  // Generates random source positions, distances, and errors for the shape measurements
+  // Random positions are stored in a 1D array, with pixelmap index
+  // Distance is also stored in a 1D array
+
+
+  double  srcErrArr[ userInput.getNsrc() ]; // Error
+  double  srcSCRArr[ userInput.getNsrc() ]; // Sigma Crit
+  double  srcDArr  [ userInput.getNsrc() ]; // Redshift
+
+// Need read error, Z distibution
+  for (int i = 0; i < userInput.getNsrc(); ++i ){
+    srcErrArr[i] = 0.3;                           // Errors all a temporary 0.3
+    srcSCRArr[i] = 1.0;//cosmo.SigmaCrit( myHalo.getZ(), sourceInfo.getZ() ); // Sigma Crit, depends on source Z
+  }
+
+
+  int indexes[ userInput.getNsrc() ];
+  getRandomSourcesIndexes( indexes, userInput );
+
+
+  // Determine distances of the sources from center of cluster
+  distArrCalc( srcDArr, indexes, userInput, angRange/userInput.getNpixH(), center );
 
 
 
