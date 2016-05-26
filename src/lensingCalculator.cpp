@@ -139,14 +139,13 @@ int main(int arg,char **argv){
   userInput.setNgridPoints( userInput.getNpixH() * 2       );   // Number of gridpoints, in reality want it more refined
 
 
-  logMessage( std::string("angRange = "        ) + std::to_string((long double)  angRange    ));
-  logMessage( std::string("realWidth = "       ) + std::to_string((long double)  realWidth   ));
+  logMessage( std::string("angRange        = " ) + std::to_string((long double)  angRange    ));
+  logMessage( std::string("realWidth       = " ) + std::to_string((long double)  realWidth   ));
   logMessage( std::string("omp_num_threads = " ) + std::to_string((long double)  userInput.getNthreads()));
+  logMessage( std::string("counter         = " ) + std::to_string((long double) center[0]    )
+                                                 + std::to_string((long double) center[1]    ));
 
-/*
-  double Sigma_crit = sourceInfo.getSigmaCrit();                   // Critital surface density
-  double   lensDist =   lensInfo.getAngDist();                     // Ang diam distance to lens
-*/
+
 
 userInput.setNpixH( 9 );
 userInput.setNpixV( 9 );
@@ -184,6 +183,7 @@ userInput.setNpix( 9*9);
 
   logMessage( std::string("Lens constructed") );
 
+
   //////////////////////////////////////////////////////
   //////////////////CONSTRUCT GRID//////////////////////
   //////////////////////////////////////////////////////
@@ -200,8 +200,9 @@ userInput.setNpix( 9*9);
                   userInput.getNpixH()       );
 
   std::cout << "Grid constructed."    << std::endl << std::endl;
-
   logMessage( std::string("Grid constructed") );
+
+  std::cout << "Generating PixelMaps from grid..." << std::endl;
 
   calcLensMaps( myGrid,
                          kappaMap ,
@@ -217,6 +218,9 @@ userInput.setNpix( 9*9);
                            center );
 
   }
+  logMessage( std::string("Lens, Grid deallocated") );
+
+  std::cout << "PixelMaps generated" << std::endl << std::endl;
 
 //This section needs work
   ////////////////////////////////////////////////////////////
@@ -228,10 +232,13 @@ userInput.setNpix( 9*9);
   // Random positions are stored in a 1D array, with pixelmap index
   // Distance is also stored in a 1D array
 
+  std::cout << "Generating sources..." << std::endl;
 
   double  srcErrArr[ userInput.getNsrc() ]; // Error
   double  srcSCRArr[ userInput.getNsrc() ]; // Sigma Crit
   double  srcDArr  [ userInput.getNsrc() ]; // Redshift
+
+  logMessage( std::string("Allocated src arrays of size: ") + std::to_string((long long) userInput.getNsrc()) );
 
 // Need read error, Z distibution
   for (int i = 0; i < userInput.getNsrc(); ++i ){
@@ -240,14 +247,25 @@ userInput.setNpix( 9*9);
   }
 
 
+  std::cout << "  generating indexes..." << std::endl;
+
+
   int indexes[ userInput.getNsrc() ];
   getRandomSourcesIndexes( indexes, userInput );
+
+
+  logMessage( std::string("Sources placed") );
+
+
+  std::cout << "  calculating distances..." << std::endl;
 
 
   // Determine distances of the sources from center of cluster
   distArrCalc( srcDArr, indexes, userInput, angRange/userInput.getNpixH(), center );
 
+  logMessage( std::string("Source distances from center found") );
 
+  std::cout << "Done." << std::endl << std::endl;
 
   /*
   ////////////////////////////////////////////////////////////

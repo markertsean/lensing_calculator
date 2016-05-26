@@ -87,7 +87,14 @@ void getRandomSourcesIndexes( int     *indexes ,
                                                                            u.getNpixV() );
         printf(" Nearest neighbor tolerance: %5.2lf, Edgedist: %4i\n",     u.getMinNeighborDist(),
                                                                            u.getEdgePix());
-        exit(0);
+        logMessage( std::string("Unable to place sources") );
+        logMessage( std::string("           Nsrc  = ") + std::to_string( u.getNsrc()      ) +
+                    std::string("           NpixH = ") + std::to_string( u.getNpixH()     ) +
+                    std::string("           NpixV = ") + std::to_string( u.getNpixV()     ) +
+                    std::string("  Min Seperation = ") + std::to_string( u.getMinNeighborDist() ) +
+                    std::string("  Min Edge Dist  = ") + std::to_string( u.getEdgePix() ) );
+        logMessage( std::string("Aborting."));
+        exit(1);
       }
     }while(accept==false);
 
@@ -141,13 +148,17 @@ void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
                     double     center[2] ){ // Center location of halo
 
 
-   kappaMap = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, KAPPA);
-  gamma1Map = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, GAMMA1);
-  gamma2Map = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, GAMMA2);
-  invMagMap = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, INVMAG);
+
+
+   kappaMap = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, KAPPA );  logMessage( std::string("Kappa  map populated") );
+  gamma1Map = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, GAMMA1);  logMessage( std::string("Gamma1 map populated") );
+  gamma2Map = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, GAMMA2);  logMessage( std::string("Gamma2 map populated") );
+  invMagMap = inpGrid.writePixelMapUniform( center, N_pixels_h, N_pixels_v, INVMAG);  logMessage( std::string("invMag map populated") );
 
 
   distMapCalc( distMap, N_pixels_h, N_pixels_v, realSize, center);
+
+  logMessage( std::string("Dist   map populated") );
 
   double posArr[2]= { 0, 0 }; // Pixel position
   double phi      =   0;      // Position angle
@@ -170,6 +181,9 @@ void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
     g_secMap[k] = (-gamma1Map[k]*sin(a)-gamma2Map[k]*cos(a)) / (1-kappaMap[k]);
   }
   }
+
+  logMessage( std::string("gtan   map populated") );
+  logMessage( std::string("gsec   map populated") );
 
 /*
   printPixelMap(   distMap, N_pixels_h, N_pixels_v );
