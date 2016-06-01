@@ -6,12 +6,20 @@
 #include <image_processing.h>
 
 
+void radialSourceAverage(	 double     *avgArr,  //Output averaged array
+                           double     *errArr,  //Radial errors for value we are averaging
+                           int       *indexes,  //Index of the source pixels for inpMap
+                           PixelMap    inpMap,  //The input map we are radially averaging
+                           double     *inpErr,  //The errors in the quantities we are averging
+                           userInfo         u,  //Input user information
+                           double   center[2]); //Center pixels
+
+
 
 void  distArrCalc(  double *sourceDistArr ,
                     int          *indexes ,
-                    userInfo            u ,
-                    double          scale ,
-                    double      center[2] );
+                    PixelMap     *distMap ,
+                    int         N_srouces );
 
 
 
@@ -48,13 +56,6 @@ void printPixelMap( PixelMap   &inpMap   ,  //input pixel map
 void getRandomSourcesIndexes( int      *indexes ,  //Array of pixelmap indexes
                               userInfo        u ); //Input user information
 /*
-void radialSourceAverage(	 double     *avgArr,  //Output averaged array
-                           double     *errArr,  //Radial errors for value we are averaging
-                           int       *indexes,  //Index of the source pixels for inpMap
-                           PixelMap    inpMap,  //The input map we are radially averaging
-                           double     *inpErr,  //The errors in the quantities we are averging
-                           userInfo         u,  //Input user information
-                           double   center[2]); //Center pixels
 
 
 void findRadialAverage( PixelMap      &inpMap,   //input map to average

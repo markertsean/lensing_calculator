@@ -11,17 +11,33 @@
 
 
 
-//
-// Get array of distances for sources
-//
-void distArrCalc( double *sourceDistArr ,
-                  int          *indexes ,
-                  userInfo            u ,
-                  double          scale ,
-                  double      center[2] ){
 
-  double posArr[2];
-  for(int i = 0 ; i < u.getNsrc() ; ++i ){
+//
+//  Radially average pixelmap values for given source positions
+//
+void radialSourceAverage( double    *avgArr ,
+                          double    *errArr ,
+                          int      *indexes ,
+                          PixelMap   inpMap ,
+                          double    *errors ,
+                          userInfo        u ,
+                          double  center[2] ){
+
+  int    iBin;
+  double dist;
+  double posArr[2]={0,0};
+
+  int N_countsArr[ u.getNbins() ];
+
+  // Make sure average is 0 to start
+  for(int i = 0; i < u.getNbins(); ++i ){
+         avgArr[i] = 0;
+         errArr[i] = 0;
+    N_countsArr[i] = 0;
+  }
+
+  // For each source, find which bin it's in
+  for(int i = 0; i < u.getNsrc(); ++i ){
 
     // 0 is y, or row
     // 1 is x, or columns
@@ -30,13 +46,59 @@ void distArrCalc( double *sourceDistArr ,
     posArr[1] = (indexes[i] - posArr[0]) / u.getNpixH();
 
     // Pixel coordinates relative to center
-    posArr[0] = ( posArr[0] - u.getNpixV()/2.0 ) - center[1] ;
-    posArr[1] = ( posArr[1] - u.getNpixH()/2.0 ) - center[0] ;
+    posArr[0] = ( posArr[0] - (u.getNpixV()-1)/2.0 ) - center[1] ;
+    posArr[1] = ( posArr[1] - (u.getNpixH()-1)/2.0 ) - center[0] ;
+
 
     // Get position from pixel coordinates
-    sourceDistArr[i] = scale*sqrt(posArr[0]*posArr[0]+posArr[1]*posArr[1]);
+    dist = sqrt( posArr[0]*posArr[0] +
+                 posArr[1]*posArr[1] );
+
+
+    // Distance of pixels from center, converted to "bin" units
+    iBin = round( std::min(
+                  std::max( dist/u.getNpixH() * 2.0 * u.getNbins() , 0.0 ),
+                                           (double)   u.getNbins()       ));
+
+         avgArr[iBin] += inpMap[ indexes[i] ] / ( errors[i]*errors[i] ); // Weighted average sum
+         errArr[iBin] += 1                    / ( errors[i]*errors[i] ); // inverse of the sum of variance
+    N_countsArr[iBin] += 1;
   }
 
+
+  // Calculate weighted average
+
+  for(int i = 0; i < u.getNbins(); ++i){
+
+    if (N_countsArr[i]==0){ // If nothing in bin, mark as -1
+      avgArr[i] = -1.0;
+    }
+
+    else{
+
+      errArr[i] = sqrt( 1   /   errArr[i]             );
+      avgArr[i] = avgArr[i] * ( errArr[i] * errArr[i] );
+
+    }
+  }
+
+}
+
+
+
+
+
+//
+// Get array of distances for sources
+//
+void distArrCalc( double *sourceDistArr ,
+                  int          *indexes ,
+                  PixelMap     *distMap ,
+                  int         N_sources ){
+
+  for(int i = 0 ; i < N_sources ; ++i ){
+    sourceDistArr[i] = (*distMap).getValue( indexes[i] );
+  }
 }
 
 
@@ -117,7 +179,7 @@ void distMapCalc( PixelMap  &distMap ,  // pixelmap to output
 
   double posArr[2]={0,0};
   double step     = inpSize/N_pixelsH;
-  #pragma omp parallel for private(posArr)
+//  #pragma omp parallel for private(posArr)
   for (int i=0;i<N_pixelsV;++i){
     posArr[1] = -i - 0.5 + N_pixelsV/2.0;
   for (int j=0;j<N_pixelsH;++j){
@@ -126,6 +188,7 @@ void distMapCalc( PixelMap  &distMap ,  // pixelmap to output
               sqrt( pow( posArr[0]-center[0] ,2) + pow( posArr[1]-center[1] ,2) );
   }
   }
+
 }
 
 
@@ -163,6 +226,8 @@ void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
   double posArr[2]= { 0, 0 }; // Pixel position
   double phi      =   0;      // Position angle
 
+
+//Check this
   for (int i=0;i<N_pixels_v;++i){
     posArr[1] = (-i - 0.5 + N_pixels_v/2.0)-center[1];
 
@@ -272,63 +337,6 @@ void printPixelMap( PixelMap   &inpMap   ,  //input pixel map
 
 
 
-/*
-  Radially average pixelmap values for given source positions
-*//*
-void radialSourceAverage( double  *avgArr  ,
-                          double  *errArr  ,
-                          int    *indexes  ,
-                          PixelMap  inpMap ,
-                          double   *errors ,
-                          userInfo       u ,
-                          double center[2] ){
-
-  int    iBin;
-  double dist;
-  double posArr[2]={0,0};
-
-  int N_countsArr[u.N_bins];
-  //Make sure average is 0 to start
-  for(int i=0;i<u.N_bins;++i){
-         avgArr[i]=0;
-         errArr[i]=0;
-    N_countsArr[i]=0;
-  }
-
-  for(int i=0;i<u.N_sources;++i){
-
-    //0 is y, or row
-    //1 is x, or columns
-    //Pixel numbers, from top corner
-    posArr[0] =  indexes[i]              % u.N_pixels;
-    posArr[1] = (indexes[i] - posArr[0]) / u.N_pixels;
-    //Pixel coordinates relative to center
-    posArr[0] = ( posArr[0] - 0.5 - u.N_pixels/2.0 ) - center[1]+1;
-    posArr[1] = (-posArr[1] + 0.5 + u.N_pixels/2.0 ) - center[0]-1;
-
-    //Get position from pixel coordinates
-    dist = sqrt(posArr[0]*posArr[0]+posArr[1]*posArr[1]);
-    iBin = round(std::min(std::max(
-            dist/u.N_pixels*2.0 * u.N_bins ,0.0),1.0*u.N_bins));
-
-    //To the bin, add the map value of this index, sum errors in quadrature
-         avgArr[iBin] += inpMap[indexes[i]];
-         errArr[iBin] += errors[i]*errors[i];
-    N_countsArr[iBin] += 1;
-  }
-
-  for(int i=0;i<u.N_bins;++i){
-    if (N_countsArr[i]==0){
-      avgArr[i] = -1.0;
-    }
-    else{
-      avgArr[i] =      avgArr[i]/N_countsArr[i] ;
-      errArr[i] = sqrt(errArr[i]/N_countsArr[i]);
-    }
-  }
-}
-
-*/
 
 
 

@@ -1,3 +1,21 @@
+/*
+
+File name from commandline, set paramfile variable to filename, allows looping over file for file
+
+
+Find & loop over Box files
+
+
+Number of sources
+Source error distribution
+
+
+Seperate section for triaxiality and g+
+Uniform distribution of sources, need alignment relative to halo orientation
+
+*/
+
+
 #include <slsimlib.h>
 #include <iostream>
 #include <cstring>
@@ -203,7 +221,7 @@ userInput.setNpix( 9*9);
   logMessage( std::string("Grid constructed") );
 
   std::cout << "Generating PixelMaps from grid..." << std::endl;
-
+//Check angles from positions
   calcLensMaps( myGrid,
                          kappaMap ,
                         gamma1Map ,
@@ -214,7 +232,7 @@ userInput.setNpix( 9*9);
                           distMap ,
              userInput.getNpixH() ,
              userInput.getNpixV() ,
-                        realWidth ,
+                         angRange ,
                            center );
 
   }
@@ -261,33 +279,36 @@ userInput.setNpix( 9*9);
 
 
   // Determine distances of the sources from center of cluster
-  distArrCalc( srcDArr, indexes, userInput, angRange/userInput.getNpixH(), center );
+  distArrCalc( srcDArr, indexes, &distMap, userInput.getNsrc() );
 
   logMessage( std::string("Source distances from center found") );
 
   std::cout << "Done." << std::endl << std::endl;
 
-  /*
+
   ////////////////////////////////////////////////////////////
   ///////////////////Determine radial average/////////////////
   ///////////////////Bin different source vals////////////////
   ////////////////////////////////////////////////////////////
 
-  Generates radial averages of the distances and RTS values of the sources
-  */
 
+  // Array to bin distances, RTS, and their errors
+  double    distArr[ userInput.getNbins() ], gTanArr[ userInput.getNbins() ];
+  double distErrArr[ userInput.getNbins() ], gErrArr[ userInput.getNbins() ];
 
+  {
+    // Temp array, for uncertainties in the distance. Can set to 1 for no weighting,
+    //             or introduce errors later
+    double distErrArr2[ userInput.getNbins() ];
 
+    for ( int i = 0; i < userInput.getNbins(); ++i ){
+      distErrArr2[i] = 1;
+    }
 
-/*
-  //Array to bin distances, RTS, and their errors
-  double    distArr[ userParams.N_bins ], gTanArr[ userParams.N_bins ];
-  double distErrArr[ userParams.N_bins ], gErrArr[ userParams.N_bins ];
-
-  //Determine radial averages and bin distances and RTS
-  radialSourceAverage( distArr, distErrArr, indexes,  distMap, tempErrArr, userParams, center );
-  radialSourceAverage( gTanArr,    gErrArr, indexes, g_tanMap, tempErrArr, userParams, center );
-*/
+    // Determine radial averages and bin distances and RTS
+    radialSourceAverage( distArr, distErrArr, indexes,  distMap, distErrArr2, userInput, center );
+  }
+    radialSourceAverage( gTanArr,    gErrArr, indexes, g_tanMap,  srcErrArr , userInput, center );
 
 
 
