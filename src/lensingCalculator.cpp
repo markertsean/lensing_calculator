@@ -227,7 +227,7 @@ userInput.setNpix( 9*9);
 
 
   std::cout << "Generating PixelMaps from grid..." << std::endl;
-//Check angles from positions
+
   calcLensMaps( myGrid,
                          kappaMap ,
                         gamma1Map ,
@@ -304,6 +304,8 @@ userInput.setNpix( 9*9);
             gTanArr[ userInput.getNbins() ],
             gErrArr[ userInput.getNbins() ];
 
+  // Generates m
+
   radialDistAverage( distArr, srcDArr, userInput, center );
 
   logMessage( std::string("Source distances averaged") );
@@ -312,15 +314,15 @@ userInput.setNpix( 9*9);
 
   logMessage( std::string("Shear values averaged") );
 
+  std::cout << " Sources averaged" << std::endl;;
 
-  /*
+
   //////////////////////////////////////////////////////////
   ////////////////////////FIT PROFILE///////////////////////
   //////////////////////////////////////////////////////////
 
-  Attempts to fit the density using the radial averages of distance and RTS
-  */
 
+  // Attempts to fit the density using the radial averages of distance and RTS
 
 
 /*

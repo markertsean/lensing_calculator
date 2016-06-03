@@ -61,59 +61,7 @@ void printPixelMap( PixelMap   &inpMap   ,  //input pixel map
 
 void getRandomSourcesIndexes( int      *indexes ,  //Array of pixelmap indexes
                               userInfo        u ); //Input user information
-/*
 
 
-void findRadialAverage( PixelMap      &inpMap,   //input map to average
-                        int          N_pixels,   //Number of pixels on a side, assumes square map
-                        int            N_bins,   //Number of bins to average to
-                        double   *avgInpArray,   //Output array to store average in
-                        double  *distInpArray,   //Outpput array to store distances in
-                        double       realSize,   //Real size on the plane of the FOV
-                        double      center[2]);  //Center coordinates
-
-
-void calcMapsFromKappa(
-		       PixelMap  &kappaMap, //Various input maps, some overwritten
-		       PixelMap    &phiMap,
-		       PixelMap   &massMap,
-		       PixelMap   &distMap,
-		       PixelMap  &sigmaMap,
-		       double    center[2],  //Center location of halo
-		       userInfo    inpInfo,  //User information
-		       double    sigmaCrit,  //Critical surface density to use for whole map
-		       double     realSize); //Real size on the 2D sky plane
-
-
-void sigmaMapCalc(
-		  PixelMap   &inpMap,
-		  PixelMap     &kMap,
-		  int       N_pixels,
-		  double  Sigma_crit);
-
-
-void   phiMapCalc(
-		  PixelMap   &phiMap,
-		  PixelMap &sigmaMap,
-		  int       N_pixels,
-		  double    realSize);
-
-
-void   magMapCalc(
-		  PixelMap   &magMap,
-		  PixelMap     &kMap,
-		  PixelMap     &gMap,
-		  int       N_pixels);
-
-
-void  massMapCalc(
-		  PixelMap  &massMap,
-		  PixelMap   &phiMap,
-		  PixelMap  &distMap,
-		  int       N_pixels);
-
-
-
-*/
 
 #endif

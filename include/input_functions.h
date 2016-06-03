@@ -16,26 +16,5 @@ void readInpFile   (  	      userInfo        &inpInfo ,  // Object we write to, 
 
 
 
-/*
-void ReadNbodyHalo(
-		   double         xpos[][3],  //2D position of particles we will be filling in
-		   int              Npoints,  //Number of particles/lines to read
-		   std::string  inpFileName); //Name of the file to read
-*/
-/*
-void setCosmoParameters(
-			InputParams    params,  //Parameters used by GLAMER code
-			COSMOLOGY   &inpCosmo); //Cosmology, default defined by user
-
-
-
-void  setHaloParameters(
-			InputParams    params, //Parameters used by GLAMER code
-			COSMOLOGY   &inpCosmo, //Cosmology, default defined by user
-			haloInfo     &inpInfo, //Object we are filling from input
-
-			std::string   objType="lens"); //Default lens, can be source
-*/
-
 
 #endif
