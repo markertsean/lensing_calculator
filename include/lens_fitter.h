@@ -3,16 +3,18 @@
 
 #include <lensing_classes.h>
 
-void fitDensProfile(
-		    lensProfile  &densProfile,  //Density profile we will write results to
-		    haloInfo            &halo,  //Information about the halo we are trying to fit
-		    userInfo                u,  //Input information from the user
-		    double              *gArr,  //Radially averaged rts measurements, to fit
-		    double              *dArr,  //Radial distances from above bins
-		    double           *gErrArr,  //Errors in the radiallt averaged rts bins
-		    double          *sourceSC,  //Source critical surface densities
-		    double        *sourceDist); //Projected radial distances of sources to lens centers
 
+void foo();
+void fitDensProfile(
+                    densProfile   &  profile ,  // Density profile we are outputting
+                    haloInfo      &     halo ,  // Info about parent halo
+                    userInfo               u ,  // Info from the user
+                    double       *      gArr ,  // RTS binned array we "observed"
+                    double       *      dArr ,  // Distance binned array
+                    double       *   gErrArr ,  // Error array in RTS
+                    double       *sourceSigC ,  // Crit surface densities of sources
+                    double       *sourceDist ); // 2D distance from source to lens
+/*
 void generateNFWRTS(
 		    double           *gArr,  //Radially averaged RTS array function will return
 		    lensProfile      &lens,  //Input density profile
@@ -57,6 +59,6 @@ double foxH2123(
                 double         z       ,  // Z from fox H function
                 double     alpha       ,  // Shape parameter Ein profile
                 double tolerance = 1e-2); // Tolence level for convergence
-
+*/
 
 #endif

@@ -37,7 +37,7 @@ Uniform distribution of sources, need alignment relative to halo orientation
 #include "lensing_classes.h"
 //#include "my_utilities.h"
 #include "input_functions.h"
-//#include "lens_fitter.h"
+#include "lens_fitter.h"
 #include "pixelmap_functions.h"
 
 
@@ -323,7 +323,7 @@ userInput.setNpix( 9*9);
 
 
   // Attempts to fit the density using the radial averages of distance and RTS
-
+foo();
 
 /*
   lensProfile nfwProfile, einProfile( 0.2 ); // 0.2 sets profile as Einasto with alpha = 0.2

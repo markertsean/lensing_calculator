@@ -1,5 +1,6 @@
 #include <cstdlib>
 
+
 //Returns value of chi^2 fit, ignores points w/0 error
 double chiSquared(
                     double    *array1 ,   // First  array to compare

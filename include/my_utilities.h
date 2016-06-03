@@ -2,6 +2,7 @@
 #define MY_UTILITIES
 
 
+
 double chiSquared(
 		  double    *array1,  //One set of values to compare
 		  double    *array2,  //Set to compare against

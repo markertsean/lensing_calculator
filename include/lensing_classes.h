@@ -2,10 +2,12 @@
 #define MY_LENSING_CLASSES
 
 #include <iostream>
+#include <fstream>
 #include <cstring>
 #include <ctime>
 #include <cosmo.h>
 #include <math.h>
+#include <sys/stat.h>
 #include <astro_constants.h>
 
 
@@ -230,19 +232,21 @@ class userInfo{
     void setNpart           ( int    inpI ) {   N_particles  = inpI ; }
     void setChiMin          ( double inpF ) {           cMin = inpF ; }
     void setChiMax          ( double inpF ) {           cMax = inpF ; }
-    void setMassMin         ( double inpF ) {           mMin = inpF ; }
-    void setMassMax         ( double inpF ) {           mMax = inpF ; }
-    void setAlphaMin        ( double inpF ) {       alphaMin = inpF ; }
-    void setAlphaMax        ( double inpF ) {       alphaMax = inpF ; }
+
+
+    void setMaxFitNum       ( int    inpI ) { maxFitAttempts = inpI ; }
+    void setNConsistent     ( int    inpI ) {  consistent    = inpI ; }
     void setTolerance       ( double inpF ) {      tolerance = inpF ; }
     void setMutChance       ( double inpF ) {      mutChance = inpF ; }
     void setTestVal         ( double inpF ) {     avgTestVal = inpF ; }
-    void setMaxFitNum       ( int    inpI ) { maxFitAttempts = inpI ; }
-    void setNchrome         ( int    inpI ) {  N_chromosomes = inpI ; }
     void setNtrack          ( int    inpI ) {  N_chiTrack    = inpI ; }
-    void setNConsistent     ( int    inpI ) {  consistent    = inpI ; }
-
-
+    void setMassMin         ( double inpF ) {           mMin = inpF ; }
+    void setMassMax         ( double inpF ) {           mMax = inpF ; }
+    void setNchrome         ( int    inpI ) {  N_chromosomes = inpI ; }
+    void setConMin          ( double inpF ) {           cMin = inpF ; }
+    void setConMax          ( double inpF ) {           cMax = inpF ; }
+    void setAlphaMin        ( double inpF ) {       alphaMin = inpF ; }
+    void setAlphaMax        ( double inpF ) {       alphaMax = inpF ; }
     void setEdgePix         ( int    inpI ) {   N_edgepixels = inpI ; }
     void setMinNeighborDist ( int    inpI ) { nearestSourceNeighbor = inpI; }
     void setNbins           ( int    inpI ) {   N_bins       = inpI ; }
@@ -273,6 +277,19 @@ class userInfo{
     int    getEdgePix         () { return   N_edgepixels ; }
     std::string getCatType    () { return  catType       ; }
     std::string getCosmology  () { return  cosmo         ; }
+    double getAlphaMin        () { return       alphaMin ; }
+    double getAlphaMax        () { return       alphaMax ; }
+    double getConMin          () { return           cMin ; }
+    double getConMax          () { return           cMax ; }
+    int    getNchrome         () { return  N_chromosomes ; }
+    double getMassMin         () { return           mMin ; }
+    double getMassMax         () { return           mMax ; }
+    int    getNtrack          () { return  N_chiTrack    ; }
+    double getTestVal         () { return     avgTestVal ; }
+    double getTolerance       () { return      tolerance ; }
+    double getMutChance       () { return      mutChance ; }
+    int    getMaxFitNum       () { return maxFitAttempts ; }
+    int    getNConsistent     () { return  consistent    ; }
 
 
 
@@ -280,17 +297,6 @@ class userInfo{
     int    getNpart           () { return   N_particles  ; }
     double getChiMin          () { return           cMin ; }
     double getChiMax          () { return           cMax ; }
-    double getMassMin         () { return           mMin ; }
-    double getMassMax         () { return           mMax ; }
-    double getAlphaMin        () { return       alphaMin ; }
-    double getAlphaMax        () { return       alphaMax ; }
-    double getTolerance       () { return      tolerance ; }
-    double getMutChance       () { return      mutChance ; }
-    double getTestVal         () { return     avgTestVal ; }
-    int    getMaxFitNum       () { return maxFitAttempts ; }
-    int    getNchrome         () { return  N_chromosomes ; }
-    int    getNtrack          () { return  N_chiTrack    ; }
-    int    getNConsistent     () { return  consistent    ; }
     double getRmax            () { return   R_max        ; }
 
 
