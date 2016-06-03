@@ -170,21 +170,25 @@ userInput.setNpixV( 9 );
 userInput.setNpix( 9*9);
   std::cout << "Constructing PixelMaps..." << std::endl;
 
-  // PixelMaps constructed to contain lensing parameters
+  // PixelMaps we need to keep
+  PixelMap  g_tanMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+  PixelMap  g_secMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+  PixelMap   distMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+
+  {
+
+  // PixelMaps we don't need to keep
   PixelMap  kappaMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
   PixelMap gamma1Map( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
   PixelMap gamma2Map( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
   PixelMap invMagMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
-  PixelMap  g_tanMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
-  PixelMap  g_secMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
-  PixelMap   distMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
 
   std::cout << "               Done." << std::endl;
 
   logMessage( std::string("PixelMaps allocated") );
 
 
-  {
+
   ///////////////////////////////////////////////////////////
   ///////////////////////CONSTRUCT LENS//////////////////////
   ///////////////////////////////////////////////////////////
@@ -302,9 +306,11 @@ userInput.setNpix( 9*9);
 
   radialDistAverage( distArr, srcDArr, userInput, center );
 
+  logMessage( std::string("Source distances averaged") );
 
   radialShearAverage( gTanArr, gErrArr, indexes, g_tanMap, srcErrArr, srcDArr, userInput, center );
 
+  logMessage( std::string("Shear values averaged") );
 
 
   /*
