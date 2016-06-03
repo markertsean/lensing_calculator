@@ -220,6 +220,8 @@ userInput.setNpix( 9*9);
   std::cout << "Grid constructed."    << std::endl << std::endl;
   logMessage( std::string("Grid constructed") );
 
+
+
   std::cout << "Generating PixelMaps from grid..." << std::endl;
 //Check angles from positions
   calcLensMaps( myGrid,
@@ -239,6 +241,7 @@ userInput.setNpix( 9*9);
   logMessage( std::string("Lens, Grid deallocated") );
 
   std::cout << "PixelMaps generated" << std::endl << std::endl;
+
 
 //This section needs work
   ////////////////////////////////////////////////////////////

@@ -227,7 +227,6 @@ void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
   double phi      =   0;      // Position angle
 
 
-//Check this
   for (int i=0;i<N_pixels_v;++i){
     posArr[1] = (-i - 0.5 + N_pixels_v/2.0)-center[1];
 
@@ -240,26 +239,26 @@ void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
     //gamma2  <0 \   >0 /
     //g_tan = -g1*cos - g2*sin
     //g_sec =  g1*sin - g2*cos
-    //glamer produces negative value for g1, swap signs in eqtns
+
     double a = 2*phi;
-    g_tanMap[k] = ( gamma1Map[k]*cos(a)-gamma2Map[k]*sin(a)) / (1-kappaMap[k]);//gamma1 swapped
-    g_secMap[k] = (-gamma1Map[k]*sin(a)-gamma2Map[k]*cos(a)) / (1-kappaMap[k]);
+
+    g_tanMap[k] = (-gamma1Map[k]*cos(a)-gamma2Map[k]*sin(a)) / (1-kappaMap[k]);
+    g_secMap[k] = (-gamma1Map[k]*sin(a)+gamma2Map[k]*cos(a)) / (1-kappaMap[k]);
   }
   }
+
 
   logMessage( std::string("gtan   map populated") );
   logMessage( std::string("gsec   map populated") );
 
 /*
   printPixelMap(   distMap, N_pixels_h, N_pixels_v );
-
   printPixelMap(  kappaMap, N_pixels_h, N_pixels_v );
-
   printPixelMap( gamma1Map, N_pixels_h, N_pixels_v );
-
   printPixelMap( gamma2Map, N_pixels_h, N_pixels_v );
+  printPixelMap(  g_tanMap, N_pixels_h, N_pixels_v );
+  printPixelMap(  g_secMap, N_pixels_h, N_pixels_v );
 */
-
 }
 /*
 //double temp = densProfile.getRho_o() * densProfile.getR_s  ()   * exp( 2./alpha ) * pow( alpha/2., 1./alpha - 1.0 ) * sqrt( M_PI ) / Sc;
