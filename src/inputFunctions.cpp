@@ -129,6 +129,7 @@ void readInpFile(          userInfo  &inpInfo  ,   // Info needed for the rest o
            if ( inpS=="N_bins"      ){        inpInfo.setNbins    (        atoi(inpC2) );      }
       else if ( inpS=="N_sources"   ){        inpInfo.setNsrc     (        atoi(inpC2) );      }
       else if ( inpS=="N_threads"   ){        inpInfo.setNthreads (        atoi(inpC2) );      }
+      else if ( inpS=="sourceRadius"){        inpInfo.setSourceRadius(     atof(inpC2) );      }
       else if ( inpS=="cosmo"       ){        inpInfo.setCosmology( std::string(inpC2) );      }
       else{
 

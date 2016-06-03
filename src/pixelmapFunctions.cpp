@@ -15,17 +15,17 @@
 //
 //  Radially average pixelmap values for given source positions
 //
-void radialSourceAverage( double    *avgArr ,
-                          double    *errArr ,
-                          int      *indexes ,
-                          PixelMap   inpMap ,
-                          double    *errors ,
-                          userInfo        u ,
-                          double  center[2] ){
+void radialShearAverage( double      *avgArr ,  // Array to overwrite
+                         double      *errArr ,  // Error array to overwrite
+                         int        *indexes ,  // Indexes of sources
+                         PixelMap     inpMap ,  // Array to sample from
+                         double      *errors ,  // Errors to use in weighting
+                         double        *dist ,  // Distances of the halos
+                         userInfo          u ,
+                         double    center[2] ){
 
   int    iBin;
-  double dist;
-  double posArr[2]={0,0};
+  int posArr[2]={0,0};
 
   int N_countsArr[ u.getNbins() ];
 
@@ -36,38 +36,50 @@ void radialSourceAverage( double    *avgArr ,
     N_countsArr[i] = 0;
   }
 
-  // For each source, find which bin it's in
+  // For each source, find which bin it's in,
+  //  and use nearby pixels to generate an average
+  //  shear value to use
   for(int i = 0; i < u.getNsrc(); ++i ){
 
-    // 0 is y, or row
-    // 1 is x, or columns
+    // 1 is y, or row
+    // 0 is x, or columns
     // Pixel numbers, from top corner
-    posArr[0] =  indexes[i]              % u.getNpixH();
-    posArr[1] = (indexes[i] - posArr[0]) / u.getNpixH();
-
-    // Pixel coordinates relative to center
-    posArr[0] = ( posArr[0] - (u.getNpixV()-1)/2.0 ) - center[1] ;
-    posArr[1] = ( posArr[1] - (u.getNpixH()-1)/2.0 ) - center[0] ;
+    posArr[0] = indexes[i] % u.getNpixH();
+    posArr[1] = indexes[i] / u.getNpixH();
 
 
-    // Get position from pixel coordinates
-    dist = sqrt( posArr[0]*posArr[0] +
-                 posArr[1]*posArr[1] );
+    // Locate indexes for source averaging
+    int startXIndex = std::max( (int) ( posArr[0] - u.getSourceRadius() ),            0 );
+    int   endXIndex = std::min( (int) ( posArr[0] + u.getSourceRadius() ), u.getNpixH() );
+
+    int startYIndex = std::max( (int) ( posArr[1] - u.getSourceRadius() ), 0 );
+    int   endYIndex = std::min( (int) ( posArr[1] + u.getSourceRadius() ), u.getNpixV() );
+
+    double avgVal = 0;
+    int    n_srcs = 0;
+
+    // Average over the nearby pixels for a given source
+    for ( int j = startXIndex; j <= endXIndex; ++j ){
+    for ( int k = startYIndex; k <= endYIndex; ++k ){
+
+      avgVal += inpMap.getValue( k * u.getNpixH() + j );
+      n_srcs += 1;
+
+    }
+    }
 
 
-    // Distance of pixels from center, converted to "bin" units
-    iBin = round( std::min(
-                  std::max( dist/u.getNpixH() * 2.0 * u.getNbins() , 0.0 ),
-                                           (double)   u.getNbins()       ));
+    // Distance of radians from center, converted to "bin" units
+    iBin = round( dist[i] / u.getAngFOV() * 2 * 180 / M_PI * u.getNbins() );
 
-         avgArr[iBin] += inpMap[ indexes[i] ] / ( errors[i]*errors[i] ); // Weighted average sum
-         errArr[iBin] += 1                    / ( errors[i]*errors[i] ); // inverse of the sum of variance
+
+         avgArr[iBin] += avgVal / n_srcs / ( errors[i]*errors[i] ); // Weighted average sum
+         errArr[iBin] += 1               / ( errors[i]*errors[i] ); // inverse of the sum of variance
     N_countsArr[iBin] += 1;
   }
 
 
-  // Calculate weighted average
-
+  // Calculate weighted average of each bin
   for(int i = 0; i < u.getNbins(); ++i){
 
     if (N_countsArr[i]==0){ // If nothing in bin, mark as -1
@@ -78,6 +90,54 @@ void radialSourceAverage( double    *avgArr ,
 
       errArr[i] = sqrt( 1   /   errArr[i]             );
       avgArr[i] = avgArr[i] * ( errArr[i] * errArr[i] );
+
+    }
+  }
+
+}
+
+
+
+//
+//  Radially average pixelmap values for given source positions
+//
+void radialDistAverage( double       *avgArr ,  // Array to overwrite
+                        double    *distances ,  // Distance array of sources
+                        userInfo           u ,
+                        double     center[2] ){
+
+  int    iBin;
+  double dist;
+  double posArr[2]={0,0};
+
+  int N_countsArr[ u.getNbins() ];
+
+  // Make sure average is 0 to start
+  for(int i = 0; i < u.getNbins(); ++i ){
+         avgArr[i] = 0;
+    N_countsArr[i] = 0;
+  }
+
+  // For each source, find which bin it's in
+  for(int i = 0; i < u.getNsrc(); ++i ){
+
+    // Distance of pixels from center, converted to "bin" units
+    iBin = round( distances[i] / u.getAngFOV() * 2 * 180 / M_PI * u.getNbins() );
+
+         avgArr[iBin] += distances[i];
+    N_countsArr[iBin] += 1;
+  }
+
+  // Perform the averaging
+  for(int i = 0; i < u.getNbins(); ++i){
+
+    if (N_countsArr[i]==0){ // If nothing in bin, mark as -1
+      avgArr[i] = -1.0;
+    }
+
+    else{
+
+      avgArr[i] = avgArr[i] / N_countsArr[i];
 
     }
   }

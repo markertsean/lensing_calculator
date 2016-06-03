@@ -252,6 +252,7 @@ class userInfo{
     void setNpixV           ( int    inpI ) {   N_pixels_v   = inpI ; }
     void setNgridPoints     ( int    inpI ) {   N_gridPoints = inpI ; }
     void setIntegLength     ( double inpF ) {   integLength  = inpF ; }
+    void setSourceRadius    ( double inpF ) {   sourceR      = inpF ; }
     void setPhysFOV         ( double inpF ) {   physFOV      = inpF ; }
     void setAngFOV          ( double inpF ) {   angFOV       = inpF ; }
     void setCatType         ( std::string inpS ) {   catType = inpS ; }
@@ -262,6 +263,7 @@ class userInfo{
     int    getNpixV           () { return  N_pixels_v    ; }
     double getPhysFOV         () { return  physFOV       ; }
     double getAngFOV          () { return  angFOV        ; }
+    double getSourceRadius    () { return  sourceR       ; }
     int    getNpix            () { return   N_pixels     ; }
     int    getNsrc            () { return   N_sources    ; }
     int    getNbins           () { return   N_bins       ; }
@@ -299,6 +301,9 @@ class userInfo{
     double     physFOV;  // Physical size of image
     double integLength;  // Integration length of current image
     double       R_max;  // ?
+
+    double    sourceR ;  // Radius of sources in pixels
+
     int    N_pixels   ;  // Number of pixels on grid
     int    N_pixels_h ;  // Number of pixels on x-axis
     int    N_pixels_v ;  // Number of pixels on y-axis
@@ -337,6 +342,7 @@ userInfo::userInfo(){
         angFOV = -1.;
        physFOV = -1.;
          R_max = -1.;
+   sourceR     = 1.0;
    N_pixels    = -1;
    N_pixels_h  = -1;
    N_pixels_v  = -1;

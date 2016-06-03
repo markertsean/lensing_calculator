@@ -6,13 +6,19 @@
 #include <image_processing.h>
 
 
-void radialSourceAverage(	 double     *avgArr,  //Output averaged array
-                           double     *errArr,  //Radial errors for value we are averaging
-                           int       *indexes,  //Index of the source pixels for inpMap
-                           PixelMap    inpMap,  //The input map we are radially averaging
-                           double     *inpErr,  //The errors in the quantities we are averging
-                           userInfo         u,  //Input user information
-                           double   center[2]); //Center pixels
+void radialDistAverage( double       *avgArr , // Array to overwrite
+                        double    *distances , // Array of source distances
+                        userInfo           u , // User parameters
+                        double     center[2] );
+
+void radialShearAverage( double      *avgArr ,  // Array to overwrite
+                         double      *errArr ,  // Error array to overwrite
+                         int        *indexes ,  // Indexes of sources
+                         PixelMap     inpMap ,  // Array to sample from
+                         double      *errors ,  // Errors to use in weighting
+                         double        *dist ,  // Distances of the halos
+                         userInfo          u ,
+                         double    center[2] );
 
 
 

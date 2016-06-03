@@ -296,23 +296,14 @@ userInput.setNpix( 9*9);
 
 
   // Array to bin distances, RTS, and their errors
-  double    distArr[ userInput.getNbins() ], gTanArr[ userInput.getNbins() ];
-  double distErrArr[ userInput.getNbins() ], gErrArr[ userInput.getNbins() ];
+  double    distArr[ userInput.getNbins() ],
+            gTanArr[ userInput.getNbins() ],
+            gErrArr[ userInput.getNbins() ];
 
-  {
-    // Temp array, for uncertainties in the distance. Can set to 1 for no weighting,
-    //             or introduce errors later
-    double distErrArr2[ userInput.getNbins() ];
+  radialDistAverage( distArr, srcDArr, userInput, center );
 
-    for ( int i = 0; i < userInput.getNbins(); ++i ){
-      distErrArr2[i] = 1;
-    }
 
-    // Determine radial averages and bin distances and RTS
-    radialSourceAverage( distArr, distErrArr, indexes,  distMap, distErrArr2, userInput, center );
-  }
-    radialSourceAverage( gTanArr,    gErrArr, indexes, g_tanMap,  srcErrArr , userInput, center );
-
+  radialShearAverage( gTanArr, gErrArr, indexes, g_tanMap, srcErrArr, srcDArr, userInput, center );
 
 
 
