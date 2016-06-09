@@ -147,7 +147,12 @@ int main(int arg,char **argv){
     exit(1);
   }
 
-
+  // Source redshift moves from glamer parameters to userInfo class
+  {
+    double srcZ;
+    params.get("z_source",srcZ);
+    userInput.setSourceZ(srcZ);
+  }
 
   double   angRange =   userInput.getAngFOV  ()  * M_PI/180  ;  // Angular field of view, in degrees
   double  realWidth =   userInput.getPhysFOV ()              ;  // Field of view in Mpc
@@ -284,9 +289,8 @@ userInput.setNpix( 9*9);
 
   std::cout << "  calculating distances..." << std::endl;
 
-
   // Determine distances of the sources from center of cluster
-  distArrCalc( srcDArr, indexes, &distMap, userInput.getNsrc() );
+  distArrCalc( srcDArr, indexes, &distMap, userInput.getPhysFOV() / userInput.getAngFOV() * 180 / M_PI, userInput.getNsrc() );
 
   logMessage( std::string("Source distances from center found") );
 
@@ -304,7 +308,6 @@ userInput.setNpix( 9*9);
             gTanArr[ userInput.getNbins() ],
             gErrArr[ userInput.getNbins() ];
 
-  // Generates m
 
   radialDistAverage( distArr, srcDArr, userInput, center );
 
@@ -316,25 +319,55 @@ userInput.setNpix( 9*9);
 
   std::cout << " Sources averaged" << std::endl;;
 
+double m_to_use= 1e14;
+double R_to_use=  2.0;
+double C_to_use=  5.0;
+
+densProfile myProfile;
+myHalo.setRmax(     R_to_use );
+myHalo.setC(        C_to_use );
+myHalo.setM(        m_to_use );
+myProfile.setR_max( R_to_use );
+myProfile.setM_enc( m_to_use );
+myProfile.setC(     C_to_use );
+
+for ( int i = 0; i < userInput.getNbins(); ++i ){
+  distArr[i] = i * userInput.getPhysFOV() / 2 / userInput.getNbins() + 1e-1;
+
+  double  srcZ;
+
+
+  double    SD =    SDNFW( distArr[i], myProfile ); //At radius
+  double avgSD = SDAvgNFW( distArr[i], myProfile ); //Average
+  double SigCr = cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() );
+
+
+  gTanArr[i] = ( avgSD - SD ) / ( SigCr - SD );
+
+printf("%7.3f %14.5e\n",distArr[i], gTanArr[i]);
+}
+printf("\n");
 
   //////////////////////////////////////////////////////////
   ////////////////////////FIT PROFILE///////////////////////
   //////////////////////////////////////////////////////////
 
-
   // Attempts to fit the density using the radial averages of distance and RTS
-foo();
 
-/*
-  lensProfile nfwProfile, einProfile( 0.2 ); // 0.2 sets profile as Einasto with alpha = 0.2
 
-  nfwProfile.setR_max( lensInfo.getRmax() );
-  einProfile.setR_max( lensInfo.getRmax() );
+  densProfile nfwProfile, einProfile( 0.2 ); // 0.2 sets profile as Einasto with alpha = 0.2
 
-  fitDensProfile( nfwProfile, lensInfo, userParams, gTanArr, distArr, gErrArr, tempSCRArr, sourceDArr );
+  nfwProfile.setR_max( myHalo.getRmax() );
+  einProfile.setR_max( myHalo.getRmax() );
 
-printf("%12.3e %5.3lf\n",nfwProfile.getM_enc(),nfwProfile.getC());
-*/
+
+  fitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
+
+printf("%14.4e %7.5f\n",nfwProfile.getM_enc(), nfwProfile.getC() );
+
+
+//printf("%12.3e %5.3lf\n",nfwProfile.getM_enc(),nfwProfile.getC());
+
 
 /*
 printf("\n\n\n");

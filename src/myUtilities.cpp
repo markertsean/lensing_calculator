@@ -3,10 +3,10 @@
 
 //Returns value of chi^2 fit, ignores points w/0 error
 double chiSquared(
-                    double    *array1 ,   // First  array to compare
-                    double    *array2 ,   // Second array to compare
-                    double  *errorArr ,   // Error values in measurement
-                    int    N_elements ){  // Number of elements in arrays, if different size might break
+                   const double    *array1 ,   // First  array to compare
+                   const double    *array2 ,   // Second array to compare
+                   const double  *errorArr ,   // Error values in measurement
+                   const int    N_elements ){  // Number of elements in arrays, if different size might break
 
   //Chi^2 = sum ( predicted - data / error )^2
   double chi2(0), temp(0);

@@ -87,7 +87,7 @@ void readFitsHeader( const std::string inputFile ,  // Name of the FITS file
   myHalo.setID    (       id );
   myHalo.setM     (     mass );
   myHalo.setZ     ( redshift );
-  myHalo.setRmax  (    r_vir );
+  myHalo.setRmax  (    r_vir / 1000);
   myHalo.setC     (        c );
   myHalo.setBA    (       ba );
   myHalo.setCA    (       ca );

@@ -21,11 +21,11 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
                          double    center[2] );
 
 
-
-void  distArrCalc(  double *sourceDistArr ,
-                    int          *indexes ,
-                    PixelMap     *distMap ,
-                    int         N_srouces );
+void distArrCalc( double *sourceDistArr ,  // Array to overwrite
+                  int          *indexes ,  // Source locations
+                  PixelMap     *distMap ,  // Map of distances
+                  double          scale ,  // Mpc/rad conversion
+                  int         N_sources ); // Number of source
 
 
 

@@ -8,10 +8,6 @@
 
 
 
-
-
-
-
 //
 //  Radially average pixelmap values for given source positions
 //
@@ -20,7 +16,7 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
                          int        *indexes ,  // Indexes of sources
                          PixelMap     inpMap ,  // Array to sample from
                          double      *errors ,  // Errors to use in weighting
-                         double        *dist ,  // Distances of the halos
+                         double        *dist ,  // Distances of the halos in Mpc
                          userInfo          u ,
                          double    center[2] ){
 
@@ -70,7 +66,7 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
 
 
     // Distance of radians from center, converted to "bin" units
-    iBin = round( dist[i] / u.getAngFOV() * 2 * 180 / M_PI * u.getNbins() );
+    iBin = round( dist[i] / u.getPhysFOV() * 2 * u.getNbins() );
 
 
          avgArr[iBin] += avgVal / n_srcs / ( errors[i]*errors[i] ); // Weighted average sum
@@ -122,7 +118,7 @@ void radialDistAverage( double       *avgArr ,  // Array to overwrite
   for(int i = 0; i < u.getNsrc(); ++i ){
 
     // Distance of pixels from center, converted to "bin" units
-    iBin = round( distances[i] / u.getAngFOV() * 2 * 180 / M_PI * u.getNbins() );
+    iBin = round( distances[i] / u.getPhysFOV() * 2 * u.getNbins() );
 
          avgArr[iBin] += distances[i];
     N_countsArr[iBin] += 1;
@@ -146,18 +142,17 @@ void radialDistAverage( double       *avgArr ,  // Array to overwrite
 
 
 
-
-
 //
 // Get array of distances for sources
 //
-void distArrCalc( double *sourceDistArr ,
-                  int          *indexes ,
-                  PixelMap     *distMap ,
-                  int         N_sources ){
+void distArrCalc( double *sourceDistArr ,  // Array to overwrite
+                  int          *indexes ,  // Source locations
+                  PixelMap     *distMap ,  // Map of distances
+                  double          scale ,  // Mpc/rad conversion
+                  int         N_sources ){ // Number of source
 
   for(int i = 0 ; i < N_sources ; ++i ){
-    sourceDistArr[i] = (*distMap).getValue( indexes[i] );
+    sourceDistArr[i] = (*distMap).getValue( indexes[i] ) * scale;
   }
 }
 

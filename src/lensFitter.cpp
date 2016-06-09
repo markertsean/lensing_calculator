@@ -35,23 +35,22 @@
 
   alpha = 0.1-0.4
 
+
 //*/
-void foo() { return; }
 //
 //  Takes input sources, and fits density profile to the rts values.
 //  Can do NFW, needs modifications for Einasto
 //  Potential to fit NFW to < 1%
 //
 void fitDensProfile(
-                    densProfile   &  profile ,  // Density profile we are outputting
-                    haloInfo      &     halo ,  // Info about parent halo
+                          densProfile   &  profile ,  // Density profile we are outputting
+                    const haloInfo      &     halo ,  // Info about parent halo
                     userInfo               u ,  // Info from the user
-                    double       *      gArr ,  // RTS binned array we "observed"
-                    double       *      dArr ,  // Distance binned array
-                    double       *   gErrArr ,  // Error array in RTS
-                    double       *sourceSigC ,  // Crit surface densities of sources
-                    double       *sourceDist ){ // 2D distance from source to lens
-
+//                    const userInfo               u ,  // Info from the user
+                    const double       *      gArr ,  // RTS binned array we "observed"
+                    const double       *      dArr ,  // Distance binned array
+                    const double       *   gErrArr ,
+                    const COSMOLOGY          cosmo ){ // Error array in RTS
 
   // Values used for comparing goodness of fits
   double  avgChi(0), oldAvg(0), testVal(0);
@@ -62,8 +61,8 @@ void fitDensProfile(
 
 
   // The genetic algorithm part, and chi2 fitting stuffs
-  densProfile         parent[ u.getNchrome() ], child[ u.getNchrome() ];
-  double      gAnalyticArray[ u.getNbins()   ],  chi2[ u.getNchrome() ];
+  densProfile parent[ u.getNchrome() ], child[ u.getNchrome() ];
+  double        chi2[ u.getNchrome() ];
 
 
 
@@ -79,30 +78,31 @@ void fitDensProfile(
      child[i].setR_max( halo.getRmax() );
   }
 
-  //Generate first parent values
+  // Generate first parent values
   #pragma omp parallel for
   for ( int i=0; i<u.getNchrome(); ++i ){
+
+    double gAnalyticArray[ u.getNbins()   ];
 
     // Generate initial parent values, if Ein profile need alpha parameter
     if ( profile.getType() == 2 )
     parent[i].setAlpha(          randVal( u.getAlphaMin(), u.getAlphaMax() )   );
-    parent[i].setM_enc( pow( 10, randVal( u.getMassMin() , u.getMassMax()  ) ) );
-    parent[i].setC    (          randVal( u.getConMin()  , u.getConMax()   )   );
+    parent[i].setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
+    parent[i].setC    (          randVal( u.getConMin  (), u.getConMax  () )   );
 
-/*
+
+
     // Gives analytic value for RTS, for source locations, radially averaged
-    if ( densProfile.getType() == 1 ){
-      generateNFWRTS( gAnalyticArray, parent[i], halo, u, sourceSigC, sourceDist);
+    if ( profile.getType() == 1 ){
+      generateNFWRTS( gAnalyticArray, parent[i], u.getNbins(), dArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ) ); // Note this distance is physical seperation
     } else{
-      generateEinRTS( gAnalyticArray, parent[i], halo, u, sourceSigC, sourceDist);
+//      generateEinRTS( gAnalyticArray, parent[i], halo, u, sourceSigC, sourceDist);
     }
-*/
 
     // Calc chi2 between theoretical predictions and real values
-//    chi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.N_bins );
+    chi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.getNbins() );
 
     avgChiThreads[omp_get_thread_num()] += chi2[i];
-
   }
 
   // Avg used for reproduction, randomly sample halos based on goodness / 1.5avg
@@ -127,7 +127,6 @@ void fitDensProfile(
   //  to a fairly constant value
   // Old average saves the previous tot, to measure how much it is changing
 
-
   do {
     oldAvg  =   totAvg;
     totAvg  =  0;
@@ -151,6 +150,8 @@ void fitDensProfile(
     // Generate new children
     #pragma omp parallel for
     for ( int i=0; i < u.getNchrome(); ++i ){
+
+      double gAnalyticArray[ u.getNbins()   ];
 
       int parentIndex[2];
 
@@ -186,32 +187,37 @@ void fitDensProfile(
 
       // Mutate values, with random chance. Don't exceed possible max or min
       // Needed to keep genes fresh
+
       if ( u.getMutChance() > randVal(0,1) )
         child[i].setC    ( std::max( std::min( child[i].getC    () * randVal( 0.9, 1.1) ,        u.getConMax()   ) ,        u.getConMin()   ) );
+//        child[i].setC    (                                           randVal(                    u.getConMin()     ,        u.getConMax()   ) );
 
       if ( u.getMutChance() > randVal(0,1) )
         child[i].setM_enc( std::max( std::min( child[i].getM_enc() * randVal( 0.9, 1.1) , pow(10,u.getMassMax()) ) , pow(10,u.getMassMin() )) );
+//        child[i].setM_enc(                                pow(10,    randVal(               u.getMassMin()  ,  u.getMassMax() )   ) );
 
       if ( u.getMutChance() > randVal(0,1) && profile.getType() == 2 )
         child[i].setAlpha( std::max( std::min( child[i].getAlpha() * randVal( 0.9, 1.1) ,        u.getAlphaMax() ) ,        u.getAlphaMin() ) );
+//        child[i].setAlpha(                                           randVal(                    u.getAlphaMin()     ,       u.getAlphaMax()   ) );
 
 
       // Generate analytic RTS for child
       if ( profile.getType() == 1 ){
-//        generateNFWRTS( gAnalyticArray, child[i], halo, u, sourceSigC, sourceDist);
+        generateNFWRTS( gAnalyticArray, child[i], u.getNbins(), dArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ) ); // Note this distance is physical seperation
+
       } else{
 //        generateEinRTS( gAnalyticArray, child[i], halo, u, sourceSigC, sourceDist);
       }
 
 
       // chi2 for the children
-//      newChi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.N_bins );
+      newChi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.getNbins() );
 
 
       avgChiThreads[ omp_get_thread_num() ] += chi2[i];
     }
 
-    //Avg used for reproduction, randomly sample halos based on goodness / avg
+    // Avg used for reproduction, randomly sample halos based on goodness / avg
     for (int i  = 0; i < u.getNthreads(); ++i){
 
       avgChi           += avgChiThreads[i];
@@ -240,12 +246,8 @@ void fitDensProfile(
     else{
       counter  = 0;
     }
-
-//printf("%5i %12.3e         %12.3e %12.3e       %12.3e %5i \n",
-//loopCounter,avgChi,
-//totAvg,oldAvg,
-//fabs(totAvg-oldAvg)/oldAvg,counter
-//);
+if ( loopCounter % 10 == 0 )
+printf("%7i    %14.4e %14.4e %14.4e   %3i\n",loopCounter, totAvg, oldAvg, fabs(totAvg-oldAvg)/oldAvg, counter);
     ++loopCounter;
   } while ( u.getNConsistent() > counter && loopCounter < u.getMaxFitNum() ) ;
 
@@ -254,23 +256,193 @@ void fitDensProfile(
 
   int    minIndex =              0; //index of lowest chi2
   double minChi   = chi2[minIndex];
-
+double cAvg(0), mAvg(0);
   //Find lowest chi2 index
   for ( int i = 1; i < u.getNchrome(); ++i ){
     if ( minChi > chi2[i] ){
       minIndex = i;
       minChi   = chi2[i];
     }
+cAvg += child[i].getC();
+mAvg += std::log10( child[i].getM_enc());
   }
+printf("%7.5f %14.4e\n",cAvg/u.getNchrome(),pow(10, mAvg/u.getNchrome()  ));
 
   profile = child[minIndex];
+
 }
 
 
 
 
 
+//
+// Generates the radially averaged reduced tangential shear for
+//  a NFW profile for given input
+//
+void generateNFWRTS(
+                          double          *gArr ,  // RTS array to output
+                    const densProfile     &lens ,  // Input density profile to generate profile for
+                    const double         N_bins ,  // Actual information from the halo
+                    const double          *dist ,  // Projected distances between source and lens
+                    const double           SigC ){ // Critical surface density of sources
 
+
+  // Loop over all distances, determining predicted rts for a given dist
+  for ( int i = 0; i < N_bins ; ++i ){
+
+    double    SD =    SDNFW( dist[i], lens ); // At radius
+    double avgSD = SDAvgNFW( dist[i], lens ); // Average
+
+    gArr[i] = ( avgSD - SD ) / ( SigC - SD );
+  }
+}
+
+
+
+// Surface density at input radius for NFW profile, integrated to R_max
+double    SDNFW( const double               r ,  //Input radius to calc SD at
+                 const densProfile inpProfile ){ //Input NFW profile
+
+  double      x = fabs( r / inpProfile.getR_s() );
+  double      c =           inpProfile.getC  ()  ;
+  double factor =       2 * inpProfile.getR_s() * inpProfile.getRho_o();
+
+  // Outside of our integration radius
+  if ( x > inpProfile.getC() ){
+    return 0;
+  }
+  // If within r_s, arctanh solution has imaginary component we ignore
+  else if ( x < 1 ){
+    return factor/( x*x - 1 ) * ( sqrt( c*c - x*x ) / ( c + 1 ) - 0.5 / sqrt( 1 - x*x ) * ( log( ( 1. / c * sqrt( ( c*c - x*x )/( 1. - x*x )   ) + 1 ) /
+                                                                                                 ( 1. / c * sqrt( ( c*c - x*x )/( 1. - x*x )   ) - 1 ) ) -
+                                                                                            log( (          sqrt( ( c*c - x*x )/( 1. - x*x )   ) + 1 ) /
+                                                                                                 (          sqrt( ( c*c - x*x )/( 1. - x*x )   ) - 1 ) )   ) ); //+i pi to the logs
+  }
+  // Outside of r_s
+  else if ( x > 1 ) {
+    return factor/( x*x - 1 ) * ( sqrt( c*c - x*x ) / ( c + 1)  + 1.0 / sqrt( x*x - 1 ) * ( atan(  1. / c * sqrt( ( c*c - x*x )/( x*x - 1. )         ) ) -
+                                                                                            atan(           sqrt( ( c*c - x*x )/( x*x - 1. )         ) )   ) );
+  }
+  // If close enough to r_s
+  else {
+    return factor/3.*pow( c*c - 1., -1.5 ) * ( c * ( c*c - 1) - 2 * c + 2 );
+  }
+
+}
+
+
+//Surface density at input radius for NFW profile, integrated to R_max
+double    SDAvgNFW( const double               r ,  //Input radius to calc SD at
+                    const densProfile inpProfile ){ //Input NFW profile
+
+  double      x = fabs( r / inpProfile.getR_s() );
+  double      c =           inpProfile.getC  ()  ;
+  double factor =       4 * inpProfile.getR_s() * inpProfile.getRho_o() / ( x*x );
+
+
+
+  // If very close to our max integration radius C, errors can occur.
+  // Therefore, need explicit solution for C
+  if ( fabs(  x - inpProfile.getC    () ) < 1e-4){
+    return factor * ( SDAvgNFW( inpProfile.getR_s  (), inpProfile ) / ( 4 * inpProfile.getR_s  () * inpProfile.getRho_o() )
+                  - 2.0 * sqrt( c*c - 1 ) / ( c + 1 )
+                  + 0.5 * log( ( 1  + 1   /   c * sqrt( c*c - 1 ) )
+                        /      ( 1  - 1   /   c * sqrt( c*c - 1 ) ) ) );
+  }
+
+  // Outside of C, integral from 0 to 1 + integral from 1 to C, and take out their factors to use the current one
+  else if ( x > inpProfile.getC() ){
+    return factor * ( SDAvgNFW( inpProfile.getR_s  (), inpProfile ) / ( 4 * inpProfile.getR_s  () * inpProfile.getRho_o() )
+                    + SDAvgNFW( inpProfile.getR_max(), inpProfile ) / ( 4 * inpProfile.getR_max() * inpProfile.getRho_o() / ( inpProfile.getC() * inpProfile.getC() ) ) );
+  }
+
+  // If within r_s, this is analytic solution integrating to a max value of r_s
+  else if ( x < 1 ){
+
+    return factor * ( ( sqrt( c*c - x*x )  - c )/( c + 1 )
+
+                    +         log( c + 1 )
+
+                    - atanh( sqrt( 1 - x*x/( c*c )) )
+
+                    + 0.5 /  sqrt( 1 - x*x ) * ( log( ( 1. / c * sqrt( ( c*c - x*x )/( 1. - x*x )   ) + 1 )
+                                             /        ( 1. / c * sqrt( ( c*c - x*x )/( 1. - x*x )   ) - 1 ) )
+                                             -   log( (          sqrt( ( c*c - x*x )/( 1. - x*x )   ) + 1 )
+                                             /        (          sqrt( ( c*c - x*x )/( 1. - x*x )   ) - 1 ) )   ) );
+  }
+
+  // Outside of r_s but less than c, integral from 0 to 1 + new component to a max of rmax/rs
+  else if ( x > 1 ){
+    return factor * (  SDAvgNFW( inpProfile.getR_s(), inpProfile  ) / ( 4 * inpProfile.getR_s() * inpProfile.getRho_o() )
+                    + ( ( sqrt( c*c - x*x ) - 2 * sqrt( c*c - 1 ) ) / ( c + 1 )
+
+                    + 0.5 * log( ( 1. / c * sqrt( c*c -  1  ) + 1 ) / ( 1 - 1. / c * sqrt( c*c -  1  ) ) )
+                    - 0.5 * log( ( 1. / c * sqrt( c*c - x*x ) + 1 ) / ( 1 - 1. / c * sqrt( c*c - x*x ) ) )
+
+                    - 1.0 / sqrt( x*x - 1 ) * ( atan(  1. / c * sqrt( ( c*c - x*x )/( x*x - 1. )         ) )
+                                            -   atan(           sqrt( ( c*c - x*x )/( x*x - 1. )         ) )   ) ));
+  }
+
+  // If close enough to r_s will integrate to 1, hyperbolic previous arctan component turns into sqrt component
+  else {
+    return factor * ( ( 2 * sqrt( c*c - 1 ) - c ) / ( c + 1 )
+
+                  +         log( c + 1 )
+
+                  - atanh( sqrt( 1 - x*x / ( c*c ) ) )  );
+  }
+
+}
+
+
+// Average surface density within radius for NFW
+double SDAvgNFWFull(
+                const double     r ,  // Input radius
+                const double   r_s ,  // Scale radius, r_-2
+                const double rho_o ){ // Initial density
+
+  double    x = r / r_s         ;
+  double temp = 4 * r_s * rho_o ;
+
+  if ( x < (1.0-1e-6) ){
+    return temp / (x*x) * ( 2./sqrt(  1 - x*x )*
+                        atanh( sqrt(( 1 - x   )/( 1 + x )) ) + log(x/2.));
+  }
+
+  else if ( x > (1.0+1e-6) ){
+    return temp / (x*x) * ( 2./sqrt(  x*x - 1 )*
+                        atan ( sqrt((   x - 1 )/( 1 + x )) ) + log(x/2.));
+  }
+
+  else{
+    return temp * ( 1.0 + log(0.5) );
+  }
+}
+
+// Surface density at radius for NFW profile integrated to infinity along LOS
+double    SDNFWFull(
+                const double   r   ,  // Input radius
+                const double   r_s ,  // Scale radius, r_-2
+                const double rho_o ){ // Initial density
+
+  double    x = r / r_s         ;
+  double temp = 2 * r_s * rho_o ;
+
+  if      ( x < (1.0-1e-6) ){
+    return temp / ( x*x - 1 ) * ( 1 - 2./sqrt(  1  - x*x ) *
+        atanh( sqrt(( 1 - x ) / ( 1 + x )) ) );
+
+  }
+  else if ( x > (1.0+1e-6) ){
+    return temp / ( x*x - 1 ) * ( 1 - 2./sqrt( x*x -  1  ) *
+        atan ( sqrt(( x - 1 ) / ( 1 + x )) ) );
+
+  }
+  else{
+    return temp/3.;
+  }
+}
 
 
 
@@ -453,199 +625,5 @@ void generateEinRTS(
 }
 
 
-//Surface density at radius for NFW profile integrated to infinity along LOS
-double    SDNFWFull(
-                double   r   ,  // Input radius
-                double   r_s ,  // Scale radius, r_-2
-                double rho_o ){ // Initial density
-
-  double    x = r / r_s         ;
-  double temp = 2 * r_s * rho_o ;
-
-  if      ( x < (1.0-1e-6) ){
-    return temp / ( x*x - 1 ) * ( 1 - 2./sqrt(  1  - x*x ) *
-        atanh( sqrt(( 1 - x ) / ( 1 + x )) ) );
-
-  }
-  else if ( x > (1.0+1e-6) ){
-    return temp / ( x*x - 1 ) * ( 1 - 2./sqrt( x*x -  1  ) *
-        atan ( sqrt(( x - 1 ) / ( 1 + x )) ) );
-
-  }
-  else{
-    return temp/3.;
-  }
-}
-
-//Surface density at input radius for NFW profile, integrated to R_max
-double    SDNFW(
-                double               r ,  //Input radius to calc SD at
-                lensProfile inpProfile ){ //Input NFW profile
-
-  double      x = fabs( r / inpProfile.getR_s() );
-  double      c =           inpProfile.getC  ()  ;
-  double factor =       2 * inpProfile.getR_s() * inpProfile.getRho_o();
-
-  //Outside of our integration radius
-  if ( x > inpProfile.getC() ){
-    return 0;
-  }
-  //If within r_s, arctanh solution has imaginary component we ignore
-  else if ( x < 1 ){
-    return factor/( x*x - 1 ) * ( sqrt( c*c - x*x ) / ( c + 1 ) - 0.5 / sqrt( 1 - x*x ) * ( log( ( 1. / c * sqrt( ( c*c - x*x )/( 1. - x*x )   ) + 1 ) /
-                                                                                                 ( 1. / c * sqrt( ( c*c - x*x )/( 1. - x*x )   ) - 1 ) ) -
-                                                                                            log( (          sqrt( ( c*c - x*x )/( 1. - x*x )   ) + 1 ) /
-                                                                                                 (          sqrt( ( c*c - x*x )/( 1. - x*x )   ) - 1 ) )   ) ); //+i pi to the logs
-  }
-  //Outside of r_s
-  else if ( x > 1 ) {
-    return factor/( x*x - 1 ) * ( sqrt( c*c - x*x ) / ( c + 1)  + 1.0 / sqrt( x*x - 1 ) * ( atan(  1. / c * sqrt( ( c*c - x*x )/( x*x - 1. )         ) ) -
-                                                                                            atan(           sqrt( ( c*c - x*x )/( x*x - 1. )         ) )   ) );
-  }
-  //If close enough to r_s
-  else {
-    return factor/3.*pow( c*c - 1., -1.5 ) * ( c * ( c*c - 1) - 2 * c + 2 );
-  }
-
-}
-
-
-//Surface density at input radius for NFW profile, integrated to R_max
-double    SDAvgNFW(
-                double               r ,  //Input radius to calc SD at
-                lensProfile inpProfile ){ //Input NFW profile
-
-  double      x = fabs( r / inpProfile.getR_s() );
-  double      c =           inpProfile.getC  ()  ;
-  double factor =       4 * inpProfile.getR_s() * inpProfile.getRho_o() / ( x*x );
-
-
-
-  //If very close to our max integration radius C, errors can occur.
-  //Therefore, need explicit solution for C
-  if ( fabs(  x - inpProfile.getC    () ) < 1e-4){
-    return factor * ( SDAvgNFW( inpProfile.getR_s  (), inpProfile ) / ( 4 * inpProfile.getR_s  () * inpProfile.getRho_o() )
-                  - 2.0 * sqrt( c*c - 1 ) / ( c + 1 )
-                  + 0.5 * log( ( 1  + 1   /   c * sqrt( c*c - 1 ) )
-                        /      ( 1  - 1   /   c * sqrt( c*c - 1 ) ) ) );
-  }
-
-  //Outside of C, integral from 0 to 1 + integral from 1 to C, and take out their factors to use the current one
-  else if ( x > inpProfile.getC() ){
-    return factor * ( SDAvgNFW( inpProfile.getR_s  (), inpProfile ) / ( 4 * inpProfile.getR_s  () * inpProfile.getRho_o() )
-                    + SDAvgNFW( inpProfile.getR_max(), inpProfile ) / ( 4 * inpProfile.getR_max() * inpProfile.getRho_o() / ( inpProfile.getC() * inpProfile.getC() ) ) );
-  }
-
-  //If within r_s, this is analytic solution integrating to a max value of r_s
-  else if ( x < 1 ){
-
-    return factor * ( ( sqrt( c*c - x*x )  - c )/( c + 1 )
-
-                    +         log( c + 1 )
-
-                    - atanh( sqrt( 1 - x*x/( c*c )) )
-
-                    + 0.5 /  sqrt( 1 - x*x ) * ( log( ( 1. / c * sqrt( ( c*c - x*x )/( 1. - x*x )   ) + 1 )
-                                             /        ( 1. / c * sqrt( ( c*c - x*x )/( 1. - x*x )   ) - 1 ) )
-                                             -   log( (          sqrt( ( c*c - x*x )/( 1. - x*x )   ) + 1 )
-                                             /        (          sqrt( ( c*c - x*x )/( 1. - x*x )   ) - 1 ) )   ) );
-  }
-
-  //Outside of r_s but less than c, integral from 0 to 1 + new component to a max of rmax/rs
-  else if ( x > 1 ){
-    return factor * (  SDAvgNFW( inpProfile.getR_s(), inpProfile  ) / ( 4 * inpProfile.getR_s() * inpProfile.getRho_o() )
-                    + ( ( sqrt( c*c - x*x ) - 2 * sqrt( c*c - 1 ) ) / ( c + 1 )
-
-                    + 0.5 * log( ( 1. / c * sqrt( c*c -  1  ) + 1 ) / ( 1 - 1. / c * sqrt( c*c -  1  ) ) )
-                    - 0.5 * log( ( 1. / c * sqrt( c*c - x*x ) + 1 ) / ( 1 - 1. / c * sqrt( c*c - x*x ) ) )
-
-                    - 1.0 / sqrt( x*x - 1 ) * ( atan(  1. / c * sqrt( ( c*c - x*x )/( x*x - 1. )         ) )
-                                            -   atan(           sqrt( ( c*c - x*x )/( x*x - 1. )         ) )   ) ));
-  }
-
-  //If close enough to r_s will integrate to 1, hyperbolic previous arctan component turns into sqrt component
-  else {
-    return factor * ( ( 2 * sqrt( c*c - 1 ) - c ) / ( c + 1 )
-
-                  +         log( c + 1 )
-
-                  - atanh( sqrt( 1 - x*x / ( c*c ) ) )  );
-  }
-
-}
-
-
-//Average surface density within radius for NFW
-double SDAvgNFWFull(
-                double     r ,  // Input radius
-                double   r_s ,  // Scale radius, r_-2
-                double rho_o ){ // Initial density
-
-  double    x = r / r_s         ;
-  double temp = 4 * r_s * rho_o ;
-
-  if ( x < (1.0-1e-6) ){
-    return temp / (x*x) * ( 2./sqrt(  1 - x*x )*
-                        atanh( sqrt(( 1 - x   )/( 1 + x )) ) + log(x/2.));
-  }
-
-  else if ( x > (1.0+1e-6) ){
-    return temp / (x*x) * ( 2./sqrt(  x*x - 1 )*
-                        atan ( sqrt((   x - 1 )/( 1 + x )) ) + log(x/2.));
-  }
-
-  else{
-    return temp * ( 1.0 + log(0.5) );
-  }
-}
-
-
-//
-//Generates the radially averaged reduced tangential shear for
-//an NFW profile for given input
-void generateNFWRTS(
-                    double          *gArr ,  // RTS array to output
-                    lensProfile     &lens ,  // Input density profile to generate profile for
-                    haloInfo        &halo ,  // Actual information from the halo
-                    userInfo            u ,  // Information from the user
-                    double    *sourceSc   ,  // Critical surface density for the sources
-                    double    *sourceDist ){ // Projected distances between source and lens
-
-  int      N_bin[u.N_bins];
-  double analRTS[u.N_bins];
-
-  //Set avg array values to 0 initially, will be adding upon
-  for (int i=0;i<u.N_bins;++i){
-      N_bin[i] = 0;
-    analRTS[i] = 0;
-  }
-
-  for (int i=0;i<u.N_bins;++i)
-    gArr[i] = 0;
-
-  //Distance converted to bins
-  double stepSize = halo.getRealFOV( u.angFOV )/2.0/u.N_bins;
-
-  //Loop over all sources, determining predicted rts for a given source
-  for ( int i=0; i < u.N_sources; ++i ){
-
-    double    SD =    SDNFW( sourceDist[i], lens ); //At radius
-    double avgSD = SDAvgNFW( sourceDist[i], lens ); //Average
-    double SigCr = sourceSc[i];
-
-    int   binNum = std::min(std::max(
-                  (int) round(sourceDist[i]/stepSize) ,0),u.N_bins-1);
-
-    //RTS avg across bin
-    analRTS[binNum] += ( avgSD - SD ) / ( SigCr - SD );
-      N_bin[binNum] += 1;
-
-  }
-
-  //Returning gArr
-  for ( int i=0; i < u.N_bins; ++i ){
-    if ( N_bin[i] > 0) gArr[i] = analRTS[i] / N_bin[i];
-  }
-}
 
 //*/

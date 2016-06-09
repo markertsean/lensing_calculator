@@ -83,15 +83,15 @@ class haloInfo{
     void setTheta ( double inpF ){ theta = inpF; }
     void setID    ( long   inpI ){ id    = inpI; }
 
-    double      getZ     () { return z     ; }
-    double      getM     () { return m     ; }
-    double      getC     () { return c     ; }
-    double      getRmax  () { return rmax  ; }
-    double      getBA    () { return ba    ; }
-    double      getCA    () { return ca    ; }
-    double      getPhi   () { return phi   ; }
-    double      getTheta () { return theta ; }
-    long        getID    () { return id    ; }
+    double      getZ     () const { return z     ; }
+    double      getM     () const { return m     ; }
+    double      getC     () const { return c     ; }
+    double      getRmax  () const { return rmax  ; }
+    double      getBA    () const { return ba    ; }
+    double      getCA    () const { return ca    ; }
+    double      getPhi   () const { return phi   ; }
+    double      getTheta () const { return theta ; }
+    long        getID    () const { return id    ; }
 
 
   private:
@@ -133,22 +133,28 @@ class densProfile{
     inline densProfile( double inpA );
 
     // Modifiers, as parameters are modified need to adjust dependant values
-    void setAlpha( double inpA ){         alpha = inpA;   modRho_o(); }
-    void setR_max( double inpR ){         r_max = inpR;   modR_s  ();   modC    ();   modRho_o(); }
-    void setC    ( double inpC ){ concentration = inpC;   modR_s  ();   modRho_o(); }
-    void setR_s  ( double inpR ){           r_s = inpR;   modC    ();   modRho_o(); }
-    void setRho_o( double inpR ){         rho_o = inpR;   modM_enc(); }
-    void setM_enc( double inpM ){         M_enc = inpM;   modRho_o(); }
-    void resetM_enc(           ){                         modM_enc(); }
+    void setAlpha( double inpA ){         alpha = inpA;                         modRho_o(); }
+    void setR_max( double inpR ){         r_max = inpR;   modR_s();             modRho_o(); }
+    void setC    ( double inpC ){ concentration = inpC;   modR_s();             modRho_o(); }
+    void setC    ( double inpC, int i ){ concentration = inpC;printf("Rs\n");   modR_s();printf("Rho\n");             modRho_o(); }
+    void setR_s  ( double inpR ){           r_s = inpR;               modC();   modRho_o(); }
+    void setRho_o( double inpR ){         rho_o = inpR;                         modM_enc(); }
+    void setM_enc( double inpM ){         M_enc = inpM;                         modRho_o(); }
+    void resetM_enc(           ){                                               modM_enc(); }
+
+// Rs    -> C, Rm
+// C     -> Rs, Rm
+// Rho_o -> M, Rm, C, alpha
+// M     -> Rho_o, Rm, C
 
     // If when getting an undefined variable, need to spit out a warning
-    double getC    () {  if ( concentration==-1.0 ) unDefVar("\"concentration\"");   return concentration;  }
-    double getRho_o() {  if (         rho_o==-1.0 ) unDefVar("\"rho_o\""        );   return         rho_o;  }
-    double getR_max() {  if (         r_max==-1.0 ) unDefVar("\"R_max\""        );   return         r_max;  }
-    double getR_s  () {  if (           r_s==-1.0 ) unDefVar("\"R_scale\""      );   return           r_s;  }
-    double getM_enc() {  if (         M_enc==-1.0 ) unDefVar("\"M_enc\""        );   return         M_enc;  }
-    double getAlpha() {  if (         alpha==-1.0 ) unDefVar("\"alpha\""        );   return         alpha;  }
-    double getType () {                                                              return          type;  }
+    double getC    () const {  if ( concentration==-1.0 ) unDefVar("\"concentration\"");   return concentration;  }
+    double getRho_o() const {  if (         rho_o==-1.0 ) unDefVar("\"rho_o\""        );   return         rho_o;  }
+    double getR_max() const {  if (         r_max==-1.0 ) unDefVar("\"R_max\""        );   return         r_max;  }
+    double getR_s  () const {  if (           r_s==-1.0 ) unDefVar("\"R_scale\""      );   return           r_s;  }
+    double getM_enc() const {  if (         M_enc==-1.0 ) unDefVar("\"M_enc\""        );   return         M_enc;  }
+    double getAlpha() const {  if (         alpha==-1.0 ) unDefVar("\"alpha\""        );   return         alpha;  }
+    double getType () const {                                                              return          type;  }
 
 
   private:
@@ -160,7 +166,7 @@ class densProfile{
     double M_enc        ;
     int    type         ; //1 NFW, 2 Einasto
 
-    void   unDefVar( std::string inpS ){
+    void   unDefVar( std::string inpS ) const {
       std::cerr<<"WARNING: variable "<<inpS<<" undefined in <lensProfile>"<<std::endl;
     }
 
@@ -226,14 +232,13 @@ class userInfo{
 
     inline userInfo();
 
-    void setRmax            ( double inpF ) {   R_max        = inpF ; }
     void setFOV             ( double inpF ) {   angFOV       = inpF ; }
     void setNpix            ( int    inpI ) {   N_pixels     = inpI ; }
     void setNpart           ( int    inpI ) {   N_particles  = inpI ; }
+
+    void setSourceZ         ( double inpF ) {        sourceZ = inpF ; }
     void setChiMin          ( double inpF ) {           cMin = inpF ; }
     void setChiMax          ( double inpF ) {           cMax = inpF ; }
-
-
     void setMaxFitNum       ( int    inpI ) { maxFitAttempts = inpI ; }
     void setNConsistent     ( int    inpI ) {  consistent    = inpI ; }
     void setTolerance       ( double inpF ) {      tolerance = inpF ; }
@@ -262,42 +267,43 @@ class userInfo{
     void setCatType         ( std::string inpS ) {   catType = inpS ; }
     void setCosmology       ( std::string inpS ) {     cosmo = inpS ; }
 
-    double getIntegLength     () { return  integLength   ; }
-    int    getNpixH           () { return  N_pixels_h    ; }
-    int    getNpixV           () { return  N_pixels_v    ; }
-    double getPhysFOV         () { return  physFOV       ; }
-    double getAngFOV          () { return  angFOV        ; }
-    double getSourceRadius    () { return  sourceR       ; }
-    int    getNpix            () { return   N_pixels     ; }
-    int    getNsrc            () { return   N_sources    ; }
-    int    getNbins           () { return   N_bins       ; }
-    int    getNthreads        () { return    num_threads ; }
-    int    getNgridPoints     () { return   N_gridPoints ; }
-    double getMinNeighborDist () { return nearestSourceNeighbor ; }
-    int    getEdgePix         () { return   N_edgepixels ; }
-    std::string getCatType    () { return  catType       ; }
-    std::string getCosmology  () { return  cosmo         ; }
-    double getAlphaMin        () { return       alphaMin ; }
-    double getAlphaMax        () { return       alphaMax ; }
-    double getConMin          () { return           cMin ; }
-    double getConMax          () { return           cMax ; }
-    int    getNchrome         () { return  N_chromosomes ; }
-    double getMassMin         () { return           mMin ; }
-    double getMassMax         () { return           mMax ; }
-    int    getNtrack          () { return  N_chiTrack    ; }
-    double getTestVal         () { return     avgTestVal ; }
-    double getTolerance       () { return      tolerance ; }
-    double getMutChance       () { return      mutChance ; }
-    int    getMaxFitNum       () { return maxFitAttempts ; }
-    int    getNConsistent     () { return  consistent    ; }
+    double getIntegLength     () const { return  integLength   ; }
+    int    getNpixH           () const { return  N_pixels_h    ; }
+    int    getNpixV           () const { return  N_pixels_v    ; }
+    double getPhysFOV         () const { return  physFOV       ; }
+    double getAngFOV          () const { return  angFOV        ; }
+    double getSourceRadius    () const { return  sourceR       ; }
+    int    getNpix            () const { return   N_pixels     ; }
+    int    getNsrc            () const { return   N_sources    ; }
+    int    getNbins           () const { return   N_bins       ; }
+    int    getNthreads        () const { return    num_threads ; }
+    int    getNgridPoints     () const { return   N_gridPoints ; }
+    double getMinNeighborDist () const { return nearestSourceNeighbor ; }
+    int    getEdgePix         () const { return   N_edgepixels ; }
+    std::string getCatType    () const { return  catType       ; }
+    std::string getCosmology  () const { return  cosmo         ; }
+    double getAlphaMin        () const { return       alphaMin ; }
+    double getAlphaMax        () const { return       alphaMax ; }
+    double getConMin          () const { return           cMin ; }
+    double getConMax          () const { return           cMax ; }
+    int    getNchrome         () const { return  N_chromosomes ; }
+    double getMassMin         () const { return           mMin ; }
+    double getMassMax         () const { return           mMax ; }
+    int    getNtrack          () const { return  N_chiTrack    ; }
+    double getTestVal         () const { return     avgTestVal ; }
+    double getTolerance       () const { return      tolerance ; }
+    double getMutChance       () const { return      mutChance ; }
+    int    getMaxFitNum       () const { return maxFitAttempts ; }
+    int    getNConsistent     () const { return  consistent    ; }
+    double getChiMin          () const { return           cMin ; }
+    double getChiMax          () const { return           cMax ; }
+    double getSourceZ         () const { return       sourceZ  ; }
+
 
 
 
     double getFOV             () { return   angFOV       ; }
     int    getNpart           () { return   N_particles  ; }
-    double getChiMin          () { return           cMin ; }
-    double getChiMax          () { return           cMax ; }
-    double getRmax            () { return   R_max        ; }
 
 
   private:
@@ -309,6 +315,7 @@ class userInfo{
     double       R_max;  // ?
 
     double    sourceR ;  // Radius of sources in pixels
+    double    sourceZ ;
 
     int    N_pixels   ;  // Number of pixels on grid
     int    N_pixels_h ;  // Number of pixels on x-axis
@@ -349,6 +356,7 @@ userInfo::userInfo(){
        physFOV = -1.;
          R_max = -1.;
    sourceR     = 1.0;
+   sourceZ     = -1.;
    N_pixels    = -1;
    N_pixels_h  = -1;
    N_pixels_v  = -1;
@@ -364,19 +372,19 @@ userInfo::userInfo(){
   cosmo    = " ";
 
       cMin =  2.0;
-      cMax =  8.0;
+      cMax = 10.0;
       mMin = 12.0;
       mMax = 17.0;
   alphaMin =  0.1;
-  alphaMax =  0.4;
+  alphaMax =  1.0;
 
-  maxFitAttempts =  1e4    ;
-   N_chromosomes = 1000    ;
-      N_chiTrack =  100    ;
-      consistent =   50    ;
-       tolerance =    0.01 ;
-       mutChance =    0.01 ;
-      avgTestVal =    1.3  ;
+  maxFitAttempts = 1e4   ;
+   N_chromosomes = 1e4   ;
+      N_chiTrack = 1e2   ;
+      consistent = 2e2   ;
+       tolerance = 1e-3  ;
+       mutChance = 1e-3  ;
+      avgTestVal = 1.3   ;
 
 }
 
