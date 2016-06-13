@@ -37,6 +37,156 @@
 
 
 //*/
+
+//
+//  Takes input sources, and fits density profile to the rts values.
+//  Can do NFW, needs modifications for Einasto
+//  Potential to fit NFW to < 1%
+//
+void rollingFitDensProfile(
+                          densProfile   &  profile ,  // Density profile we are outputting
+                    const haloInfo      &     halo ,  // Info about parent halo
+                    userInfo               u ,  // Info from the user
+//                    const userInfo               u ,  // Info from the user
+                    const double       *      gArr ,  // RTS binned array we "observed"
+                    const double       *      dArr ,  // Distance binned array
+                    const double       *   gErrArr ,
+                    const COSMOLOGY          cosmo ){ // Error array in RTS
+
+  densProfile ball[ u.getNchrome() ];
+  double      chi2[ u.getNchrome() ];
+
+  double smallStep = 200;  // Number of possible steps in a direction
+  double   bigStep = 100;
+
+  double decrement = 1/4.; // Amount to decrease step size by
+
+  // Number of directions can roll, 3 for Einasto, 2 for NFW
+
+  int N_directions =   2;
+  if ( profile.getType() != 1.0 )
+      N_directions =   3;
+
+  for (int i = 0; i  <  u.getNchrome() ; ++i) ball[i].setR_max( halo.getRmax() );
+
+
+  // Do for each rolling ball
+  for ( int i = 0; i < u.getNchrome(); ++i ){
+
+
+    // Set starting parameters, location on hill
+    if ( profile.getType() == 2 );
+    ball[i].setAlpha(          randVal( u.getAlphaMin(), u.getAlphaMax() )   );
+    ball[i].setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
+    ball[i].setC    (          randVal( u.getConMin  (), u.getConMax  () )   );
+
+
+    // Step sizes partially random
+    double cStep = ( u.getConMax  () - u.getConMin  () ) / randVal( bigStep, smallStep ) ;
+    double mStep = ( u.getMassMax () - u.getMassMin () ) / randVal( bigStep, smallStep ) ;
+    double aStep = ( u.getAlphaMax() - u.getAlphaMin() ) / randVal( bigStep, smallStep ) ;
+
+
+    // Previous values, revert to this if we do worse
+    double prevA   = ball[i].getAlpha();
+    double prevC   = ball[i].getC    ();
+    double prevM   = ball[i].getM_enc();
+    double prevChi = 9999 ;
+
+
+    int loopCounter = 0; // Number of times we have rolled
+    int convCounter = 0; // Number of times we have been in tolerance
+
+    double chiConvergence[  u.getNtrack()  ];
+    for ( int j = 0; j < u.getNtrack(); ++j )
+      chiConvergence[j] = 0;
+
+    double runningAvgChi;
+
+    // Roll the ball
+    do{
+
+      double gAnalyticArray[  u.getNbins()   ];
+
+      int randDirection = floor( randVal( 0, N_directions) ); // 2 alpha, 1 mass, 0 con
+
+
+      // Roll randomly
+           if ( randDirection == 1 ) ball[i].setM_enc(  pow( 10, std::min(std::max( log10( ball[i].getM_enc() ) + mStep , u.getMassMin () ), u.getMassMax () ) ));
+      else if ( randDirection == 0 ) ball[i].setC    (           std::min(std::max(        ball[i].getC    ()   + cStep , u.getConMin  () ), u.getConMax  () )  );
+      else                           ball[i].setAlpha(           std::min(std::max(        ball[i].getAlpha()   + aStep , u.getAlphaMin() ), u.getAlphaMax() )  );
+
+      // Gives analytic value for RTS, for source locations, radially averaged
+      if ( profile.getType() == 1 ){
+        generateNFWRTS( gAnalyticArray, ball[i], u.getNbins(), dArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ) ); // Note this distance is physical seperation
+      } else{
+//      generateEinRTS( gAnalyticArray, parent[i], halo, u, sourceSigC, sourceDist);
+      }
+
+      // Calc chi2 between theoretical predictions and real values
+      chi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.getNbins() );
+
+      // If it's worse, walk it back, reverse the step
+      if ( chi2[i] > prevChi ) {
+           chi2[i] = prevChi;
+
+          if ( randDirection == 2 ) {
+            ball[i].setAlpha( prevA );
+            aStep = - aStep * decrement;
+          }
+          if ( randDirection == 1 ) {
+            ball[i].setM_enc( prevM );
+            mStep = - mStep * decrement;
+          }
+          if ( randDirection == 0 ) {
+            ball[i].setC    ( prevC );
+            cStep = - cStep * decrement;
+          }
+      }
+
+      prevChi = chi2[i];
+      prevM   = ball[i].getM_enc();
+      prevC   = ball[i].getC    ();
+      prevA   = ball[i].getAlpha();
+
+
+
+      chiConvergence[ loopCounter % u.getNtrack() ] = chi2[i];
+
+        runningAvgChi  = 0;
+      for (int j = 0; j < u.getNtrack(); ++j )
+        runningAvgChi += chiConvergence[j];
+
+        runningAvgChi  = runningAvgChi / u.getNtrack();
+
+      // Need counter to be greater than u.consistent,
+      //  a count of how many times average has been
+      //  consistently below tolerance. Tests for convergence
+      if ( fabs( runningAvgChi - chi2[i] )
+               / runningAvgChi < u.getTolerance() &&
+                   loopCounter > u.getNtrack()    ){
+        convCounter += 1;
+      } else {
+        convCounter  = 0;
+      }
+
+//printf("%4i %14.4e %3i %14.4e %7.2f\n", loopCounter, chi2[i], convCounter, ball[i].getM_enc(), ball[i].getC() );
+
+      loopCounter +=1;
+    } while ( loopCounter < u.getMaxFitNum()   &&
+              convCounter < u.getNConsistent() );
+if ( loopCounter == u.getMaxFitNum() )
+  printf("Failed\n");
+//exit(0);
+  }
+
+for ( int i = 0; i < u.getNchrome(); ++i )
+printf("%2i %10.7f %14.4e\n", i, ball[i].getC(), ball[i].getM_enc() );
+exit(0);
+}
+
+
+
 //
 //  Takes input sources, and fits density profile to the rts values.
 //  Can do NFW, needs modifications for Einasto
@@ -188,17 +338,17 @@ void fitDensProfile(
       // Mutate values, with random chance. Don't exceed possible max or min
       // Needed to keep genes fresh
 
-      if ( u.getMutChance() > randVal(0,1) )
-        child[i].setC    ( std::max( std::min( child[i].getC    () * randVal( 0.9, 1.1) ,        u.getConMax()   ) ,        u.getConMin()   ) );
-//        child[i].setC    (                                           randVal(                    u.getConMin()     ,        u.getConMax()   ) );
+      double upperRand = 1.1;
+      double lowerRand = 0.9;
 
       if ( u.getMutChance() > randVal(0,1) )
-        child[i].setM_enc( std::max( std::min( child[i].getM_enc() * randVal( 0.9, 1.1) , pow(10,u.getMassMax()) ) , pow(10,u.getMassMin() )) );
-//        child[i].setM_enc(                                pow(10,    randVal(               u.getMassMin()  ,  u.getMassMax() )   ) );
+        child[i].setC    ( std::max( std::min( child[i].getC    () * randVal( lowerRand, upperRand ) ,        u.getConMax()   ) ,        u.getConMin()   ) );
+
+      if ( u.getMutChance() > randVal(0,1) )
+        child[i].setM_enc( std::max( std::min( child[i].getM_enc() * randVal( lowerRand, upperRand ) , pow(10,u.getMassMax()) ) , pow(10,u.getMassMin() )) );
 
       if ( u.getMutChance() > randVal(0,1) && profile.getType() == 2 )
-        child[i].setAlpha( std::max( std::min( child[i].getAlpha() * randVal( 0.9, 1.1) ,        u.getAlphaMax() ) ,        u.getAlphaMin() ) );
-//        child[i].setAlpha(                                           randVal(                    u.getAlphaMin()     ,       u.getAlphaMax()   ) );
+        child[i].setAlpha( std::max( std::min( child[i].getAlpha() * randVal( lowerRand, upperRand ) ,        u.getAlphaMax() ) ,        u.getAlphaMin() ) );
 
 
       // Generate analytic RTS for child
@@ -256,17 +406,32 @@ printf("%7i    %14.4e %14.4e %14.4e   %3i\n",loopCounter, totAvg, oldAvg, fabs(t
 
   int    minIndex =              0; //index of lowest chi2
   double minChi   = chi2[minIndex];
-double cAvg(0), mAvg(0);
+  double cAvg(0), mAvg(0), weightedChi(0);
+
   //Find lowest chi2 index
-  for ( int i = 1; i < u.getNchrome(); ++i ){
+  for ( int i = 0; i < u.getNchrome(); ++i ){
     if ( minChi > chi2[i] ){
       minIndex = i;
       minChi   = chi2[i];
     }
-cAvg += child[i].getC();
-mAvg += std::log10( child[i].getM_enc());
+//         avgArr[iBin] += avgVal / n_srcs / ( errors[i]*errors[i] ); // Weighted average sum
+
+    weightedChi += 1/chi2[i] ;
+
+    cAvg +=             child[i].getC()       /  chi2[i]  ;
+    mAvg += std::log10( child[i].getM_enc() ) /  chi2[i]  ;
   }
-printf("%7.5f %14.4e\n",cAvg/u.getNchrome(),pow(10, mAvg/u.getNchrome()  ));
+
+  weightedChi = 1 / weightedChi;
+  cAvg = cAvg * weightedChi ;
+  mAvg = mAvg * weightedChi ;
+
+printf("\n");
+printf("%14.4e %7.5f %14.4e\n", weightedChi, cAvg, pow(10, mAvg ) );
+printf("%14.4e ", minChi);
+
+
+
 
   profile = child[minIndex];
 

@@ -361,9 +361,10 @@ printf("\n");
   einProfile.setR_max( myHalo.getRmax() );
 
 
-  fitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
+  rollingFitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
+//  fitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 
-printf("%14.4e %7.5f\n",nfwProfile.getM_enc(), nfwProfile.getC() );
+printf("%7.5f %14.4e\n",nfwProfile.getC(), nfwProfile.getM_enc() );
 
 
 //printf("%12.3e %5.3lf\n",nfwProfile.getM_enc(),nfwProfile.getC());

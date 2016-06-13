@@ -4,6 +4,17 @@
 #include <lensing_classes.h>
 
 
+void rollingFitDensProfile(
+                          densProfile   &  profile ,  // Density profile we are outputting
+                    const haloInfo      &     halo ,  // Info about parent halo
+                    userInfo               u ,  // Info from the user
+//                    const userInfo               u ,  // Info from the user
+                    const double       *      gArr ,  // RTS binned array we "observed"
+                    const double       *      dArr ,  // Distance binned array
+                    const double       *   gErrArr ,
+                    const COSMOLOGY          cosmo ); // Error array in RTS
+
+
 void fitDensProfile(
                           densProfile   &  profile ,  // Density profile we are outputting
                     const haloInfo      &     halo ,  // Info about parent halo

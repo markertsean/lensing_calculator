@@ -372,19 +372,42 @@ userInfo::userInfo(){
   cosmo    = " ";
 
       cMin =  2.0;
-      cMax = 10.0;
+      cMax =  9.0;
       mMin = 12.0;
-      mMax = 17.0;
+      mMax = 16.0;
   alphaMin =  0.1;
   alphaMax =  1.0;
 
+//5.06
+//1.00e14
+//10%
+/*
   maxFitAttempts = 1e4   ;
    N_chromosomes = 1e4   ;
       N_chiTrack = 1e2   ;
       consistent = 2e2   ;
        tolerance = 1e-3  ;
-       mutChance = 1e-3  ;
-      avgTestVal = 1.3   ;
+       mutChance = 1e-2  ;
+      avgTestVal = 0.5   ;
+*/
+
+/*
+  maxFitAttempts = 1e3   ;
+   N_chromosomes = 1e1   ;
+      N_chiTrack = 4e0   ;
+      consistent = 1e1   ;
+       tolerance = 1e-1  ;
+       mutChance = 1e-2  ;
+      avgTestVal = 0.6   ;
+*/
+
+  maxFitAttempts = 1e4   ;
+   N_chromosomes = 2e1   ;
+      N_chiTrack = 1e2   ;
+      consistent = 1e2   ;
+       tolerance = 1e-2  ;
+       mutChance = 1e-2  ;
+      avgTestVal = 0.6   ;
 
 }
 
