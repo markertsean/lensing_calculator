@@ -61,13 +61,9 @@ void rollingFitDensProfile(
 
   double decrement = 1/4.; // Amount to decrease step size by
 
-  // Number of directions can roll, 3 for Einasto, 2 for NFW
 
-  int N_directions =   2;
-  if ( profile.getType() != 1.0 )
-      N_directions =   3;
-
-  for (int i = 0; i  <  u.getNchrome() ; ++i) ball[i].setR_max( halo.getRmax() );
+  for (int i = 0; i  <  u.getNchrome() ; ++i)
+    ball[i].setR_max( halo.getRmax() );
 
 
   // Do for each rolling ball
@@ -87,70 +83,80 @@ void rollingFitDensProfile(
     double aStep = ( u.getAlphaMax() - u.getAlphaMin() ) / randVal( bigStep, smallStep ) ;
 
 
-    // Previous values, revert to this if we do worse
-    double prevA   = ball[i].getAlpha();
-    double prevC   = ball[i].getC    ();
-    double prevM   = ball[i].getM_enc();
-    double prevChi = 9999 ;
+    int loopCounter = 0;                      // Number of times we have rolled
+    int convCounter = 0;                      // Number of times we have been in tolerance
 
-
-    int loopCounter = 0; // Number of times we have rolled
-    int convCounter = 0; // Number of times we have been in tolerance
-
-    double chiConvergence[  u.getNtrack()  ];
+    double chiConvergence[  u.getNtrack()  ]; // Array to keep track of previous chi^2, for convergence
     for ( int j = 0; j < u.getNtrack(); ++j )
       chiConvergence[j] = 0;
 
-    double runningAvgChi;
+    double runningAvgChi; // Average of chiConv array
+
 
     // Roll the ball
     do{
 
+      // Used to check which direction is best
+      densProfile testProfile;
+      testProfile.setR_max( ball[i].getR_max() );
+      double mVals[3], cVals[3], aVals[3];
+
+
+      // Sets the parameters for moving along the hill
+      for ( int j = -1; j < 2; ++j ){
+        aVals[j+1] =          std::min(std::max(        ball[i].getAlpha()   + aStep * j, u.getAlphaMin() ), u.getAlphaMax() );
+        mVals[j+1] = pow( 10, std::min(std::max( log10( ball[i].getM_enc() ) + mStep * j, u.getMassMin () ), u.getMassMax () ) );
+        cVals[j+1] =          std::min(std::max(        ball[i].getC    ()   + cStep * j, u.getConMin  () ), u.getConMax  () );
+      }
+
+      double chiChoose(999), compChi(998);
+
       double gAnalyticArray[  u.getNbins()   ];
 
-      int randDirection = floor( randVal( 0, N_directions) ); // 2 alpha, 1 mass, 0 con
+      for ( int ii = 0; ii < 3; ++ii ){
 
+        testProfile.setC(     cVals[ii] );
 
-      // Roll randomly
-           if ( randDirection == 1 ) ball[i].setM_enc(  pow( 10, std::min(std::max( log10( ball[i].getM_enc() ) + mStep , u.getMassMin () ), u.getMassMax () ) ));
-      else if ( randDirection == 0 ) ball[i].setC    (           std::min(std::max(        ball[i].getC    ()   + cStep , u.getConMin  () ), u.getConMax  () )  );
-      else                           ball[i].setAlpha(           std::min(std::max(        ball[i].getAlpha()   + aStep , u.getAlphaMin() ), u.getAlphaMax() )  );
+      for ( int jj = 0; jj < 3; ++jj ){
 
-      // Gives analytic value for RTS, for source locations, radially averaged
-      if ( profile.getType() == 1 ){
-        generateNFWRTS( gAnalyticArray, ball[i], u.getNbins(), dArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ) ); // Note this distance is physical seperation
-      } else{
+        testProfile.setM_enc( mVals[jj] );
+
 //      generateEinRTS( gAnalyticArray, parent[i], halo, u, sourceSigC, sourceDist);
+// Add Einasto
+        generateNFWRTS( gAnalyticArray, testProfile, u.getNbins(), dArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ) );
+        compChi = chiSquared( gAnalyticArray, gArr, gErrArr, u.getNbins() );
+
+        // If a better fit, keep it
+        if (compChi < chiChoose){
+//printf("%14.5e %14.5e %14.5e %14.5e %14.5e %14.5e\n", compChi, chiChoose, ball[i].getC(), cVals[ii], ball[i].getM_enc(), mVals[jj] );
+          chiChoose = compChi;
+          ball[i].setC    ( cVals[jj] );
+          ball[i].setM_enc( mVals[jj] );
+
+          chi2[i] = compChi;
+        }
+
+
+      }
       }
 
-      // Calc chi2 between theoretical predictions and real values
-      chi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.getNbins() );
+//printf("    %14.7e    %14.7e\n",cStep,mStep);
 
-      // If it's worse, walk it back, reverse the step
-      if ( chi2[i] > prevChi ) {
-           chi2[i] = prevChi;
 
-          if ( randDirection == 2 ) {
-            ball[i].setAlpha( prevA );
-            aStep = - aStep * decrement;
-          }
-          if ( randDirection == 1 ) {
-            ball[i].setM_enc( prevM );
-            mStep = - mStep * decrement;
-          }
-          if ( randDirection == 0 ) {
-            ball[i].setC    ( prevC );
-            cStep = - cStep * decrement;
-          }
+      // If didn't move in one direction, decrease step size
+      if ( ball[i].getC    () == cVals[1] &&
+           ball[i].getM_enc() == mVals[1] ){
+        cStep *= decrement;
+        mStep *= decrement;
       }
 
-      prevChi = chi2[i];
-      prevM   = ball[i].getM_enc();
-      prevC   = ball[i].getC    ();
-      prevA   = ball[i].getAlpha();
 
+// Add einasto
 
+//printf("    %14.7e    %14.7e\n",cStep,mStep);
+double on = 0;
 
+      // Test for convergence
       chiConvergence[ loopCounter % u.getNtrack() ] = chi2[i];
 
         runningAvgChi  = 0;
@@ -158,6 +164,8 @@ void rollingFitDensProfile(
         runningAvgChi += chiConvergence[j];
 
         runningAvgChi  = runningAvgChi / u.getNtrack();
+
+if ( loopCounter > u.getNtrack() ) on = 1.0;
 
       // Need counter to be greater than u.consistent,
       //  a count of how many times average has been
@@ -170,7 +178,8 @@ void rollingFitDensProfile(
         convCounter  = 0;
       }
 
-//printf("%4i %14.4e %3i %14.4e %7.2f\n", loopCounter, chi2[i], convCounter, ball[i].getM_enc(), ball[i].getC() );
+if ( loopCounter % 1000 == 0 && loopCounter > 0 )
+printf("%4i %4i %14.4e %3i %14.4e %20.14f %14.4e %14.4e\n", i, loopCounter, chi2[i], convCounter, runningAvgChi, fabs( runningAvgChi - chi2[i] ) / runningAvgChi, ball[i].getM_enc(), ball[i].getC() );
 
       loopCounter +=1;
     } while ( loopCounter < u.getMaxFitNum()   &&
