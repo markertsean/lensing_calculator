@@ -343,8 +343,9 @@ for ( int i = 0; i < userInput.getNbins(); ++i ){
 
 
   gTanArr[i] = ( avgSD - SD ) / ( SigCr - SD );
+  gErrArr[i] = 0.3;
 
-printf("%7.3f %14.5e\n",distArr[i], gTanArr[i]);
+printf("%7.3f %14.5e %14.5e\n",distArr[i], gTanArr[i], gErrArr[i]);
 }
 printf("\n");
 

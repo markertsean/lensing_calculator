@@ -67,6 +67,7 @@ void rollingFitDensProfile(
 
 
   // Do for each rolling ball
+  #pragma omp parallel for
   for ( int i = 0; i < u.getNchrome(); ++i ){
 
 
@@ -82,16 +83,20 @@ void rollingFitDensProfile(
     double mStep = ( u.getMassMax () - u.getMassMin () ) / randVal( bigStep, smallStep ) ;
     double aStep = ( u.getAlphaMax() - u.getAlphaMin() ) / randVal( bigStep, smallStep ) ;
 
+    // For kicking the ball back
+    double cStep_0 = cStep;
+    double mStep_0 = mStep;
+    double aStep_0 = aStep;
+
+
+    // Previous values, to test for convergence
+    double prevM=1;
+    double prevC=1;
+    double prevA=1;
+
 
     int loopCounter = 0;                      // Number of times we have rolled
     int convCounter = 0;                      // Number of times we have been in tolerance
-
-    double chiConvergence[  u.getNtrack()  ]; // Array to keep track of previous chi^2, for convergence
-    for ( int j = 0; j < u.getNtrack(); ++j )
-      chiConvergence[j] = 0;
-
-    double runningAvgChi; // Average of chiConv array
-
 
     // Roll the ball
     do{
@@ -128,7 +133,6 @@ void rollingFitDensProfile(
 
         // If a better fit, keep it
         if (compChi < chiChoose){
-//printf("%14.5e %14.5e %14.5e %14.5e %14.5e %14.5e\n", compChi, chiChoose, ball[i].getC(), cVals[ii], ball[i].getM_enc(), mVals[jj] );
           chiChoose = compChi;
           ball[i].setC    ( cVals[jj] );
           ball[i].setM_enc( mVals[jj] );
@@ -140,8 +144,21 @@ void rollingFitDensProfile(
       }
       }
 
-//printf("    %14.7e    %14.7e\n",cStep,mStep);
+      // Kick ball if stuck on edge
 
+      if ( fabs( ball[i].getC    () - u.getConMax () ) / u.getConMax () < 1e-4 ||
+           fabs( ball[i].getC    () - u.getConMin () ) / u.getConMin () < 1e-4 ){
+           ball[i].setC(              randVal( u.getConMin  (), u.getConMax  () ) );
+           cStep = cStep_0;
+      }
+
+      if ( fabs( ball[i].getM_enc() - u.getMassMax() ) / u.getMassMax() < 1e-4 ||
+           fabs( ball[i].getM_enc() - u.getMassMin() ) / u.getMassMin() < 1e-4 ){
+           ball[i].setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
+           mStep = mStep_0;
+      }
+// Einasto
+//*/
 
       // If didn't move in one direction, decrease step size
       if ( ball[i].getC    () == cVals[1] &&
@@ -149,49 +166,70 @@ void rollingFitDensProfile(
         cStep *= decrement;
         mStep *= decrement;
       }
-
-
 // Add einasto
 
-//printf("    %14.7e    %14.7e\n",cStep,mStep);
-double on = 0;
 
-      // Test for convergence
-      chiConvergence[ loopCounter % u.getNtrack() ] = chi2[i];
 
-        runningAvgChi  = 0;
-      for (int j = 0; j < u.getNtrack(); ++j )
-        runningAvgChi += chiConvergence[j];
-
-        runningAvgChi  = runningAvgChi / u.getNtrack();
-
-if ( loopCounter > u.getNtrack() ) on = 1.0;
 
       // Need counter to be greater than u.consistent,
       //  a count of how many times average has been
       //  consistently below tolerance. Tests for convergence
-      if ( fabs( runningAvgChi - chi2[i] )
-               / runningAvgChi < u.getTolerance() &&
-                   loopCounter > u.getNtrack()    ){
+      if (  fabs( ball[i].getM_enc() - prevM ) / prevM < u.getTolerance() &&
+            fabs( ball[i].getC    () - prevC ) / prevC < u.getTolerance() ){
+//Einasto
         convCounter += 1;
       } else {
         convCounter  = 0;
       }
 
-if ( loopCounter % 1000 == 0 && loopCounter > 0 )
-printf("%4i %4i %14.4e %3i %14.4e %20.14f %14.4e %14.4e\n", i, loopCounter, chi2[i], convCounter, runningAvgChi, fabs( runningAvgChi - chi2[i] ) / runningAvgChi, ball[i].getM_enc(), ball[i].getC() );
+//printf("%4i %4i     %14.7e %14.7e     %14.7e %14.7e\n", loopCounter, convCounter, ball[i].getM_enc(), fabs( ball[i].getM_enc() - prevM ) / prevM, ball[i].getC(), fabs( ball[i].getC    () - prevC ) / prevC );
+
+
+// Einasto
+      prevM = ball[i].getM_enc();
+      prevC = ball[i].getC    ();
 
       loopCounter +=1;
     } while ( loopCounter < u.getMaxFitNum()   &&
               convCounter < u.getNConsistent() );
-if ( loopCounter == u.getMaxFitNum() )
-  printf("Failed\n");
-//exit(0);
+
+
   }
 
-for ( int i = 0; i < u.getNchrome(); ++i )
-printf("%2i %10.7f %14.4e\n", i, ball[i].getC(), ball[i].getM_enc() );
-exit(0);
+
+
+  int    minIndex =              0; //index of lowest chi2
+  double minChi   = chi2[minIndex];
+  double cAvg(0), mAvg(0), weightedChi(0);
+
+  //Find lowest chi2 index
+  for ( int i = 0; i < u.getNchrome(); ++i ){
+    if ( minChi > chi2[i] ){
+      minIndex = i;
+      minChi   = chi2[i];
+    }
+//         avgArr[iBin] += avgVal / n_srcs / ( errors[i]*errors[i] ); // Weighted average sum
+
+    weightedChi += 1/chi2[i] ;
+
+    cAvg +=             ball[i].getC()       /  chi2[i]  ;
+    mAvg += std::log10( ball[i].getM_enc() ) /  chi2[i]  ;
+//Einasto
+  }
+
+  weightedChi = 1 / weightedChi;
+  cAvg = cAvg * weightedChi ;
+  mAvg = mAvg * weightedChi ;
+
+  profile.setC    (  ball[minIndex].getC    ()  );
+  profile.setM_enc(  ball[minIndex].getM_enc()  );
+//Einasto
+
+printf("\n");
+printf("%14.4e %7.5f %14.4e\n", weightedChi, cAvg, pow(10, mAvg ) );
+printf("%14.4e ", minChi);
+
+
 }
 
 

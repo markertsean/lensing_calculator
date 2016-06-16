@@ -402,10 +402,12 @@ userInfo::userInfo(){
 */
 
   maxFitAttempts = 1e4   ;
-   N_chromosomes = 1e1   ;
-      N_chiTrack = 2e1   ;
-      consistent = 1e1   ;
-       tolerance = 1e-3  ;
+   N_chromosomes = 1e3   ;
+      consistent = 2e1   ;
+       tolerance = 1e-4  ;
+
+
+      N_chiTrack = 1e1   ;
        mutChance = 1e-2  ;
       avgTestVal = 0.6   ;
 
