@@ -401,8 +401,9 @@ userInfo::userInfo(){
       avgTestVal = 0.6   ;
 */
 
+  // Good for ball fitting
   maxFitAttempts = 1e4   ;
-   N_chromosomes = 1e3   ;
+   N_chromosomes = 3e3   ;
       consistent = 2e1   ;
        tolerance = 1e-4  ;
 

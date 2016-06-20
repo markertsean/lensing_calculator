@@ -3,6 +3,14 @@
 
 #include <lensing_classes.h>
 
+void rollBall(        densProfile   &ball ,  // Ball to roll
+                      double        &chi2 ,  // Chi2 value
+               const  double        *gArr ,  // g values we are fitting
+               const  double        *dArr ,  // distance array corresponding to g values
+               const  double     *gErrArr ,  // Errors associated with g
+               const  double       sigmaC ,  // Critical surface density to use, of sources
+               const  userInfo          u );
+
 
 void rollingFitDensProfile(
                           densProfile   &  profile ,  // Density profile we are outputting

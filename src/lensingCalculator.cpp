@@ -52,7 +52,7 @@ int main(int arg,char **argv){
   initLogFile();
 
   // Default values that will not be changing
-  long    seed    = -1827674;
+  long    seed    = time(NULL); //-1827674;
 
   logMessage( std::string("Seed = ") + std::to_string( (long long) seed ) );
 
@@ -319,9 +319,9 @@ userInput.setNpix( 9*9);
 
   std::cout << " Sources averaged" << std::endl;;
 
-double m_to_use= 1e14;
+double m_to_use= 1e13;
 double R_to_use=  2.0;
-double C_to_use=  5.0;
+double C_to_use=  7.0;
 
 densProfile myProfile;
 myHalo.setRmax(     R_to_use );
