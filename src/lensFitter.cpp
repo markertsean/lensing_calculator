@@ -672,7 +672,7 @@ double    SDNFWFull(
 
 
 
-/*
+
 
 //   2 0[              (0,1)     ]    1     ^ G(2/as)G(s-1/2)           -2s         (-1)^k G(1/a-2/a k)  2k        a(-1)^k G(-1/2-a/2 k)  ak+1
 // H    [                        ]= -----  |  ------------------------ X   ds=  Sum ------ ------------ X    + Sum ------- ------------- X
@@ -775,57 +775,36 @@ double foxH2123(
 
 void generateEinRTS(
                     double          *gArr ,  // RTS array to output
-                    lensProfile     &lens ,  // Input density profile to generate profile for
-                    haloInfo        &halo ,  // Actual information from the halo
+                    densProfile     &lens ,  // Input density profile to generate profile for
                     userInfo            u ,  // Information from the user
-                    double    *sourceSc   ,  // Critical surface density for the sources
+                    double     sourceSc   ,  // Critical surface density for the sources
                     double    *sourceDist ){ // Projected distances between source and lens
 
-  //Arrays for binning
-  int      N_bin[u.N_bins];
-  double analRTS[u.N_bins];
 
-  //Set avg array values to 0 initially, will be adding upon
-  for (int i=0;i<u.N_bins;++i){
-      N_bin[i] = 0;
-    analRTS[i] = 0;
-  }
-
-  for (int i=0;i<u.N_bins;++i)
+  for (int i=0;i<u.getNbins();++i)
     gArr[i] = 0;
-
-  //Distance converted to bins
-  double stepSize = halo.getRealFOV( u.angFOV )/2.0/u.N_bins;
 
 
   //Constant part of kappa_c, divided by gamma(1/alpha) * sqrt pi, a constant for easier kappas
-  double temp = lens.getRho_o() * lens.getR_s  ()   * exp( 2./lens.getAlpha() )       *
-                             pow( lens.getAlpha()/2.,      1./lens.getAlpha() - 1.0 ) *
-                             sqrt( M_PI );
+  //Modified kappa_c, kappa_c * sqrt(pi) / Gamma(1/alpha), just need to multiply by H function
 
-  for ( int i = 0; i<u.N_bins; ++i )
+  double kappa_cM = lens.getRho_o() * lens.getR_s  ()   * exp( 2./lens.getAlpha() )       *
+                             pow(     lens.getAlpha()/2.,      1./lens.getAlpha() - 1.0 ) *
+                             sqrt( M_PI )  / sourceSc;
+
+  for ( int i = 0; i < u.getNbins(); ++i )
   {
     double x        = sourceDist[i] / lens.getR_s();
 
-    //Modified kappa_c, kappa_c * sqrt(pi) / Gamma(1/alpha), just need to multiply by H function
-    double kappa_cM = temp / sourceSc[i];
 
     double kappa    = kappa_cM * foxH2012( x*x, lens.getAlpha() );
     double kappaAVG = kappa_cM * foxH2123( x*x, lens.getAlpha() );
 
-    int    binNum   = std::min(std::max(
-                      (int) round(sourceDist[i]/stepSize) ,0),u.N_bins-1);
 
-    //RTS avg across bin
-    analRTS[binNum] += ( kappaAVG - kappa ) / ( 1 - kappa );
-      N_bin[binNum] += 1;
+    // RTS avg across bin
+    gArr[i] = ( kappaAVG - kappa ) / ( 1 - kappa );
 
-//printf("%12.3e %12.3e %12.3e\n", kappa, kappaAVG, (kappaAVG-kappa)/(1-kappa));
-  }
-
-  //Returning gArr
-  for ( int i=0; i < u.N_bins; ++i ){
-    if ( N_bin[i] > 0) gArr[i] = analRTS[i] / N_bin[i];
+printf("%12.3e %12.3e %12.3e\n", kappa/kappa_cM, kappaAVG/kappa_cM, gArr[i]);
   }
 
   //Kappas are fox H functions
@@ -850,4 +829,4 @@ void generateEinRTS(
 
 
 
-//*/
+

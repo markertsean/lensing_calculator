@@ -56,14 +56,13 @@ double SDAvgNFWFull( const double     r ,  //Distance to evaluate SD of NFW prof
                      const double   r_s ,  //Scale radius of profile
                      const double rho_o ); //Initial density of profile
 
-/*
+
 
 void generateEinRTS(
 		    double           *gArr,  //Radially averaged RTS array function will return
-		    lensProfile      &lens,  //Input density profile
-		    haloInfo         &halo,  //Information on the halo
-                    userInfo             u,  //Info from user
-		    double       *sourceSc,  //Critical surface density of a source
+		    densProfile      &lens,  //Input density profile
+        userInfo             u,  //Info from user
+		    double        sourceSc,  //Critical surface density of a source
 		    double     *sourceDist); //Projected radial distance of sources to lens centers
 
 
@@ -76,6 +75,6 @@ double foxH2123(
                 double         z       ,  // Z from fox H function
                 double     alpha       ,  // Shape parameter Ein profile
                 double tolerance = 1e-2); // Tolence level for convergence
-*/
+
 
 #endif
