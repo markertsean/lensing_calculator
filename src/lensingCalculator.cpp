@@ -355,7 +355,7 @@ einProfile.setR_max( R_to_use );
 einProfile.setM_enc( m_to_use );
 einProfile.setC(     C_to_use );
 
-
+std::cout << einProfile.getR_s() << std::endl;
 generateEinRTS( gTanArr, einProfile, userInput, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ), distArr );
 }
 exit(0);

@@ -678,48 +678,60 @@ double    SDNFWFull(
 // H    [                        ]= -----  |  ------------------------ X   ds=  Sum ------ ------------ X    + Sum ------- ------------- X
 //   1 2[(0,2/a)(-1/2,1)         ]  2pi i U            G( s )                   k=0 (k  )! G(1/2-    k)        k=1 2(k)!   G(    -a/2 k)
 double foxH2012(
-                double         z ,  // Z from fox H function
+                double         x ,  // Z from fox H function
                 double     alpha ,  // Shape parameter Ein profile
                 double tolerance ){ // Tolerance level for convergence
 
-  double sum1(0), sum2(0), oldSum(0), totSum(0), s1(0), s2(0);
+  double sum1(0), sum2(0), oldSum1(0), oldSum2(0), s1(0), s2(0);
 
   int converge(0), k(0);
 
   //k = 0 term
-     sum1 += tgamma( 1. / alpha ) / tgamma( 0.5 );
-  oldSum  += sum1;
-//printf("%12s,%12s %12s,%12s %12s,%12s    %12s\n\n","s1","sum1","s2","sum2","totSum","oldSum","differential");
-//printf("%12.3e,%12.3e %12.3e,%12.3e %12.3e,%12.3e    %12.3e\n",s1,sum1,s2,sum2,totSum,oldSum,fabs((totSum-oldSum)/oldSum));
+  sum1 = tgamma( 1. / alpha ) / tgamma( 0.5 );
+
+//printf("%4s %4s %14s %14s %14s\n", "k", "conv", "s1", "sum1", "oldSum1");
   do {
       ++k;
 
+      int            sign = pow(   -1,   k );
+      double       x2kPow = pow(    x, 2*k );
+      double       x1kPow = pow(    x, 1+k*alpha );
+      double invFactorial = 1./tgamma( 1+k );
+
       //Terms in summation
-      s1 =    pow(       - 1     , k ) / factorial(k) *    pow( z, 2 * k ) *
+      s1 = sign * x2kPow * invFactorial *
            tgamma(  ( 1. - 2.    * k ) / alpha      ) / tgamma(  0.5 - k );
 
-      s2 =    pow(       - 1     , k ) / factorial(k) *    pow( z, 1 + k * alpha ) *
+
+      s2 = sign * x1kPow * invFactorial *
            tgamma( -( 1. + alpha * k ) / 2.         ) / tgamma(      - k * alpha / 2.0);
 
+//printf("%4i %4i %14.7e %14.7e    %14.7e %14.7e \n", k, converge, (double) sum1, (double) sum2, tgamma((1.-2.*k)/alpha)/tgamma(0.5-k), tgamma(-(1.+alpha*k)/2.0)/tgamma(-k*alpha/2.0));
+
       //Don't include inf or NaN
-      if ( ! (std::isinf( s1 ) || s1!=s1) )  sum1 += s1;
-      if ( ! (std::isinf( s2 ) || s2!=s2) )  sum2 += s2;
+      if ( ! (std::isinf( s1 ) || s1!=s1) ) {
+        oldSum1  = sum1;
+           sum1 += s1;
+      }
+
+      if ( ! (std::isinf( s2 ) || s2!=s2) ) {
+        oldSum2  = sum2;
+           sum2 += s2;
+      }
 
       //totSum is term for current k
-      totSum = sum1 + alpha/2. * sum2;
-      //oldSum an average over all old sums
-      oldSum = ( totSum + oldSum * k ) / ( k + 1 );
-//printf("%12.3e,%12.3e %12.3e,%12.3e %12.3e,%12.3e    %12.3e\n",s1,sum1,s2,sum2,totSum,oldSum,fabs((totSum-oldSum)/oldSum));
-      if ( fabs((totSum-oldSum)/oldSum) < tolerance ){
+      if ( fabs((sum1-oldSum1)/oldSum1) < tolerance &&
+           fabs((sum2-oldSum2)/oldSum2) < tolerance ){
         converge +=1;
       }
       else{
         converge = 0;
       }
+//converge +=1;
   } while ( converge < 10 && k < 1e2 );
 
   sum2 *= alpha/2.;
-
+//printf("%14.7e   %14.7e + %14.7e =  %14.7e\n      ", x, (double) sum1, (double) sum2, sum1+sum2);
   return sum1+sum2;
 }
 
@@ -797,14 +809,14 @@ void generateEinRTS(
     double x        = sourceDist[i] / lens.getR_s();
 
 
-    double kappa    = kappa_cM * foxH2012( x*x, lens.getAlpha() );
-    double kappaAVG = kappa_cM * foxH2123( x*x, lens.getAlpha() );
+    double kappa    = kappa_cM * foxH2012( x, lens.getAlpha() );
+    double kappaAVG = kappa_cM * foxH2123( x, lens.getAlpha() );
 
 
     // RTS avg across bin
     gArr[i] = ( kappaAVG - kappa ) / ( 1 - kappa );
 
-printf("%12.3e %12.3e %12.3e\n", kappa/kappa_cM, kappaAVG/kappa_cM, gArr[i]);
+//printf("%12.3e %12.3e %12.3e\n", kappa/kappa_cM, kappaAVG/kappa_cM, gArr[i]);
   }
 
   //Kappas are fox H functions
