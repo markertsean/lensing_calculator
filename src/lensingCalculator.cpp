@@ -350,7 +350,7 @@ printf("%7.3f %14.5e %14.5e\n",distArr[i], gTanArr[i], gErrArr[i]);
 printf("\n");
 {
 
-densProfile einProfile(0.4);
+densProfile einProfile(0.41);
 einProfile.setR_max( R_to_use );
 einProfile.setM_enc( m_to_use );
 einProfile.setC(     C_to_use );
