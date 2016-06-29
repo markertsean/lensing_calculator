@@ -1,4 +1,6 @@
 #include <cstdlib>
+#include <cmath>
+#include <stdio.h>
 
 
 //Returns value of chi^2 fit, ignores points w/0 error
@@ -74,4 +76,37 @@ int     factorial(
     product *= i;
 
   return product;
+}
+
+
+// Gamma'(z) / Gamma(z)
+double diGamma(  double  z        ,
+                 double tolerance ,
+                 int    N_consis  ){
+
+  double    sum = 0;
+  double oldSum = 1000;
+
+  int    consis = 0;
+  int         n = 0;
+
+  double  gamma = 0.577215664901532860606512090082402; // Euler-Mascheroni constant
+
+  do {
+
+    ++n;
+
+    sum += 1./( n + z ) - 1./n;
+
+    if ( fabs((sum-oldSum)/oldSum) < tolerance ) {
+      ++consis;
+    } else {
+      consis = 0;
+    }
+    oldSum = sum;
+
+  } while ( consis < N_consis && n < 1e6);
+
+  return - ( 1./z + gamma + sum );
+
 }

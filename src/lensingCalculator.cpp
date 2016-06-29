@@ -35,7 +35,7 @@ Uniform distribution of sources, need alignment relative to halo orientation
 //My files
 #include "astro_constants.h"
 #include "lensing_classes.h"
-//#include "my_utilities.h"
+#include "my_utilities.h"
 #include "input_functions.h"
 #include "lens_fitter.h"
 #include "pixelmap_functions.h"
@@ -332,7 +332,7 @@ myProfile.setM_enc( m_to_use );
 myProfile.setC(     C_to_use );
 
 for ( int i = 0; i < userInput.getNbins(); ++i ){
-  distArr[i] = i * userInput.getPhysFOV() / 2 / userInput.getNbins() + 1e-1;
+  distArr[i] = i * userInput.getPhysFOV() / 2 / userInput.getNbins() +1e-3;
 
   double  srcZ;
 

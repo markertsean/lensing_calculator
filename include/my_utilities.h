@@ -29,5 +29,9 @@ int       randVal(
 int     factorial(
                   int  facVal); //Value to calculate factorial of
 
+double diGamma(  double  z               ,
+                 double tolerance = 1e-9,
+                 int    N_consis  =  20  );
+
 
 #endif

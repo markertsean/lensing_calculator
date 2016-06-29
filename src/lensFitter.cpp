@@ -682,14 +682,19 @@ double foxH2012(
                 double     alpha ,  // Shape parameter Ein profile
                 double tolerance ){ // Tolerance level for convergence
 
+  // Sum3 only for specific conditions, when second order poles
   double sum1(0), sum2(0), oldSum1(0), oldSum2(0), s1(0), s2(0);
+  double sum3(0);
 
   int converge(0), k(0);
 
-  //k = 0 term
-  sum1 = tgamma( 1. / alpha ) / tgamma( 0.5 );
+  bool secondOrder = false;
 
-//printf("%4s %4s %14s %14s %14s\n", "k", "conv", "s1", "sum1", "oldSum1");
+  //k = 0 term
+  sum1 =      tgamma(   1. / alpha  ) / tgamma( 0.5 );
+//  sum3 = 1. / tgamma( - 1. / alpha+1) * ( x*x / 4 ) ;//* ( - log( x / 2.) + diGamma(1.) + 1./alpha * diGamma(-1./alpha)-diGamma(-1.) );
+
+printf("%4s %4s %14s %14s %14s %14s\n", "k", "conv", "sum1", "sum2", "sum3", "Gammas");
   do {
       ++k;
 
@@ -698,25 +703,33 @@ double foxH2012(
       double       x1kPow = pow(    x, 1+k*alpha );
       double invFactorial = 1./tgamma( 1+k );
 
-      //Terms in summation
-      s1 = sign * x2kPow * invFactorial *
+      // Terms in summation
+      s1   = sign * x2kPow * invFactorial *
            tgamma(  ( 1. - 2.    * k ) / alpha      ) / tgamma(  0.5 - k );
 
 
-      s2 = sign * x1kPow * invFactorial *
+      s2   = sign * x1kPow * invFactorial *
            tgamma( -( 1. + alpha * k ) / 2.         ) / tgamma(      - k * alpha / 2.0);
 
-//printf("%4i %4i %14.7e %14.7e    %14.7e %14.7e \n", k, converge, (double) sum1, (double) sum2, tgamma((1.-2.*k)/alpha)/tgamma(0.5-k), tgamma(-(1.+alpha*k)/2.0)/tgamma(-k*alpha/2.0));
+      sum3+= sign * x2kPow * invFactorial * invFactorial / pow( 2, 2*k ) *
+           tgamma( 2 * k + 1 ) / tgamma( ( 2 * k - 1 )   / alpha + 1 ) *
+           ( -log( x / 2.) - 1 / (2.0*k) + diGamma( k+1. ) + diGamma( (2.*k-1.)/alpha ) / alpha - diGamma( 2*k-1. ) );
 
-      //Don't include inf or NaN
+printf("%4i %4i %14.7e %14.7e %14.7e   %14.7e %14.7e \n", k, converge, (double) sum1, (double) sum2, (double) sum3, tgamma((1.-2.*k)/alpha)/tgamma(0.5-k), tgamma(-(1.+alpha*k)/2.0)/tgamma(-k*alpha/2.0));
+
+      //Don't include inf or NaN, which only occurs for second order poles
       if ( ! (std::isinf( s1 ) || s1!=s1) ) {
         oldSum1  = sum1;
            sum1 += s1;
+      } else {
+        secondOrder = true;
       }
 
       if ( ! (std::isinf( s2 ) || s2!=s2) ) {
         oldSum2  = sum2;
            sum2 += s2;
+      } else {
+        secondOrder = true;
       }
 
       //totSum is term for current k
@@ -727,12 +740,15 @@ double foxH2012(
       else{
         converge = 0;
       }
-//converge +=1;
-  } while ( converge < 10 && k < 1e2 );
+  } while ( converge < 10 && k < 1e1 );
+
+  if ( !secondOrder ) sum3 = 0; // If we are not including secondOrder, set sum to 0
 
   sum2 *= alpha/2.;
-//printf("%14.7e   %14.7e + %14.7e =  %14.7e\n      ", x, (double) sum1, (double) sum2, sum1+sum2);
-  return sum1+sum2;
+  sum3 *= alpha/tgamma( 0.5 );
+printf("%14.7e   %14.7e + %14.7e + %14.7e =  %14.7e\n\n      ", x, (double) sum1, (double) sum2, (double) sum3, sum1+sum2+sum3);
+//std::cout<<sum3<<std::endl;;
+  return sum1+sum2+sum3;
 }
 
 
@@ -817,22 +833,28 @@ void generateEinRTS(
   //Constant part of kappa_c, divided by gamma(1/alpha) * sqrt pi, a constant for easier kappas
   //Modified kappa_c, kappa_c * sqrt(pi) / Gamma(1/alpha), just need to multiply by H function
 
-  double kappa_cM = lens.getRho_o() * lens.getR_s  ()   * exp( 2./lens.getAlpha() )       *
-                             pow(     lens.getAlpha()/2.,      1./lens.getAlpha() - 1.0 ) *
-                             sqrt( M_PI )  / sourceSc;
-
+  double kappa_c = lens.getRho_o() * lens.getR_s  ()   * exp( 2./lens.getAlpha() )       *
+                         pow(        lens.getAlpha()/2.,      1./lens.getAlpha() - 1.0 ) *
+                         tgamma( 1./ lens.getAlpha() ) / sourceSc;
+//printf("%7s %14s     %14s %14s      %14s %14s\n", "dist", "gArr", "k_EIN", "k_NFW", "k_AVG_EIN", "k_AVG_NFW");
+lens.setAlpha( 1.0 );
   for ( int i = 0; i < u.getNbins(); ++i )
   {
     double x        = sourceDist[i] / lens.getR_s();
 
+//kappa(x)=kc*x*k1(x)=kc*x*G2002=kc*k*2.55912
 
-    double kappa    = kappa_cM * foxH2012( x, lens.getAlpha() );
-    double kappaAVG = kappa_cM * foxH2123( x, lens.getAlpha() );
-
-
+    double kappa    ;//= kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) * foxH2012( x, lens.getAlpha() );
+    double kappaAVG ;//= kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) * foxH2123( x, lens.getAlpha() );
+kappa    = foxH2012( x, lens.getAlpha() )*std::sqrt(M_PI)/x;
+kappaAVG = foxH2123( x, lens.getAlpha() )*x*kappa_c/2;
     // RTS avg across bin
     gArr[i] = ( kappaAVG - kappa ) / ( 1 - kappa );
-printf("%7.2f %14.7e %14.7e %14.7e\n",sourceDist[i],gArr[i],kappaAVG,kappa);
+printf("%7s %14s     %14s %14s      %14s %14s\n", "dist", "R_s", "k_EIN", "k_NFW", "k_AVG_EIN", "k_AVG_NFW");
+printf("%7.2f %14.7e     %14.7e %14.7e      %14.7e %14.7e\n",sourceDist[i],x,
+                                                             kappa   , SDNFWFull   ( sourceDist[i], lens.getR_s(), lens.getRho_o())/sourceSc,
+                                                             kappaAVG, SDAvgNFWFull( sourceDist[i], lens.getR_s(), lens.getRho_o())/sourceSc);
+exit(0);
 //printf("%12.3e %12.3e %12.3e\n", kappa/kappa_cM, kappaAVG/kappa_cM, gArr[i]);
   }
 
