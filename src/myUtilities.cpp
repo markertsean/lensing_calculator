@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <stdio.h>
+#include <iostream>
 
 
 //Returns value of chi^2 fit, ignores points w/0 error
@@ -80,33 +81,36 @@ int     factorial(
 
 
 // Gamma'(z) / Gamma(z)
-double diGamma(  double  z        ,
-                 double tolerance ,
-                 int    N_consis  ){
+long double diGamma(  long double  z ){
 
-  double    sum = 0;
-  double oldSum = 1000;
 
-  int    consis = 0;
-  int         n = 0;
+  long double  gamma = 0.57721566490153286060651209008240243104215933593992359880576L; // Euler-Mascheroni constant
 
-  double  gamma = 0.577215664901532860606512090082402; // Euler-Mascheroni constant
+  // Integral solution, but also follows relation phi(x+1) = phi(x) + 1/x
 
-  do {
+  if ( z >= 1.L &&
+       z <= 3.L ){   // We can integrate
 
-    ++n;
+    long double stepSize = 1.0e-7L;
+    long double      s   = z-1.L;
+    long double      sum = 0.L;
 
-    sum += 1./( n + z ) - 1./n;
+    // Midpoint Integration, offset x by half a step
+    for ( long double x = stepSize/2.0; x < 1.0  ; x+= stepSize ){
 
-    if ( fabs((sum-oldSum)/oldSum) < tolerance ) {
-      ++consis;
-    } else {
-      consis = 0;
+      sum += stepSize *              // dx
+             ( 1. - pow( x, s ) ) /  // ( 1-x^s )
+             ( 1. -      x      ) ;  // ( 1-x)
+
     }
-    oldSum = sum;
 
-  } while ( consis < N_consis && n < 1e6);
+    return sum - gamma;
 
-  return - ( 1./z + gamma + sum );
-
+  } else
+  if ( z > 3.L ){
+    return diGamma( z - 1 ) + 1.L/(z-1.L);
+  } else {
+    return diGamma( z + 1 ) - 1.L/z;
+  }
 }
+
