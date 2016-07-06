@@ -2,6 +2,13 @@
 #define LENS_FITTER
 
 #include <lensing_classes.h>
+#include <gmpxx.h>
+
+#define ln_ln10   2.302585092994045684017991454684364207601101488628
+#define ln_ln10s "2.302585092994045684017991454684364207601101488628"
+#define ln_e      2.718281828459045235360287471352662497757247093699
+#define ln_es    "2.718281828459045235360287471352662497757247093699"
+
 
 void rollBall(        densProfile   &ball ,  // Ball to roll
                       double        &chi2 ,  // Chi2 value
@@ -75,6 +82,10 @@ double foxH2123(
                 double         z       ,  // Z from fox H function
                 double     alpha       ,  // Shape parameter Ein profile
                 double tolerance = 1e-2); // Tolence level for convergence
+
+mpf_class diGamma( mpf_class z );
+
+mpf_class ln( mpf_class inpVal );
 
 
 #endif

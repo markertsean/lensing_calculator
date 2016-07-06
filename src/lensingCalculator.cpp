@@ -40,6 +40,8 @@ Uniform distribution of sources, need alignment relative to halo orientation
 #include "lens_fitter.h"
 #include "pixelmap_functions.h"
 
+#include <gmp.h>
+#include <gmpxx.h>
 
 // Name of the code log file
 std::string logFileName = "";
@@ -47,6 +49,25 @@ std::string logFileName = "";
 
 int main(int arg,char **argv){
 
+int prec = 1000;
+mpf_set_default_prec( prec );
+
+mpf_class  foo(  1.0 );
+mpf_class  bar( 5.687e-38 );
+
+
+std::cout.precision(24);
+std::scientific;
+
+
+std::cout<< bar<<"\t" <<ln( bar )<<std::endl;
+//for ( ; foo < 10.0; foo+=0.5 ){
+//  diGamma( bar, foo );
+//x = pow( bar.get_d() , -foo.get_d() );
+//std::cout << bar << "^" << foo << " = " << x << std::endl;
+//}
+
+exit(0);
   // Initializes the log file, generates logfiles directory
   //  and a file name based on current time
   initLogFile();
@@ -307,7 +328,6 @@ userInput.setNpix( 9*9);
   double    distArr[ userInput.getNbins() ],
             gTanArr[ userInput.getNbins() ],
             gErrArr[ userInput.getNbins() ];
-
 
   radialDistAverage( distArr, srcDArr, userInput, center );
 

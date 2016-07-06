@@ -41,4 +41,4 @@ endif()
 
 add_executable(lensing_calculator ${SOURCES})
 
-target_link_libraries(lensing_calculator ${GLAMER_LIBRARIES} "-lcfitsio")
+target_link_libraries(lensing_calculator ${GLAMER_LIBRARIES} "-lcfitsio" "-lgmpxx" "-lgmp")

@@ -1,3 +1,5 @@
+#include <iostream>
+#include <iomanip>
 #include <math.h>
 #include <cmath>
 #include <omp.h>
@@ -5,6 +7,8 @@
 #include <lensing_classes.h>
 #include <lens_fitter.h>
 #include <my_utilities.h>
+#include <gmp.h>
+#include <gmpxx.h>
 
 
 
@@ -682,73 +686,169 @@ double foxH2012(
                 double     alpha ,  // Shape parameter Ein profile
                 double tolerance ){ // Tolerance level for convergence
 
-  // Sum3 only for specific conditions, when second order poles
-  double sum1(0), sum2(0), oldSum1(0), oldSum2(0), s1(0), s2(0);
-  double sum3(0);
+//  int prec =  32;
+//  int prec =  64;
+//  int prec = 128;
+  int prec = 256;
 
   int converge(0), k(0);
 
+  // Sum3 only for specific conditions, when second order poles
   bool secondOrder = false;
 
-  //k = 0 term
-  sum1 =      tgamma(   1. / alpha  ) / tgamma( 0.5 );
+  mpf_class sum1( 0.0, prec ), s1( 0.0, prec ), oldSum1( 0.0, prec );
+  mpf_class sum2( 0.0, prec ), s2( 0.0, prec ), oldSum2( 0.0, prec );
+  mpf_class sum3( 0.0, prec ), s3( 0.0, prec ), oldSum3( 0.0, prec );
+
+
+
+
+  // k = 0 term
+  sum1 = tgamma(   1.L / alpha  ) / tgamma( 0.5L );
 //  sum3 = 1. / tgamma( - 1. / alpha+1) * ( x*x / 4 ) ;//* ( - log( x / 2.) + diGamma(1.) + 1./alpha * diGamma(-1./alpha)-diGamma(-1.) );
 
-printf("%4s %4s %14s %14s %14s %14s\n", "k", "conv", "sum1", "sum2", "sum3", "Gammas");
+printf("%4s %4s   %14s   %23s    %23s   %23s   %23s\n", "k", "conv", "sum3", "s3", "x4","invF","Gamma");
+
   do {
       ++k;
 
-      int            sign = pow(   -1,   k );
-      double       x2kPow = pow(    x, 2*k );
-      double       x1kPow = pow(    x, 1+k*alpha );
-      double invFactorial = 1./tgamma( 1+k );
+      int                 sign = pow(   -1  ,   k );
+
+//Might not be precise enough
+      mpf_class x2kPow(                pow( x    , 2.L*k       ) , prec );
+      mpf_class x1kPow(                pow( x    , 1.L+k*alpha ) , prec );
+      mpf_class invFactorial( (double) 1.L/tgamma( 1.L+k       ) , prec );
+
+
+      double testVal1 = tgamma( 1.0L - 2.L * k ) ;
+      double testVal2 = tgamma( 0.5L -       k ) ;
+
+      // Can't pass NaNs to mpfs
+      if ( testVal1 == testVal1 &&
+           testVal2 == testVal2 ){
+
+        oldSum1  = sum1;
+             s1  = sign * x2kPow * invFactorial * tgamma(  ( 1.L - 2.L    * k ) / alpha      ) / tgamma(  0.5L - k );
+           sum1 += s1;
+
+      } else {
+        secondOrder = true;
+      }
+
+
+      testVal1 = tgamma( -( 1.L + alpha * k ) / 2.L );
+      testVal2 = tgamma(        - alpha * k   / 2.L );
+
+      if ( testVal1 == testVal1 &&
+           testVal2 == testVal2 ){
+
+        oldSum2  = sum2;
+             s2  = sign * x1kPow * invFactorial * tgamma( -( 1.L + alpha * k ) / 2.L         ) / tgamma(      - k * alpha / 2.L);
+           sum2 += s2;
+
+      } else {
+        secondOrder = true;
+      }
+
+
+
+      testVal1 = tgamma(   2.L * k + 1.L               );
+      testVal2 = tgamma( ( 2.L * k - 1.L ) / alpha + 1 );
+
+      if ( testVal1 == testVal1 &&
+           testVal2 == testVal2 ){
+
+        oldSum3  = sum3;
+
+        mpf_class  x4kPow (  pow( x / 2.L, 2.L*k) , prec ); // All showing 16 digits of precision
+        mpf_class  logJunk( -log( x / 2.L       ) , prec );
+        mpf_class  invJunk( -   ( 1./ 2.  *k    ) , prec );
+        mpf_class  diG1   (           0.0         , prec );
+        mpf_class  diG2   (           0.0         , prec );
+        mpf_class  diG3   (           0.0         , prec );
+        mpf_class  z      (           0.0         , prec );
+
+        z =       k + 1.;
+        diG1 = diGamma( z );
+
+        z = (2. * k - 1.)/alpha;
+        diG2 = diGamma( z );
+
+        z =  2. * k - 1.;
+        diG3 = diGamma( z );
+
+
+        s3   = - x4kPow * invFactorial * invFactorial *
+             tgamma( 2.L * k + 1.L ) / tgamma( ( 2.L * k - 1.L )   / alpha + 1 ) *
+             ( logJunk + invJunk + diG1
+);//+ diG2 / alpha - diG3 );
+
+        sum3 += s3;
 
       // Terms in summation
-      s1   = sign * x2kPow * invFactorial *
-           tgamma(  ( 1. - 2.    * k ) / alpha      ) / tgamma(  0.5 - k );
 
+printf("%4i %4i   %14.4e   ", k, converge, sum3.get_d());
+std::cout.precision(17);
+std::scientific;
+std::cout << std::internal << std::setw( 24 ) <<
+s3 << " = " << std::setw( 24 ) <<
+x4kPow << " * " << std::setw( 24 ) <<
+invFactorial << " * ";
+printf("%23.16e\n",tgamma( 2.L * k + 1.L ) / tgamma( ( 2.L * k - 1.L )   / alpha + 1 ));
+/*
+printf("%4i %4i   %14.4e   %23.16e =  %23.16e * %23.16e * %23.16e * %23.16e\n", k, converge,
+sum3.get_d(),
+s3.get_d(),
+x4kPow.get_d(),
+invFactorial.get_d(),
+tgamma( 2.L * k + 1.L ) / tgamma( ( 2.L * k - 1.L )   / alpha + 1 )
+);
+*/
 
-      s2   = sign * x1kPow * invFactorial *
-           tgamma( -( 1. + alpha * k ) / 2.         ) / tgamma(      - k * alpha / 2.0);
-
-      sum3+= sign * x2kPow * invFactorial * invFactorial / pow( 2, 2*k ) *
-           tgamma( 2 * k + 1 ) / tgamma( ( 2 * k - 1 )   / alpha + 1 ) *
-           ( -log( x / 2.) - 1 / (2.0*k) + diGamma( k+1. ) + diGamma( (2.*k-1.)/alpha ) / alpha - diGamma( 2*k-1. ) );
-
-printf("%4i %4i %14.7e %14.7e %14.7e   %14.7e %14.7e \n", k, converge, (double) sum1, (double) sum2, (double) sum3, tgamma((1.-2.*k)/alpha)/tgamma(0.5-k), tgamma(-(1.+alpha*k)/2.0)/tgamma(-k*alpha/2.0));
-
-      //Don't include inf or NaN, which only occurs for second order poles
-      if ( ! (std::isinf( s1 ) || s1!=s1) ) {
-        oldSum1  = sum1;
-           sum1 += s1;
-      } else {
-        secondOrder = true;
       }
 
-      if ( ! (std::isinf( s2 ) || s2!=s2) ) {
-        oldSum2  = sum2;
-           sum2 += s2;
-      } else {
-        secondOrder = true;
-      }
 
       //totSum is term for current k
-      if ( fabs((sum1-oldSum1)/oldSum1) < tolerance &&
-           fabs((sum2-oldSum2)/oldSum2) < tolerance ){
+      if ( fabs((sum1.get_d()-oldSum1.get_d())/oldSum1.get_d()) < tolerance &&      // Both sums converging
+           fabs((sum2.get_d()-oldSum2.get_d())/oldSum2.get_d()) < tolerance ){
+        converge +=1;
+      }
+      else if (//                             secondOrder &&  // One converging, and second order converging
+               fabs((sum3.get_d()-oldSum3.get_d())/oldSum3.get_d()) < tolerance &&
+              (fabs((sum1.get_d()-oldSum1.get_d())/oldSum1.get_d()) < tolerance ||
+true||
+               fabs((sum2.get_d()-oldSum2.get_d())/oldSum2.get_d()) < tolerance )){
         converge +=1;
       }
       else{
         converge = 0;
       }
-  } while ( converge < 10 && k < 1e1 );
+
+
+/*
+      s1   = sign * x2kPow * invFactorial *
+           tgamma(  ( 1.L - 2.L    * k ) / alpha      ) / tgamma(  0.5L - k );
+
+      s2   = sign * x1kPow * invFactorial *
+           tgamma( -( 1.L + alpha * k ) / 2.L         ) / tgamma(      - k * alpha / 2.L);
+
+      s3   = - x4kPow * invFactorial * invFactorial *
+           tgamma( 2.L * k + 1.L ) / tgamma( ( 2.L * k - 1.L )   / alpha + 1 ) *
+           ( -log( x / 2.L) - 1.L / (2.L*k) + diGamma( k+1.L ) );//+ diGamma( (2.*k-1.)/alpha ) / alpha - diGamma( 2*k-1. ) );
+*/
+
+  } while ( converge < 20  &&
+                   k < 1e2 );
+
 
   if ( !secondOrder ) sum3 = 0; // If we are not including secondOrder, set sum to 0
 
   sum2 *= alpha/2.;
   sum3 *= alpha/tgamma( 0.5 );
-printf("%14.7e   %14.7e + %14.7e + %14.7e =  %14.7e\n\n      ", x, (double) sum1, (double) sum2, (double) sum3, sum1+sum2+sum3);
-//std::cout<<sum3<<std::endl;;
-  return sum1+sum2+sum3;
+//printf("%14.7e   %23.16e + %23.16e + %26.16e =  %23.16e\n\n", x, (double) sum1, (double) sum2, (double) sum3, (double) (sum1+sum2+sum3));
+printf("%14.7e   %23.16e + %23.16e + %26.16e =  %23.16e\n\n", x, sum1.get_d(), sum2.get_d(), sum3.get_d(), (sum1.get_d()+sum2.get_d()+sum3.get_d()));
+exit(0);
+  return (sum1.get_d()+sum2.get_d()+sum3.get_d());
 }
 
 
@@ -840,7 +940,7 @@ void generateEinRTS(
 lens.setAlpha( 1.0 );
   for ( int i = 0; i < u.getNbins(); ++i )
   {
-    double x        = sourceDist[i] / lens.getR_s();
+    double x        = sourceDist[i] / lens.getR_s() ;//* pow( 2./lens.getAlpha(), 1./lens.getAlpha() );
 
 //kappa(x)=kc*x*k1(x)=kc*x*G2002=kc*k*2.55912
 
@@ -879,5 +979,151 @@ exit(0);
 }
 
 
+// Needs super precision
+mpf_class ln( mpf_class inpVal ){
+std::cout.precision(30);
+std::scientific;
+
+  if ( inpVal <= 0.0 ){
+      printf("Error in ln of value: ");
+      std::cout << inpVal << std::endl;
+      exit(1);
+  }
+
+  // use property of ln( a x 10^n ) = ln( a ) + n ln( 10 )
+  mpz_class n(      0 );
+  mpf_class a( inpVal );
+
+  mpf_class ln10Val(ln_ln10s);
+  mpf_class    eVal(ln_es   );
+
+  // Sets a as coefficient, n as exponent
+  while ( a >= mpf_class( 10 ) ){
+      a = a /  mpf_class( 10 ) ;
+      n = n +  mpz_class(  1 ) ;
+  }
+  while ( a <  mpf_class(  1 ) ){
+      a = a *  mpf_class( 10 ) ;
+      n = n -  mpz_class(  1 ) ;
+  }
+
+  // Now have ln( a ) + n ln( 10 ), 1 < a < 10, remove any extra e's as well
+  // If a > e^2, b = a / e^2, ln( a ) = ln( b ) + 2
+  // If a > e^1, b = a / e^1, ln( a ) = ln( b ) + 1
+  // If a > e^m, b = a / e^m, ln( a ) = ln( b ) + m
+
+  mpz_class m( 0 );
+
+  // Reusing a is simpler...
+  if        ( a > eVal * eVal ) {
+    m = m + mpz_class( 2 );
+    a = a /     ( eVal * eVal );
+  } else if ( a > eVal ){
+    m = m + mpz_class( 1 );
+    a = a /       eVal;
+  }
+
+  // Drop another power of 10 for converging the series
+  n = n + mpz_class(  1 );
+  a = a / mpf_class( 10 );
+
+  // a should be < 1
+  // for x < 1:
+  // y = (x-1)/(x+1)
+  // ln(x) = 2 * y SUM k = 1 to inf of 1/(2k+1) * y^(2k)
+  mpf_class   y( ( a - mpf_class( 1 ) )  /
+                 ( a + mpf_class( 1 ) )  );
+  mpf_class  yp(                  1      );
+  mpf_class sum(                  1      );
+
+  mpz_class k( 0 );
+
+//std::cout<<y<<std::endl;
+  do {
+
+    k = k + mpz_class( 1 );
+
+    yp  = yp  * y  * y; // = y^(2k)
+
+    sum = sum + yp / mpf_class( 2 * k + 1 );
+/*
+gmp_printf("%4i     ",(int)k.get_d());
+std::cout << std::internal << std::setw( 4 ) <<
+(2*k+1) << " " << std::setw( 30 ) <<
+yp << " " << std::setw( 30 ) <<
+sum << std::endl;
+*/
+
+  } while ( k < 2e2 );
+
+/*
+gmp_printf("%2i %2i     ",k,counter);
+std::cout << std::internal << std::setw( 24 ) <<
+factor << " " << std::setw( 24 ) <<
+sum << " " << std::setw( 24 ) <<
+oldSum << std::endl;
+*/
+mpf_class returnVal( 0 );
+returnVal = mpf_class(2) * y * sum + m + n * ln10Val;
+/*
+std::cout<<std::setw( 30 ) <<
+mpf_class(2) << " * " <<std::setw( 30 )<<
+y << " * " <<std::setw( 30 )<<
+sum<< " + " <<std::setw( 30 )<<
+m << " + " <<std::setw( 30 )<<
+n << " * " <<std::setw( 30 )<<
+ln10Val << std::endl;
+
+//std::cout<<std::setw( 30 ) <<m+n*mpf_class("ln_ln10")<<std::endl;
+std::cout<<std::setw( 30 ) <<mpf_class(2) * y * sum <<std::endl;//+ m + n * mpf_class(ln_ln10)<<std::endl;
+std::cout<<std::setw( 30 ) <<ln10Val<<std::endl;
+std::cout<<"2.3025850929"<<"940456840"<<"179914546843"<<std::endl;
+
+exit(0);
+*/
+  return returnVal;
+}
 
 
+
+
+
+
+
+
+//need special power function
+mpf_class diGamma( mpf_class z ){
+
+  int prec = 2 * z.get_prec() ;
+
+  mpf_class  gamma( 0.57721566490153286060651209008240243104215933593992359880576, prec ); // Euler-Mascheroni constant
+
+  // Integral solution, but also follows relation phi(x+1) = phi(x) + 1/x
+//returnVal = 0.;
+//return;
+  if ( z >= 1. &&
+       z <= 3. ){   // We can integrate
+printf("996\n");
+    mpf_class stepSize(          1.0e-6  , prec );
+    mpf_class      s  (          z-1.0   , prec );
+    mpf_class      sum(            0.0   , prec );
+    mpf_class      x  ( stepSize / 2.0   , prec );
+
+    // Midpoint Integration, offset x by half a step
+    for ( ; x < 1.0  ; x+= stepSize ){
+
+      sum += stepSize *                              // dx
+             ( 1. - pow( x.get_d(), s.get_d() ) ) /  // ( 1-x^s )
+             ( 1. -      x      ) ;                  // ( 1-x)
+
+    }
+
+    return sum - gamma;
+
+  } else
+  if ( z > 3. ){
+    return diGamma( z - 1 ) + 1.0/( z - 1.0);
+  } else {
+    return diGamma( z + 1 ) - 1.0/  z;
+  }
+}
