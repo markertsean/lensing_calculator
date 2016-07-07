@@ -85,6 +85,11 @@ double foxH2123(
 
 mpf_class diGamma( mpf_class z );
 
+// Roughly 1e2 - 1e4 times slower than exp
+mpf_class exp( mpf_class inpVal );
+
+
+// Roughly 1e5 times slower than log
 mpf_class ln( mpf_class inpVal );
 
 

@@ -16,6 +16,7 @@ Uniform distribution of sources, need alignment relative to halo orientation
 */
 
 
+#include <ctime>
 #include <slsimlib.h>
 #include <iostream>
 #include <cstring>
@@ -52,21 +53,28 @@ int main(int arg,char **argv){
 int prec = 1000;
 mpf_set_default_prec( prec );
 
-mpf_class  foo(  1.0 );
-mpf_class  bar( 5.687e-38 );
+mpf_class  foo(  -78.4 );
+mpf_class  bar( -42.8  );
+
+double  blah(foo.get_d());
 
 
-std::cout.precision(24);
-std::scientific;
+clock_t t1 = clock();
+
+for ( long int i=0; i<1e5; ++i )
+  exp(blah);
+
+clock_t t2 = clock();
+
+for ( long int i=0; i<1e5; ++i )
+  exp(foo);
+
+clock_t t3 = clock();
 
 
-std::cout<< bar<<"\t" <<ln( bar )<<std::endl;
-//for ( ; foo < 10.0; foo+=0.5 ){
-//  diGamma( bar, foo );
-//x = pow( bar.get_d() , -foo.get_d() );
-//std::cout << bar << "^" << foo << " = " << x << std::endl;
-//}
-
+std::cout<<"  exp  "<< (double) (t2-t1) / CLOCKS_PER_SEC <<std::endl;
+std::cout<<"myexp  "<< (double) (t3-t2) / CLOCKS_PER_SEC <<std::endl;
+//*/
 exit(0);
   // Initializes the log file, generates logfiles directory
   //  and a file name based on current time

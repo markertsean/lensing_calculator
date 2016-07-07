@@ -979,10 +979,8 @@ exit(0);
 }
 
 
-// Needs super precision
+// Natural logarithm
 mpf_class ln( mpf_class inpVal ){
-std::cout.precision(30);
-std::scientific;
 
   if ( inpVal <= 0.0 ){
       printf("Error in ln of value: ");
@@ -1035,58 +1033,61 @@ std::scientific;
                  ( a + mpf_class( 1 ) )  );
   mpf_class  yp(                  1      );
   mpf_class sum(                  1      );
+  mpz_class   k(                  0      );
 
-  mpz_class k( 0 );
-
-//std::cout<<y<<std::endl;
   do {
-
-    k = k + mpz_class( 1 );
-
-    yp  = yp  * y  * y; // = y^(2k)
-
-    sum = sum + yp / mpf_class( 2 * k + 1 );
-/*
-gmp_printf("%4i     ",(int)k.get_d());
-std::cout << std::internal << std::setw( 4 ) <<
-(2*k+1) << " " << std::setw( 30 ) <<
-yp << " " << std::setw( 30 ) <<
-sum << std::endl;
-*/
-
+    k   = k   + mpz_class( 1 )              ; // iterate k
+    yp  = yp  * y  * y                      ; // = y^(2k)
+    sum = sum + yp / mpf_class( 2 * k + 1 ) ;
   } while ( k < 2e2 );
 
-/*
-gmp_printf("%2i %2i     ",k,counter);
-std::cout << std::internal << std::setw( 24 ) <<
-factor << " " << std::setw( 24 ) <<
-sum << " " << std::setw( 24 ) <<
-oldSum << std::endl;
-*/
-mpf_class returnVal( 0 );
-returnVal = mpf_class(2) * y * sum + m + n * ln10Val;
-/*
-std::cout<<std::setw( 30 ) <<
-mpf_class(2) << " * " <<std::setw( 30 )<<
-y << " * " <<std::setw( 30 )<<
-sum<< " + " <<std::setw( 30 )<<
-m << " + " <<std::setw( 30 )<<
-n << " * " <<std::setw( 30 )<<
-ln10Val << std::endl;
-
-//std::cout<<std::setw( 30 ) <<m+n*mpf_class("ln_ln10")<<std::endl;
-std::cout<<std::setw( 30 ) <<mpf_class(2) * y * sum <<std::endl;//+ m + n * mpf_class(ln_ln10)<<std::endl;
-std::cout<<std::setw( 30 ) <<ln10Val<<std::endl;
-std::cout<<"2.3025850929"<<"940456840"<<"179914546843"<<std::endl;
-
-exit(0);
-*/
-  return returnVal;
+  return mpf_class(2) * y * sum + m + n * ln10Val;
 }
 
 
 
 
+
+// Exponential function
+mpf_class exp( mpf_class inpVal ){
+
+// e^8.14, e^178.78, e^-43.5
+
+  // e^( a + b ) = e^a * e^b
+  // a whole number
+  // b decimal
+
+  mpf_class  eVal(         ln_es     );  // Value of Eulers Constant
+  mpz_class  sign(   sgn( inpVal )   );  // Sign of the exponent
+  mpf_class     a( trunc( inpVal )   );  // Whole number portion
+  mpf_class     b(        inpVal - a );  // Decimal portion
+  mpf_class    ea(               1.0 );  // e^a
+
+
+  // Calc e^a
+  for ( int i = 0 ; i < abs( a ); i = i + 1 )
+    ea = ea * eVal;
+
+  if ( sign == -1 )
+    ea = 1/ea;
+
+  mpz_class   k( 0 ); // Index
+  mpf_class sum( 1 ); // Running sum, = e^b
+  mpz_class fac( 1 ); // Factorial
+  mpf_class  xk( 1 ); // x^k, where x = b
+
+  do {
+
+    k   = k   + 1; // Increment index
+    xk  = xk  * b; // Calculates x^k
+    fac = fac * k; // Calculates the factoral
+
+    sum = sum + xk / fac;
+  } while ( k < 3e1 );
+
+
+  return ea * sum;
+}
 
 
 
