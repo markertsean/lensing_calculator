@@ -688,7 +688,6 @@ double foxH2012(
 //  int prec =  32;
 //  int prec =  64;
 //  int prec = 128;
-  int prec = 256;
 
   int converge(0), k(0);
 
@@ -699,24 +698,25 @@ double foxH2012(
   mpf_class sum2( 0 ), s2( 0 ), oldSum2( 0 );
   mpf_class sum3( 0 ), s3( 0 ), oldSum3( 0 );
 
-
-
+  mpf_class     z( x );
+  mpf_class    km( 0 );
+  mpf_class  alph( alpha );
 
   // k = 0 term
-  sum1 = tgamma(   1.L / alpha  ) / tgamma( 0.5L );
+  sum1 = gamma( 1 / alph ) / gamma( mpf_class( 0.5 ) );
 //  sum3 = 1. / tgamma( - 1. / alpha+1) * ( x*x / 4 ) ;//* ( - log( x / 2.) + diGamma(1.) + 1./alpha * diGamma(-1./alpha)-diGamma(-1.) );
-
-printf("%4s %4s   %14s   %23s    %23s   %23s   %23s\n", "k", "conv", "sum3", "s3", "x4","invF","Gamma");
+std::cout<<x<<std::endl;
+printf("%4s %4s   %14s   %23s    %23s   %23s\n", "k", "conv", "sum3", "invFactorial", "tGamma(0.5-k)", "Gamma(0.5-k)");
 
   do {
       ++k;
+      km = km + 1;
 
-      int                 sign = pow(   -1  ,   k );
+      int             sign = pow( -1  ,   k );
 
-//Might not be precise enough
-      mpf_class x2kPow(                pow( x    , 2.L*k       ) , prec );
-      mpf_class x1kPow(                pow( x    , 1.L+k*alpha ) , prec );
-      mpf_class invFactorial( (double) 1.L/tgamma( 1.L+k       ) , prec );
+      mpf_class x2kPow(      pow( z   , 2*km       )  );
+      mpf_class x1kPow(      pow( z   , 1+km*alpha )  );
+      mpf_class invFactorial(  1/gamma( 1+km       )  );
 
 
       double testVal1 = tgamma( 1.0L - 2.L * k ) ;
@@ -727,7 +727,7 @@ printf("%4s %4s   %14s   %23s    %23s   %23s   %23s\n", "k", "conv", "sum3", "s3
            testVal2 == testVal2 ){
 
         oldSum1  = sum1;
-             s1  = sign * x2kPow * invFactorial * tgamma(  ( 1.L - 2.L    * k ) / alpha      ) / tgamma(  0.5L - k );
+             s1  = sign * x2kPow * invFactorial * gamma(  ( 1 - 2 * km ) / alph ) / gamma(  0.5 - km );
            sum1 += s1;
 
       } else {
@@ -742,7 +742,7 @@ printf("%4s %4s   %14s   %23s    %23s   %23s   %23s\n", "k", "conv", "sum3", "s3
            testVal2 == testVal2 ){
 
         oldSum2  = sum2;
-             s2  = sign * x1kPow * invFactorial * tgamma( -( 1.L + alpha * k ) / 2.L         ) / tgamma(      - k * alpha / 2.L);
+             s2  = sign * x1kPow * invFactorial * gamma( -( 1 + alph * km ) / 2 ) / gamma( - km * alph / 2 );
            sum2 += s2;
 
       } else {
@@ -759,41 +759,40 @@ printf("%4s %4s   %14s   %23s    %23s   %23s   %23s\n", "k", "conv", "sum3", "s3
 
         oldSum3  = sum3;
 
-        mpf_class  x4kPow (  pow( x / 2.L, 2.L*k) , prec ); // All showing 16 digits of precision
-        mpf_class  logJunk( -log( x / 2.L       ) , prec );
-        mpf_class  invJunk( -   ( 1./ 2.  *k    ) , prec );
-        mpf_class  diG1   (           0.0         , prec );
-        mpf_class  diG2   (           0.0         , prec );
-        mpf_class  diG3   (           0.0         , prec );
-        mpf_class  z      (           0.0         , prec );
+        mpf_class  x4kPow (  pow( z / 2  , 2*km) ); // All showing 16 digits of precision
+        mpf_class  logJunk( -ln ( x / 2        ) );
+        mpf_class  invJunk( -   ( 1 / 2   *km  ) );
+        mpf_class  diG1   (           0.0        );
+        mpf_class  diG2   (           0.0        );
+        mpf_class  diG3   (           0.0        );
+        mpf_class  s      (           0.0         );
 
-        z =       k + 1.;
-        diG1 = diGamma( z );
+        s =       k + 1.;
+//        diG1 = diGamma( z );
 
-        z = (2. * k - 1.)/alpha;
-        diG2 = diGamma( z );
+        s = (2. * k - 1.)/alpha;
+//        diG2 = diGamma( z );
 
-        z =  2. * k - 1.;
-        diG3 = diGamma( z );
+        s =  2. * k - 1.;
+//        diG3 = diGamma( z );
 
 
         s3   = - x4kPow * invFactorial * invFactorial *
              tgamma( 2.L * k + 1.L ) / tgamma( ( 2.L * k - 1.L )   / alpha + 1 ) *
-             ( logJunk + invJunk + diG1
-);//+ diG2 / alpha - diG3 );
+             ( logJunk + invJunk
+);//+ diG1 + diG2 / alpha - diG3 );
 
         sum3 += s3;
 
       // Terms in summation
 
 printf("%4i %4i   %14.4e   ", k, converge, sum3.get_d());
-std::cout.precision(17);
+std::cout.precision(26);
 std::scientific;
-std::cout << std::internal << std::setw( 24 ) <<
-s3 << " = " << std::setw( 24 ) <<
-x4kPow << " * " << std::setw( 24 ) <<
-invFactorial << " * ";
-printf("%23.16e\n",tgamma( 2.L * k + 1.L ) / tgamma( ( 2.L * k - 1.L )   / alpha + 1 ));
+//std::cout << std::internal << std::setw( 24 ) << x1kPow << " " << std::setw( 24 ) << x2kPow << " " << std::setw( 24 ) << x4kPow << " " << std::endl;
+std::cout << std::internal << std::setw( 30 ) << invFactorial << " " << std::setw( 30 ) << tgamma( 0.5-k ) << " " << std::setw( 30 ) << gamma( mpf_class(0.5-k) ) << " " << std::endl;
+//printf("%23.16e\n",tgamma( 2.L * k + 1.L ) / tgamma( ( 2.L * k - 1.L )   / alpha + 1 ));
+
 /*
 printf("%4i %4i   %14.4e   %23.16e =  %23.16e * %23.16e * %23.16e * %23.16e\n", k, converge,
 sum3.get_d(),
