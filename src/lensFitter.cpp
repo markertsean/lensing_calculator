@@ -7,9 +7,8 @@
 #include <lensing_classes.h>
 #include <lens_fitter.h>
 #include <my_utilities.h>
-#include <gmp.h>
-#include <gmpxx.h>
 
+#include "precise_math.h"
 
 
 /*
@@ -696,9 +695,9 @@ double foxH2012(
   // Sum3 only for specific conditions, when second order poles
   bool secondOrder = false;
 
-  mpf_class sum1( 0.0, prec ), s1( 0.0, prec ), oldSum1( 0.0, prec );
-  mpf_class sum2( 0.0, prec ), s2( 0.0, prec ), oldSum2( 0.0, prec );
-  mpf_class sum3( 0.0, prec ), s3( 0.0, prec ), oldSum3( 0.0, prec );
+  mpf_class sum1( 0 ), s1( 0 ), oldSum1( 0 );
+  mpf_class sum2( 0 ), s2( 0 ), oldSum2( 0 );
+  mpf_class sum3( 0 ), s3( 0 ), oldSum3( 0 );
 
 
 
@@ -978,153 +977,3 @@ exit(0);
   //              2 3[(0,2/a)(-1/2,1)(-3/2,1) ]  2pi i U   G(5/2-s) G( s )                       [ k=0 (k+1)! G(1/2-1/a  )        k=1 2(k)!   G(    -a/2 k)       ]
 }
 
-
-// Natural logarithm
-mpf_class ln( mpf_class inpVal ){
-
-  if ( inpVal <= 0.0 ){
-      printf("Error in ln of value: ");
-      std::cout << inpVal << std::endl;
-      exit(1);
-  }
-
-  // use property of ln( a x 10^n ) = ln( a ) + n ln( 10 )
-  mpz_class n(      0 );
-  mpf_class a( inpVal );
-
-  mpf_class ln10Val(ln_ln10s);
-  mpf_class    eVal(ln_es   );
-
-  // Sets a as coefficient, n as exponent
-  while ( a >= mpf_class( 10 ) ){
-      a = a /  mpf_class( 10 ) ;
-      n = n +  mpz_class(  1 ) ;
-  }
-  while ( a <  mpf_class(  1 ) ){
-      a = a *  mpf_class( 10 ) ;
-      n = n -  mpz_class(  1 ) ;
-  }
-
-  // Now have ln( a ) + n ln( 10 ), 1 < a < 10, remove any extra e's as well
-  // If a > e^2, b = a / e^2, ln( a ) = ln( b ) + 2
-  // If a > e^1, b = a / e^1, ln( a ) = ln( b ) + 1
-  // If a > e^m, b = a / e^m, ln( a ) = ln( b ) + m
-
-  mpz_class m( 0 );
-
-  // Reusing a is simpler...
-  if        ( a > eVal * eVal ) {
-    m = m + mpz_class( 2 );
-    a = a /     ( eVal * eVal );
-  } else if ( a > eVal ){
-    m = m + mpz_class( 1 );
-    a = a /       eVal;
-  }
-
-  // Drop another power of 10 for converging the series
-  n = n + mpz_class(  1 );
-  a = a / mpf_class( 10 );
-
-  // a should be < 1
-  // for x < 1:
-  // y = (x-1)/(x+1)
-  // ln(x) = 2 * y SUM k = 1 to inf of 1/(2k+1) * y^(2k)
-  mpf_class   y( ( a - mpf_class( 1 ) )  /
-                 ( a + mpf_class( 1 ) )  );
-  mpf_class  yp(                  1      );
-  mpf_class sum(                  1      );
-  mpz_class   k(                  0      );
-
-  do {
-    k   = k   + mpz_class( 1 )              ; // iterate k
-    yp  = yp  * y  * y                      ; // = y^(2k)
-    sum = sum + yp / mpf_class( 2 * k + 1 ) ;
-  } while ( k < 2e2 );
-
-  return mpf_class(2) * y * sum + m + n * ln10Val;
-}
-
-
-
-
-
-// Exponential function
-mpf_class exp( mpf_class inpVal ){
-
-// e^8.14, e^178.78, e^-43.5
-
-  // e^( a + b ) = e^a * e^b
-  // a whole number
-  // b decimal
-
-  mpf_class  eVal(         ln_es     );  // Value of Eulers Constant
-  mpz_class  sign(   sgn( inpVal )   );  // Sign of the exponent
-  mpf_class     a( trunc( inpVal )   );  // Whole number portion
-  mpf_class     b(        inpVal - a );  // Decimal portion
-  mpf_class    ea(               1.0 );  // e^a
-
-
-  // Calc e^a
-  for ( int i = 0 ; i < abs( a ); i = i + 1 )
-    ea = ea * eVal;
-
-  if ( sign == -1 )
-    ea = 1/ea;
-
-  mpz_class   k( 0 ); // Index
-  mpf_class sum( 1 ); // Running sum, = e^b
-  mpz_class fac( 1 ); // Factorial
-  mpf_class  xk( 1 ); // x^k, where x = b
-
-  do {
-
-    k   = k   + 1; // Increment index
-    xk  = xk  * b; // Calculates x^k
-    fac = fac * k; // Calculates the factoral
-
-    sum = sum + xk / fac;
-  } while ( k < 3e1 );
-
-
-  return ea * sum;
-}
-
-
-
-
-//need special power function
-mpf_class diGamma( mpf_class z ){
-
-  int prec = 2 * z.get_prec() ;
-
-  mpf_class  gamma( 0.57721566490153286060651209008240243104215933593992359880576, prec ); // Euler-Mascheroni constant
-
-  // Integral solution, but also follows relation phi(x+1) = phi(x) + 1/x
-//returnVal = 0.;
-//return;
-  if ( z >= 1. &&
-       z <= 3. ){   // We can integrate
-printf("996\n");
-    mpf_class stepSize(          1.0e-6  , prec );
-    mpf_class      s  (          z-1.0   , prec );
-    mpf_class      sum(            0.0   , prec );
-    mpf_class      x  ( stepSize / 2.0   , prec );
-
-    // Midpoint Integration, offset x by half a step
-    for ( ; x < 1.0  ; x+= stepSize ){
-
-      sum += stepSize *                              // dx
-             ( 1. - pow( x.get_d(), s.get_d() ) ) /  // ( 1-x^s )
-             ( 1. -      x      ) ;                  // ( 1-x)
-
-    }
-
-    return sum - gamma;
-
-  } else
-  if ( z > 3. ){
-    return diGamma( z - 1 ) + 1.0/( z - 1.0);
-  } else {
-    return diGamma( z + 1 ) - 1.0/  z;
-  }
-}

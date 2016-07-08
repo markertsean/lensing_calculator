@@ -40,6 +40,7 @@ Uniform distribution of sources, need alignment relative to halo orientation
 #include "input_functions.h"
 #include "lens_fitter.h"
 #include "pixelmap_functions.h"
+#include "precise_math.h"
 
 #include <gmp.h>
 #include <gmpxx.h>
@@ -53,27 +54,42 @@ int main(int arg,char **argv){
 int prec = 1000;
 mpf_set_default_prec( prec );
 
-mpf_class  foo(  -78.4 );
-mpf_class  bar( -42.8  );
+mpf_class  foo( -1.358e-2 );
+mpf_class  bar( -4.8  );
 
-double  blah(foo.get_d());
+std::scientific;
+std::cout.precision(30);
 
+std::cout << std::setw(30) <<
+foo << " " << std::setw(30) <<
+gamma( foo ) <<
+std::endl;
 
+exit(0);
+/*
+std::scientific;
+std::cout.precision(30);
+std::cout << std::setw(30) <<
+foo << " " << std::setw(30) <<
+bar << " " << std::setw(30) <<
+blah << std::endl;
+exit(0);
+*/
 clock_t t1 = clock();
 
-for ( long int i=0; i<1e5; ++i )
-  exp(blah);
+for ( long int i=0; i<1e4; ++i )
+  pow( foo.get_d(), bar.get_d() );
 
 clock_t t2 = clock();
 
-for ( long int i=0; i<1e5; ++i )
-  exp(foo);
+for ( long int i=0; i<1e4; ++i )
+  pow( foo, bar );
 
 clock_t t3 = clock();
 
 
-std::cout<<"  exp  "<< (double) (t2-t1) / CLOCKS_PER_SEC <<std::endl;
-std::cout<<"myexp  "<< (double) (t3-t2) / CLOCKS_PER_SEC <<std::endl;
+std::cout<<"  pow  "<< (double) (t2-t1) / CLOCKS_PER_SEC <<std::endl;
+std::cout<<"mypow  "<< (double) (t3-t2) / CLOCKS_PER_SEC <<std::endl;
 //*/
 exit(0);
   // Initializes the log file, generates logfiles directory
