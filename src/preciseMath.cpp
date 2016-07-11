@@ -284,162 +284,59 @@ mpf_class pow( mpf_class  a ,
 mpf_class diGamma( mpf_class z ){
 
 
-  mpf_class  gamma( ln_ems ); // Euler-Mascheroni constant
+  int  lowVal = 17;
+  int highVal = lowVal+1;
 
   // Integral solution, but also follows relation phi(x+1) = phi(x) + 1/x
-/*
--0.577215664901532860606512090082402431042159335939923598805767234884867726
-1.644934066848226436472415166646025189218949901206798437735558229370007470 pi2/6
--2.404113806319188570799476323022899981529972584680997763584543110683676411
-6.493939402266829149096022179247007416648505711512361446097857292664723697 pi4/15
--24.88626612344087823195277167496882003336994206804590748738062426969128615
-122.0811674381338967657421515749104633482180988039424274210890396805198619 8pi6/63
--726.0114797149844353246542358918536669119017636069718686204438583315530643
-5060.549875237639470468573602083608424905162384875244102458715421369018080 8pi8/15
--40400.97839874763488532782365545085427877962792824191466403941555348253335
-363240.91142238262680714352556574776489114436761411760146250647037361744687 128pi10/33
-9^
--3.630593311606628712990618842832054105457279034079387429801940443319876172e6
-3.992662298773108670232707324047201489779273691976043029806448907811259421e7
--4.790603798898314524268767644990636347189709185641186486362327984306841255e8
-6.227402193410971764192853408947415910060510469664605698043745885736784393e9
--8.718095783017206784519122031036435756610645482962514563576904352293937892e10
-1.307694352218913820890099907485110170285328633962085017522629158340478485e12
--2.092294967948151090663165568811151437911025141531737318144060238699595562e13
-3.556887858592237159756123967161824480929801507384519141393675325474109458e14
--6.402385922818921400735649453323975529947187425748758832484198207540196311e15
-1.216452164536393966698766962740413842383112994013078739263026453952777028e17
--2.432903168507861321737256818243197497086463760919206750959866308632857752e18
-20^
 
-*/
-/*
-  mpf_class phi011("1.644934066848226436472415166646025189218949901206798437735558229370007470");
-  mpf_class phi021("-2.404113806319188570799476323022899981529972584680997763584543110683676411");
-  mpf_class phi031("6.493939402266829149096022179247007416648505711512361446097857292664723697");
-  mpf_class phi041("-24.88626612344087823195277167496882003336994206804590748738062426969128615");
-  mpf_class phi051("122.0811674381338967657421515749104633482180988039424274210890396805198619");
-  mpf_class phi061("-726.0114797149844353246542358918536669119017636069718686204438583315530643");
-  mpf_class phi071("5060.549875237639470468573602083608424905162384875244102458715421369018080");
-  mpf_class phi081("-40400.97839874763488532782365545085427877962792824191466403941555348253335");
-  mpf_class phi091("363240.91142238262680714352556574776489114436761411760146250647037361744687");
+  if ( z >=  lowVal &&
+       z <  highVal ){   // We can integrate
 
-  mpf_class phi101("-3.63059331160662871299061884283205410545727903407938742980194044331987617e6");
-  mpf_class phi111("3.992662298773108670232707324047201489779273691976043029806448907811259421e7");
-  mpf_class phi121("-4.79060379889831452426876764499063634718970918564118648636232798430684125e8");
-  mpf_class phi131("6.227402193410971764192853408947415910060510469664605698043745885736784393e9");
-  mpf_class phi141("-8.71809578301720678451912203103643575661064548296251456357690435229393789e10");
-  mpf_class phi151("1.307694352218913820890099907485110170285328633962085017522629158340478485e12");
-  mpf_class phi161("-2.09229496794815109066316556881115143791102514153173731814406023869959556e13");
-  mpf_class phi171("3.556887858592237159756123967161824480929801507384519141393675325474109458e14");
-  mpf_class phi181("-6.40238592281892140073564945332397552994718742574875883248419820754019631e15");
-  mpf_class phi191("1.216452164536393966698766962740413842383112994013078739263026453952777028e17");
-  mpf_class phi201("-2.43290316850786132173725681824319749708646376091920675095986630863285775e18");
-*/
+    mpf_class gamma( ln_ems ); // Euler-Mascheroni constant
 
-  mpf_class pPhi( -gamma );
+    mpf_class nPhi ( ln( z ) - mpf_class(1) / ( mpz_class(2) * z )  ); // To add to sum
 
-  if ( z >= 1 &&
-       z <  2 ){   // We can integrate
+    mpf_class sum ( 0 );
+    mpf_class zp  ( 1 );
 
 
-    mpf_class stepSize(          1.0e-6  );
-    mpf_class      s  (          z-1.0   );
-    mpf_class      sum(            0.0   );
-    mpf_class      x  ( stepSize / 2.0   );
-
-    // Midpoint Integration, offset x by half a step
-    for ( ; x < 1.0  ; x+= stepSize ){
-
-      sum += stepSize *              // dx
-             ( 1. - pow( x, s ) ) /  // ( 1-x^s )
-             ( 1. -      x      ) ;  // ( 1-x)
-
-    }
-
-/*
-  mpf_class eps( z - 1 );
+    // Bernoulli numbers, external function
+    mpq_t rop;
+    mpz_t n, d;
+    mpq_init(rop);
+    mpz_inits(n, d, NULL);
 
 
-  pPhi = pPhi + phi011 * pow( eps, mpf_class(  1 ) ) +
-                phi021 * pow( eps, mpf_class(  2 ) ) / mpz_class( 2 ) +
-                phi031 * pow( eps, mpf_class(  3 ) ) / mpz_class( 6 ) +
-                phi041 * pow( eps, mpf_class(  4 ) ) / mpz_class( 24 ) +
-                phi051 * pow( eps, mpf_class(  5 ) ) / mpz_class( 120 ) +
-                phi061 * pow( eps, mpf_class(  6 ) ) / mpz_class( 720 ) +
-                phi071 * pow( eps, mpf_class(  7 ) ) / mpz_class( 5040 ) +
-                phi081 * pow( eps, mpf_class(  8 ) ) / mpz_class( 40320 ) +
-                phi091 * pow( eps, mpf_class(  9 ) ) / mpz_class( 362880 ) +
-                phi101 * pow( eps, mpf_class( 10 ) ) / mpz_class( 3628800 ) +
-                phi111 * pow( eps, mpf_class( 11 ) ) / mpz_class( 39916800 ) +
-                phi121 * pow( eps, mpf_class( 12 ) ) / mpz_class( 479001600 ) +
-                phi131 * pow( eps, mpf_class( 13 ) ) / mpz_class( 6227020800 ) +
-                phi141 * pow( eps, mpf_class( 14 ) ) / mpz_class( 87178291200 ) +
-                phi151 * pow( eps, mpf_class( 15 ) ) / mpz_class( 1307674368000 ) +
-                phi161 * pow( eps, mpf_class( 16 ) ) / mpz_class( 20922789888000 ) +
-                phi171 * pow( eps, mpf_class( 17 ) ) / mpz_class( 355687428096000 ) +
-                phi181 * pow( eps, mpf_class( 18 ) ) / mpz_class( 6402373705728000 ) +
-                phi191 * pow( eps, mpf_class( 19 ) ) / mpz_class( 121645100408832000 ) +
-                phi201 * pow( eps, mpf_class( 20 ) ) / mpz_class( 2432902008176640000 );
-*/
-/*
-  mpf_class      sum(            0.0   );
-  mpf_class nPhi( ln( z ) - mpz_class(1) / ( mpz_class(2) * z )  );
 
-  // Bernoulli numbers
-  mpq_t rop;
-  mpz_t n, d;
-  mpq_init(rop);
-  mpz_inits(n, d, NULL);
+    unsigned int kui (0);
+    mpf_class    km  (0);
 
+    do{
 
-  sum = 0;
+      kui = kui + 1 ;
+      km  = km  + 1 ;
+      zp  = zp  * z * z;
 
-  unsigned int kui (0);
-  mpf_class    km  (0);
-std::cout.precision(30);
-std::scientific;
+      bernoulli( rop, 2 * kui );
+      mpq_get_num( n, rop );
+      mpq_get_den( d, rop );
 
-  do{
+      mpq_class  rat( rop );
 
-    kui = kui + 2;
-    km  = km  + 2;
-    bernoulli( rop, kui );
-    mpq_get_num( n, rop );
-    mpq_get_den( d, rop );
+      mpz_class num( rat.get_num_mpz_t() );
+      mpz_class den( rat.get_den_mpz_t() );
 
-    mpq_class rat( rop );
+      sum = sum + num / ( den * 2 * km * zp );
 
-    mpz_class num( rat.get_num_mpz_t() );
-    mpz_class den( rat.get_den_mpz_t() );
+    } while ( kui < 100 );
 
-    sum = sum + num / ( den * km * pow( z, km ) );
-*/
-/*
-std::cout << std::setw(4) <<
-kui/2 << " " << std::setw(20) <<
-num << " " << std::setw(10) <<
-den*km << " " << std::setw(30) <<
-pow( z, km ) << " " << std::setw(30) <<
-sum << std::endl;
-
-  } while ( kui < 200 );
-
-  nPhi = nPhi + sum;
-
-std::cout.precision(30);
-std::scientific;
-std::cout<< std::setw(30) << z << std::endl;
-//std::cout<< std::setw(30) << eps << std::endl;
-std::cout<< std::setw(30) << nPhi << std::endl;
-//std::cout<< std::setw(30) << sum-gamma << std::endl;
-*/
-    return sum - gamma;
+    return nPhi-sum;
 
   } else
-  if ( z > 2 ){
+  if ( z >= highVal ){
     return diGamma( z - 1 ) + 1.0/( z - 1.0);
   } else {
     return diGamma( z + 1 ) - 1.0/  z;
   }
 }
+

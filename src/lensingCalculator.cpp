@@ -54,45 +54,6 @@ int main(int arg,char **argv){
 int prec = 1000;
 mpf_set_default_prec( prec );
 
-/*
-mpf_class  foo( -1.358e-2 );
-mpf_class  bar( -4.8  );
-
-std::scientific;
-std::cout.precision(30);
-
-std::cout << std::setw(30) <<
-foo << " " << std::setw(30) <<
-gamma( foo ) <<
-std::endl;
-
-
-std::scientific;
-std::cout.precision(30);
-std::cout << std::setw(30) <<
-foo << " " << std::setw(30) <<
-bar << " " << std::setw(30) <<
-blah << std::endl;
-exit(0);
-
-clock_t t1 = clock();
-
-for ( long int i=0; i<1e4; ++i )
-  pow( foo.get_d(), bar.get_d() );
-
-clock_t t2 = clock();
-
-for ( long int i=0; i<1e4; ++i )
-  pow( foo, bar );
-
-clock_t t3 = clock();
-
-
-std::cout<<"  pow  "<< (double) (t2-t1) / CLOCKS_PER_SEC <<std::endl;
-std::cout<<"mypow  "<< (double) (t3-t2) / CLOCKS_PER_SEC <<std::endl;
-exit(0);
-//*/
-
 
   // Initializes the log file, generates logfiles directory
   //  and a file name based on current time
