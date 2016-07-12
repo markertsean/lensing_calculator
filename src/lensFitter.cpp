@@ -704,10 +704,9 @@ double foxH2012(
 
   // k = 0 term
   sum1 = gamma( 1 / alph ) / gamma( mpf_class( 0.5 ) );
-//  sum3 = 1. / tgamma( - 1. / alpha+1) * ( x*x / 4 ) ;//* ( - log( x / 2.) + diGamma(1.) + 1./alpha * diGamma(-1./alpha)-diGamma(-1.) );
-std::cout<<x<<std::endl;
-printf("%4s %4s   %14s   %23s    %23s   %23s\n", "k", "conv", "sum3", "invFactorial", "tGamma(0.5-k)", "Gamma(0.5-k)");
 
+//printf("%4s %4s   %14s   %23s\n", "k", "conv", "sum3", "s3");
+mpf_class x4kPow( 1 );
   do {
       ++k;
       km = km + 1;
@@ -722,9 +721,11 @@ printf("%4s %4s   %14s   %23s    %23s   %23s\n", "k", "conv", "sum3", "invFactor
       double testVal1 = tgamma( 1.0L - 2.L * k ) ;
       double testVal2 = tgamma( 0.5L -       k ) ;
 
+      bool nan_s1 = !( testVal1 == testVal1 && // If s1 is NaN
+                       testVal2 == testVal2 );
+
       // Can't pass NaNs to mpfs
-      if ( testVal1 == testVal1 &&
-           testVal2 == testVal2 ){
+      if ( ! nan_s1 ){
 
         oldSum1  = sum1;
              s1  = sign * x2kPow * invFactorial * gamma(  ( 1 - 2 * km ) / alph ) / gamma(  0.5 - km );
@@ -738,8 +739,11 @@ printf("%4s %4s   %14s   %23s    %23s   %23s\n", "k", "conv", "sum3", "invFactor
       testVal1 = tgamma( -( 1.L + alpha * k ) / 2.L );
       testVal2 = tgamma(        - alpha * k   / 2.L );
 
-      if ( testVal1 == testVal1 &&
-           testVal2 == testVal2 ){
+      bool nan_s2 = !( testVal1 == testVal1 && // If s1 is NaN
+                       testVal2 == testVal2 );
+
+
+      if ( ! nan_s2 ){
 
         oldSum2  = sum2;
              s2  = sign * x1kPow * invFactorial * gamma( -( 1 + alph * km ) / 2 ) / gamma( - km * alph / 2 );
@@ -754,43 +758,60 @@ printf("%4s %4s   %14s   %23s    %23s   %23s\n", "k", "conv", "sum3", "invFactor
       testVal1 = tgamma(   2.L * k + 1.L               );
       testVal2 = tgamma( ( 2.L * k - 1.L ) / alpha + 1 );
 
-      if ( testVal1 == testVal1 &&
-           testVal2 == testVal2 ){
+      bool nan_s3 = !( testVal1 == testVal1 && // If s2 is NaN
+                       testVal2 == testVal2 );
+
+
+      if ( ! nan_s3 ){
 
         oldSum3  = sum3;
 
-        mpf_class  x4kPow (  pow( z / 2  , 2*km) ); // All showing 16 digits of precision
+//        mpf_class  x4kPow (  pow( z / 2  , 2*km) ); // All showing 16 digits of precision
         mpf_class  logJunk( -ln ( x / 2        ) );
-        mpf_class  invJunk( -   ( 1 / 2   *km  ) );
+        mpf_class  invJunk( -     1./(2   * km ) );
         mpf_class  diG1   (           0.0        );
         mpf_class  diG2   (           0.0        );
         mpf_class  diG3   (           0.0        );
-        mpf_class  s      (           0.0         );
+        mpf_class  s      (           0.0        );
+
+        x4kPow = x4kPow * ( z / 2 ) * ( z / 2);  // (z/x)^2k
 
         s =       k + 1.;
-//        diG1 = diGamma( z );
+        diG1 = diGamma( s );
 
-        s = (2. * k - 1.)/alpha;
-//        diG2 = diGamma( z );
+        s = (2. * k - 1.)/alph;
+        diG2 = diGamma( s );
 
         s =  2. * k - 1.;
-//        diG3 = diGamma( z );
+        diG3 = diGamma( s );
+
+        if ( abs( mpf_class(1) - alpha ) <= 1e-8 ){
+          diG2 = 0;
+          diG3 = 0;
+        }
 
 
         s3   = - x4kPow * invFactorial * invFactorial *
-             tgamma( 2.L * k + 1.L ) / tgamma( ( 2.L * k - 1.L )   / alpha + 1 ) *
-             ( logJunk + invJunk
-);//+ diG1 + diG2 / alpha - diG3 );
+             gamma(   2 * km + 1 ) /
+             gamma( ( 2 * km - 1 ) / alph + 1 ) *
+             ( logJunk +
+               invJunk +
+                  diG1 +
+                  diG2 / alph -
+                  diG3 );
 
         sum3 += s3;
 
       // Terms in summation
-
+/*
 printf("%4i %4i   %14.4e   ", k, converge, sum3.get_d());
 std::cout.precision(26);
 std::scientific;
-//std::cout << std::internal << std::setw( 24 ) << x1kPow << " " << std::setw( 24 ) << x2kPow << " " << std::setw( 24 ) << x4kPow << " " << std::endl;
-std::cout << std::internal << std::setw( 30 ) << invFactorial << " " << std::setw( 30 ) << tgamma( 0.5-k ) << " " << std::setw( 30 ) << gamma( mpf_class(0.5-k) ) << " " << std::endl;
+std::cout << std::internal <<
+std::setw( 28 ) << logJunk << " " <<
+std::setw( 28 ) << invJunk << " " <<
+//std::setw( 28 ) << gamma(   2 * km + 1 ) / gamma( ( 2 * km - 1 ) / alph + 1 ) << " " <<
+std::setw( 28 ) << diG1 + diG2/alph - diG3 << " " << std::endl;
 //printf("%23.16e\n",tgamma( 2.L * k + 1.L ) / tgamma( ( 2.L * k - 1.L )   / alpha + 1 ));
 
 /*
@@ -807,15 +828,9 @@ tgamma( 2.L * k + 1.L ) / tgamma( ( 2.L * k - 1.L )   / alpha + 1 )
 
 
       //totSum is term for current k
-      if ( fabs((sum1.get_d()-oldSum1.get_d())/oldSum1.get_d()) < tolerance &&      // Both sums converging
-           fabs((sum2.get_d()-oldSum2.get_d())/oldSum2.get_d()) < tolerance ){
-        converge +=1;
-      }
-      else if (//                             secondOrder &&  // One converging, and second order converging
-               fabs((sum3.get_d()-oldSum3.get_d())/oldSum3.get_d()) < tolerance &&
-              (fabs((sum1.get_d()-oldSum1.get_d())/oldSum1.get_d()) < tolerance ||
-true||
-               fabs((sum2.get_d()-oldSum2.get_d())/oldSum2.get_d()) < tolerance )){
+      if ( (fabs((sum1.get_d()-oldSum1.get_d())/oldSum1.get_d()) < tolerance ||  nan_s1 ) &&  // Checks for variables converging, or NaN
+           (fabs((sum2.get_d()-oldSum2.get_d())/oldSum2.get_d()) < tolerance ||  nan_s2 )
+&& (fabs((sum3.get_d()-oldSum3.get_d())/oldSum3.get_d()) < tolerance ||  nan_s3 ) ){
         converge +=1;
       }
       else{
@@ -823,29 +838,34 @@ true||
       }
 
 
-/*
-      s1   = sign * x2kPow * invFactorial *
-           tgamma(  ( 1.L - 2.L    * k ) / alpha      ) / tgamma(  0.5L - k );
-
-      s2   = sign * x1kPow * invFactorial *
-           tgamma( -( 1.L + alpha * k ) / 2.L         ) / tgamma(      - k * alpha / 2.L);
-
-      s3   = - x4kPow * invFactorial * invFactorial *
-           tgamma( 2.L * k + 1.L ) / tgamma( ( 2.L * k - 1.L )   / alpha + 1 ) *
-           ( -log( x / 2.L) - 1.L / (2.L*k) + diGamma( k+1.L ) );//+ diGamma( (2.*k-1.)/alpha ) / alpha - diGamma( 2*k-1. ) );
-*/
 
   } while ( converge < 20  &&
                    k < 1e2 );
 
 
-  if ( !secondOrder ) sum3 = 0; // If we are not including secondOrder, set sum to 0
+  if ( secondOrder ) {
+
+/*
+    // Add k=0 term
+    if ( abs( mpf_class(1) - alpha ) <= 1e-8 ){
+      sum3 = sum3 - 1 ;
+    }else {
+
+      sum3 = sum3 - ( -ln( z / 2 ) + diGamma(-1/alph ) / alph + 1 - 2 * mpf_class( ln_ems ) ) / gamma( 1 - 1./alph );
+
+    }
+*/
+
+
+  } else{
+    sum3 = 0; // If we are not including secondOrder, set sum to 0
+  }
 
   sum2 *= alpha/2.;
   sum3 *= alpha/tgamma( 0.5 );
 //printf("%14.7e   %23.16e + %23.16e + %26.16e =  %23.16e\n\n", x, (double) sum1, (double) sum2, (double) sum3, (double) (sum1+sum2+sum3));
 printf("%14.7e   %23.16e + %23.16e + %26.16e =  %23.16e\n\n", x, sum1.get_d(), sum2.get_d(), sum3.get_d(), (sum1.get_d()+sum2.get_d()+sum3.get_d()));
-exit(0);
+//exit(0);
   return (sum1.get_d()+sum2.get_d()+sum3.get_d());
 }
 
@@ -934,7 +954,7 @@ void generateEinRTS(
   double kappa_c = lens.getRho_o() * lens.getR_s  ()   * exp( 2./lens.getAlpha() )       *
                          pow(        lens.getAlpha()/2.,      1./lens.getAlpha() - 1.0 ) *
                          tgamma( 1./ lens.getAlpha() ) / sourceSc;
-//printf("%7s %14s     %14s %14s      %14s %14s\n", "dist", "gArr", "k_EIN", "k_NFW", "k_AVG_EIN", "k_AVG_NFW");
+printf("%7s %14s     %14s %14s      %14s %14s\n", "dist", "gArr", "k_EIN", "k_NFW", "k_AVG_EIN", "k_AVG_NFW");
 lens.setAlpha( 1.0 );
   for ( int i = 0; i < u.getNbins(); ++i )
   {
@@ -948,11 +968,11 @@ kappa    = foxH2012( x, lens.getAlpha() )*std::sqrt(M_PI)/x;
 kappaAVG = foxH2123( x, lens.getAlpha() )*x*kappa_c/2;
     // RTS avg across bin
     gArr[i] = ( kappaAVG - kappa ) / ( 1 - kappa );
-printf("%7s %14s     %14s %14s      %14s %14s\n", "dist", "R_s", "k_EIN", "k_NFW", "k_AVG_EIN", "k_AVG_NFW");
+//printf("%7s %14s     %14s %14s      %14s %14s\n", "dist", "R_s", "k_EIN", "k_NFW", "k_AVG_EIN", "k_AVG_NFW");
 printf("%7.2f %14.7e     %14.7e %14.7e      %14.7e %14.7e\n",sourceDist[i],x,
                                                              kappa   , SDNFWFull   ( sourceDist[i], lens.getR_s(), lens.getRho_o())/sourceSc,
                                                              kappaAVG, SDAvgNFWFull( sourceDist[i], lens.getR_s(), lens.getRho_o())/sourceSc);
-exit(0);
+//exit(0);
 //printf("%12.3e %12.3e %12.3e\n", kappa/kappa_cM, kappaAVG/kappa_cM, gArr[i]);
   }
 
