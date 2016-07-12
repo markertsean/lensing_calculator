@@ -696,7 +696,6 @@ double foxH2012(
 
   mpf_class sum1( 0 ), s1( 0 ), oldSum1( 0 );
   mpf_class sum2( 0 ), s2( 0 ), oldSum2( 0 );
-  mpf_class sum3( 0 ), s3( 0 ), oldSum3( 0 );
 
   mpf_class     z( x );
   mpf_class    km( 0 );
@@ -705,8 +704,6 @@ double foxH2012(
   // k = 0 term
   sum1 = gamma( 1 / alph ) / gamma( mpf_class( 0.5 ) );
 
-//printf("%4s %4s   %14s   %23s\n", "k", "conv", "sum3", "s3");
-mpf_class x4kPow( 1 );
   do {
       ++k;
       km = km + 1;
@@ -754,21 +751,46 @@ mpf_class x4kPow( 1 );
       }
 
 
+      //totSum is term for current k
+      if ( (fabs((sum1.get_d()-oldSum1.get_d())/oldSum1.get_d()) < tolerance ||  nan_s1 ) &&  // Checks for variables converging, or NaN
+           (fabs((sum2.get_d()-oldSum2.get_d())/oldSum2.get_d()) < tolerance ||  nan_s2 ) ){
+        converge +=1;
+      }
+      else{
+        converge = 0;
+      }
 
-      testVal1 = tgamma(   2.L * k + 1.L               );
-      testVal2 = tgamma( ( 2.L * k - 1.L ) / alpha + 1 );
+  } while ( converge < 20  &&
+                   k < 1e2 );
 
-      bool nan_s3 = !( testVal1 == testVal1 && // If s2 is NaN
+
+  mpf_class   sum3( 0 ), s3( 0 ), oldSum3( 0 );
+
+// Was working, after shifting things broke
+
+  if ( secondOrder ) {
+
+    mpf_class  x4kPow( 1 );
+    mpf_class logJunk( -ln ( x / 2        ) );
+
+    km = 0 ;
+
+    do{
+
+      km = km + 1;
+
+      double testVal1 = tgamma(   2.L * km.get_d() + 1.L               );
+      double testVal2 = tgamma( ( 2.L * km.get_d() - 1.L ) / alpha + 1 );
+
+      bool nan_s3 = !( testVal1 == testVal1 && // If s3 is NaN
                        testVal2 == testVal2 );
-
 
       if ( ! nan_s3 ){
 
         oldSum3  = sum3;
 
-//        mpf_class  x4kPow (  pow( z / 2  , 2*km) ); // All showing 16 digits of precision
-        mpf_class  logJunk( -ln ( x / 2        ) );
-        mpf_class  invJunk( -     1./(2   * km ) );
+        mpf_class  invJunk( -    1./     ( 2 * km ) );
+        mpf_class invFactorial(  1 /gamma( 1 + km )  );
         mpf_class  diG1   (           0.0        );
         mpf_class  diG2   (           0.0        );
         mpf_class  diG3   (           0.0        );
@@ -776,16 +798,16 @@ mpf_class x4kPow( 1 );
 
         x4kPow = x4kPow * ( z / 2 ) * ( z / 2);  // (z/x)^2k
 
-        s =       k + 1.;
+        s =       km + 1.;
         diG1 = diGamma( s );
 
-        s = (2. * k - 1.)/alph;
+        s = (2. * km - 1.)/alph;
         diG2 = diGamma( s );
 
-        s =  2. * k - 1.;
+        s =  2. * km - 1.;
         diG3 = diGamma( s );
 
-        if ( abs( mpf_class(1) - alpha ) <= 1e-8 ){
+        if ( abs( mpf_class(1) - alph ) <= 1e-8 ){
           diG2 = 0;
           diG3 = 0;
         }
@@ -802,70 +824,34 @@ mpf_class x4kPow( 1 );
 
         sum3 += s3;
 
-      // Terms in summation
-/*
-printf("%4i %4i   %14.4e   ", k, converge, sum3.get_d());
-std::cout.precision(26);
-std::scientific;
-std::cout << std::internal <<
-std::setw( 28 ) << logJunk << " " <<
-std::setw( 28 ) << invJunk << " " <<
-//std::setw( 28 ) << gamma(   2 * km + 1 ) / gamma( ( 2 * km - 1 ) / alph + 1 ) << " " <<
-std::setw( 28 ) << diG1 + diG2/alph - diG3 << " " << std::endl;
-//printf("%23.16e\n",tgamma( 2.L * k + 1.L ) / tgamma( ( 2.L * k - 1.L )   / alpha + 1 ));
-
-/*
-printf("%4i %4i   %14.4e   %23.16e =  %23.16e * %23.16e * %23.16e * %23.16e\n", k, converge,
-sum3.get_d(),
-s3.get_d(),
-x4kPow.get_d(),
-invFactorial.get_d(),
-tgamma( 2.L * k + 1.L ) / tgamma( ( 2.L * k - 1.L )   / alpha + 1 )
-);
-*/
-
       }
 
-
-      //totSum is term for current k
-      if ( (fabs((sum1.get_d()-oldSum1.get_d())/oldSum1.get_d()) < tolerance ||  nan_s1 ) &&  // Checks for variables converging, or NaN
-           (fabs((sum2.get_d()-oldSum2.get_d())/oldSum2.get_d()) < tolerance ||  nan_s2 )
-&& (fabs((sum3.get_d()-oldSum3.get_d())/oldSum3.get_d()) < tolerance ||  nan_s3 ) ){
+      if ( fabs((sum3.get_d()-oldSum3.get_d())/oldSum3.get_d()) < tolerance ||  nan_s3  ){
         converge +=1;
       }
       else{
         converge = 0;
       }
 
+    } while ( converge < 20  &&
+                    km < 1e2 );
 
-
-  } while ( converge < 20  &&
-                   k < 1e2 );
-
-
-  if ( secondOrder ) {
 
 /*
     // Add k=0 term
     if ( abs( mpf_class(1) - alpha ) <= 1e-8 ){
       sum3 = sum3 - 1 ;
     }else {
-
       sum3 = sum3 - ( -ln( z / 2 ) + diGamma(-1/alph ) / alph + 1 - 2 * mpf_class( ln_ems ) ) / gamma( 1 - 1./alph );
-
     }
 */
 
 
-  } else{
-    sum3 = 0; // If we are not including secondOrder, set sum to 0
   }
 
   sum2 *= alpha/2.;
   sum3 *= alpha/tgamma( 0.5 );
-//printf("%14.7e   %23.16e + %23.16e + %26.16e =  %23.16e\n\n", x, (double) sum1, (double) sum2, (double) sum3, (double) (sum1+sum2+sum3));
-printf("%14.7e   %23.16e + %23.16e + %26.16e =  %23.16e\n\n", x, sum1.get_d(), sum2.get_d(), sum3.get_d(), (sum1.get_d()+sum2.get_d()+sum3.get_d()));
-//exit(0);
+
   return (sum1.get_d()+sum2.get_d()+sum3.get_d());
 }
 
