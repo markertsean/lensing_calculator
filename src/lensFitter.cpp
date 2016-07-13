@@ -685,38 +685,44 @@ double foxH2012(
                 double     alpha ,  // Shape parameter Ein profile
                 double tolerance ){ // Tolerance level for convergence
 
-//  int prec =  32;
-//  int prec =  64;
-//  int prec = 128;
 
-  int converge(0), k(0);
+  int converge(0);
 
   // Sum3 only for specific conditions, when second order poles
   bool secondOrder = false;
 
-  mpf_class sum1( 0 ), s1( 0 ), oldSum1( 0 );
+  mpf_class sum1( 0 ), s1( 0 ), oldSum1( 0 ); // The two sums we need to calculate foxH
   mpf_class sum2( 0 ), s2( 0 ), oldSum2( 0 );
 
-  mpf_class     z( x );
-  mpf_class    km( 0 );
-  mpf_class  alph( alpha );
+  mpf_class      z( x );     // Lock in the precision
+  mpf_class     km( 0 );
+  mpf_class   alph( alpha );
+  mpf_class x2kPow( 1 );
+  mpf_class x1kPow( z );     // The +1 in ak+1
+
+  mpf_class xakPow( pow( z, alpha ) ); // x^alpha
+
+  mpf_class invFactorial( 1 );
 
   // k = 0 term
   sum1 = gamma( 1 / alph ) / gamma( mpf_class( 0.5 ) );
 
+
+
+printf("%3s %3s %4s %20s %20s %4s %20s %20s\n","k","conv","nan1","s1","sum1","nan2","s2","sum2");
   do {
-      ++k;
+
       km = km + 1;
 
-      int             sign = pow( -1  ,   k );
+      int sign = pow( -1  , (int)  km.get_d() );
 
-      mpf_class x2kPow(      pow( z   , 2*km       )  );
-      mpf_class x1kPow(      pow( z   , 1+km*alpha )  );
-      mpf_class invFactorial(  1/gamma( 1+km       )  );
+      x2kPow   = x2kPow * z * z;  // x^2k
+      x1kPow   = x1kPow * xakPow; // x^1+ak
 
+      invFactorial    = invFactorial     / km; //1/k!
 
-      double testVal1 = tgamma( 1.0L - 2.L * k ) ;
-      double testVal2 = tgamma( 0.5L -       k ) ;
+      double testVal1 = tgamma( (1.0 - 2. * km.get_d()) / alpha ) ;
+      double testVal2 = tgamma(  0.5 -      km.get_d()          ) ;
 
       bool nan_s1 = !( testVal1 == testVal1 && // If s1 is NaN
                        testVal2 == testVal2 );
@@ -733,8 +739,8 @@ double foxH2012(
       }
 
 
-      testVal1 = tgamma( -( 1.L + alpha * k ) / 2.L );
-      testVal2 = tgamma(        - alpha * k   / 2.L );
+      testVal1 = tgamma( -( 1. + alpha * km.get_d() ) / 2. );
+      testVal2 = tgamma(       - alpha * km.get_d()   / 2. );
 
       bool nan_s2 = !( testVal1 == testVal1 && // If s1 is NaN
                        testVal2 == testVal2 );
@@ -759,19 +765,19 @@ double foxH2012(
       else{
         converge = 0;
       }
+printf("%3i %3i %4i %20.12e %20.12e %4i %20.12e %20.12e\n",(int)km.get_d(),converge,nan_s1,s1.get_d(),sum1.get_d(),nan_s2,s2.get_d(),sum2.get_d());
+
 
   } while ( converge < 20  &&
-                   k < 1e2 );
-
+                  km < 1e2 );
 
   mpf_class   sum3( 0 ), s3( 0 ), oldSum3( 0 );
-
-// Was working, after shifting things broke
 
   if ( secondOrder ) {
 
     mpf_class  x4kPow( 1 );
     mpf_class logJunk( -ln ( x / 2        ) );
+    mpf_class invFactorial( 1 );
 
     km = 0 ;
 
@@ -779,8 +785,11 @@ double foxH2012(
 
       km = km + 1;
 
-      double testVal1 = tgamma(   2.L * km.get_d() + 1.L               );
-      double testVal2 = tgamma( ( 2.L * km.get_d() - 1.L ) / alpha + 1 );
+      invFactorial = invFactorial / km;
+
+
+      double testVal1 = tgamma(   2. * km.get_d() + 1.               );
+      double testVal2 = tgamma( ( 2. * km.get_d() - 1. ) / alpha + 1 );
 
       bool nan_s3 = !( testVal1 == testVal1 && // If s3 is NaN
                        testVal2 == testVal2 );
@@ -789,12 +798,11 @@ double foxH2012(
 
         oldSum3  = sum3;
 
-        mpf_class  invJunk( -    1./     ( 2 * km ) );
-        mpf_class invFactorial(  1 /gamma( 1 + km )  );
-        mpf_class  diG1   (           0.0        );
-        mpf_class  diG2   (           0.0        );
-        mpf_class  diG3   (           0.0        );
-        mpf_class  s      (           0.0        );
+        mpf_class  invJunk( -  1. /  ( 2 * km ) );
+        mpf_class  diG1   (    0  );
+        mpf_class  diG2   (    0  );
+        mpf_class  diG3   (    0  );
+        mpf_class  s      (    0  );
 
         x4kPow = x4kPow * ( z / 2 ) * ( z / 2);  // (z/x)^2k
 
@@ -832,26 +840,15 @@ double foxH2012(
       else{
         converge = 0;
       }
+printf("%3i %3i %4i %20.12e %20.12e\n",(int)km.get_d(),converge,nan_s3,s3.get_d(),sum3.get_d());
 
     } while ( converge < 20  &&
                     km < 1e2 );
-
-
-/*
-    // Add k=0 term
-    if ( abs( mpf_class(1) - alpha ) <= 1e-8 ){
-      sum3 = sum3 - 1 ;
-    }else {
-      sum3 = sum3 - ( -ln( z / 2 ) + diGamma(-1/alph ) / alph + 1 - 2 * mpf_class( ln_ems ) ) / gamma( 1 - 1./alph );
-    }
-*/
-
-
   }
 
   sum2 *= alpha/2.;
   sum3 *= alpha/tgamma( 0.5 );
-
+printf("%14.7e   %14.7e + %14.7e + %14.7e =  %14.7e\n      ", x, sum1.get_d(), sum2.get_d(), sum3.get_d(), sum1.get_d() + sum2.get_d() + sum3.get_d() );
   return (sum1.get_d()+sum2.get_d()+sum3.get_d());
 }
 
@@ -941,7 +938,8 @@ void generateEinRTS(
                          pow(        lens.getAlpha()/2.,      1./lens.getAlpha() - 1.0 ) *
                          tgamma( 1./ lens.getAlpha() ) / sourceSc;
 printf("%7s %14s     %14s %14s      %14s %14s\n", "dist", "gArr", "k_EIN", "k_NFW", "k_AVG_EIN", "k_AVG_NFW");
-lens.setAlpha( 1.0 );
+//lens.setAlpha( 1. );
+lens.setAlpha( 0.4 );
   for ( int i = 0; i < u.getNbins(); ++i )
   {
     double x        = sourceDist[i] / lens.getR_s() ;//* pow( 2./lens.getAlpha(), 1./lens.getAlpha() );

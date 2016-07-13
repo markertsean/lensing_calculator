@@ -289,7 +289,12 @@ mpf_class diGamma( mpf_class z ){
 
   // Integral solution, but also follows relation phi(x+1) = phi(x) + 1/x
 
-  if ( z >=  lowVal &&
+  if ( z == lowVal ) {
+
+    return mpf_class("2.803513328327460368386716903146");
+
+  } else
+  if ( z >   lowVal &&
        z <  highVal ){   // We can integrate
 
     mpf_class gamma( ln_ems ); // Euler-Mascheroni constant
@@ -328,7 +333,7 @@ mpf_class diGamma( mpf_class z ){
 
       sum = sum + num / ( den * 2 * km * zp );
 
-    } while ( kui < 100 );
+    } while ( kui < 15 );
 
     return nPhi-sum;
 

@@ -51,6 +51,7 @@ std::string logFileName = "";
 
 int main(int arg,char **argv){
 
+//int prec = 100;
 int prec = 1000;
 mpf_set_default_prec( prec );
 
