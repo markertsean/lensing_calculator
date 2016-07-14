@@ -691,6 +691,17 @@ double foxH2012(
   // Sum3 only for specific conditions, when second order poles
   bool secondOrder = false;
 
+  {
+    mpq_class a_rat( alpha );
+
+    mpz_class q( a_rat.get_den() );
+
+    if ( a_rat.get_num() <  50 && // Reasonable fraction, and q of p/q odd
+         a_rat.get_den() <  50 &&
+     ((int) q.get_d() % 2 == 1 )) secondOrder = true;
+
+  }
+
   mpf_class sum1( 0 ), s1( 0 ), oldSum1( 0 ); // The two sums we need to calculate foxH
   mpf_class sum2( 0 ), s2( 0 ), oldSum2( 0 );
 
@@ -708,8 +719,7 @@ double foxH2012(
   sum1 = gamma( 1 / alph ) / gamma( mpf_class( 0.5 ) );
 
 
-
-printf("%3s %3s %4s %20s %20s %4s %20s %20s\n","k","conv","nan1","s1","sum1","nan2","s2","sum2");
+//printf("%3s %3s %4s %20s %20s %4s %20s %20s\n","k","conv","nan1","s1","sum1","nan2","s2","sum2");
   do {
 
       km = km + 1;
@@ -734,8 +744,6 @@ printf("%3s %3s %4s %20s %20s %4s %20s %20s\n","k","conv","nan1","s1","sum1","na
              s1  = sign * x2kPow * invFactorial * gamma(  ( 1 - 2 * km ) / alph ) / gamma(  0.5 - km );
            sum1 += s1;
 
-      } else {
-        secondOrder = true;
       }
 
 
@@ -745,15 +753,12 @@ printf("%3s %3s %4s %20s %20s %4s %20s %20s\n","k","conv","nan1","s1","sum1","na
       bool nan_s2 = !( testVal1 == testVal1 && // If s1 is NaN
                        testVal2 == testVal2 );
 
-
       if ( ! nan_s2 ){
 
         oldSum2  = sum2;
              s2  = sign * x1kPow * invFactorial * gamma( -( 1 + alph * km ) / 2 ) / gamma( - km * alph / 2 );
            sum2 += s2;
 
-      } else {
-        secondOrder = true;
       }
 
 
@@ -765,11 +770,14 @@ printf("%3s %3s %4s %20s %20s %4s %20s %20s\n","k","conv","nan1","s1","sum1","na
       else{
         converge = 0;
       }
-printf("%3i %3i %4i %20.12e %20.12e %4i %20.12e %20.12e\n",(int)km.get_d(),converge,nan_s1,s1.get_d(),sum1.get_d(),nan_s2,s2.get_d(),sum2.get_d());
+//printf("%3i %3i %4i %20.12e %20.12e %4i %20.12e %20.12e\n",(int)km.get_d(),converge,nan_s1,s1.get_d(),sum1.get_d(),nan_s2,s2.get_d(),sum2.get_d());
 
 
   } while ( converge < 20  &&
                   km < 1e2 );
+
+
+  // If second order, will need additional term
 
   mpf_class   sum3( 0 ), s3( 0 ), oldSum3( 0 );
 
@@ -840,7 +848,7 @@ printf("%3i %3i %4i %20.12e %20.12e %4i %20.12e %20.12e\n",(int)km.get_d(),conve
       else{
         converge = 0;
       }
-printf("%3i %3i %4i %20.12e %20.12e\n",(int)km.get_d(),converge,nan_s3,s3.get_d(),sum3.get_d());
+//printf("%3i %3i %4i %20.12e %20.12e\n",(int)km.get_d(),converge,nan_s3,s3.get_d(),sum3.get_d());
 
     } while ( converge < 20  &&
                     km < 1e2 );
@@ -848,7 +856,7 @@ printf("%3i %3i %4i %20.12e %20.12e\n",(int)km.get_d(),converge,nan_s3,s3.get_d(
 
   sum2 *= alpha/2.;
   sum3 *= alpha/tgamma( 0.5 );
-printf("%14.7e   %14.7e + %14.7e + %14.7e =  %14.7e\n      ", x, sum1.get_d(), sum2.get_d(), sum3.get_d(), sum1.get_d() + sum2.get_d() + sum3.get_d() );
+//printf("%14.7e   %14.7e + %14.7e + %14.7e =  %14.7e\n      ", x, sum1.get_d(), sum2.get_d(), sum3.get_d(), sum1.get_d() + sum2.get_d() + sum3.get_d() );
   return (sum1.get_d()+sum2.get_d()+sum3.get_d());
 }
 
@@ -861,7 +869,7 @@ double foxH2123(
                 double         x ,  // Z from fox H function
                 double     alpha ,  // Shape parameter Ein profile
                 double tolerance ){ // Tolerance level for convergence
-
+/*
   double sum1(0), sum2(0), oldSum1(0), oldSum2(0), s1(0), s2(0);
 
   int converge(0), k(0);
@@ -916,6 +924,90 @@ double foxH2123(
 //printf("%14.7e   %14.7e + %14.7e =  %14.7e\n      ", x, (double) sum1, (double) sum2, sum1-sum2);
 //exit(0);
   return sum1-sum2;
+*/
+
+  int converge(0);
+
+  mpf_class sum1( 0 ), s1( 0 ), oldSum1( 0 ); // The two sums we need to calculate foxH
+  mpf_class sum2( 0 ), s2( 0 ), oldSum2( 0 );
+
+  mpf_class      z( x );     // Lock in the precision
+  mpf_class     km( 0 );
+  mpf_class   alph( alpha );
+
+  mpf_class x2kPow( z * z    );  // the 2 in x^2k+2
+  mpf_class x3kPow( z * z * z);  // the 3 in x^ak+3
+
+  mpf_class xakPow( pow( z, alpha ) ); // x^alpha
+
+  mpf_class invFactorial( 1 );
+
+  // k = 0 term
+  sum1 = gamma( 1 / alph ) / gamma( 0.5 - 1./alph ) * x2kPow;
+
+
+//printf("%3s %3s %4s %20s %20s %4s %20s %20s\n","k","conv","nan1","s1","sum1","nan2","s2","sum2");
+  do {
+
+      km = km + 1;
+
+      int sign = pow( -1  , (int)  km.get_d() );
+
+      x2kPow   = x2kPow * z * z;  // x^2k+2
+      x3kPow   = x3kPow * xakPow; // x^3+ak
+
+      invFactorial    = invFactorial     / km; //1/k!
+
+      double testVal1 = tgamma( (1.0 - 2. * km.get_d()) / alpha ) ;
+      double testVal2 = tgamma(  0.5 -                1 / alpha ) ;
+
+      bool nan_s1 = !( testVal1 == testVal1 && // If s1 is NaN
+                       testVal2 == testVal2 );
+
+      // Can't pass NaNs to mpfs
+      if ( ! nan_s1 ){
+
+        oldSum1  = sum1;
+             s1  = sign * x2kPow * invFactorial * gamma(  ( 1 - 2 * km ) / alph ) / gamma(  0.5 - 1./alpha );
+           sum1 += s1;
+
+      }
+// G(  (1-2k)/a ) / G( 1/2 - 1/a )
+// G( -(3+ak)/2 ) / G( -ak/2 )
+
+      testVal1 = tgamma( -( 3. + alpha * km.get_d() ) / 2. );
+      testVal2 = tgamma(       - alpha * km.get_d()   / 2. );
+
+      bool nan_s2 = !( testVal1 == testVal1 && // If s1 is NaN
+                       testVal2 == testVal2 );
+
+      if ( ! nan_s2 ){
+
+        oldSum2  = sum2;
+             s2  = sign * x3kPow * invFactorial * gamma( -( 3 + alph * km ) / 2 ) / gamma( - km * alph / 2 );
+           sum2 += s2;
+
+      }
+
+
+      //totSum is term for current k
+      if ( (fabs((sum1.get_d()-oldSum1.get_d())/oldSum1.get_d()) < tolerance ||  nan_s1 ) &&  // Checks for variables converging, or NaN
+           (fabs((sum2.get_d()-oldSum2.get_d())/oldSum2.get_d()) < tolerance ||  nan_s2 ) ){
+        converge +=1;
+      }
+      else{
+        converge = 0;
+      }
+//printf("%3i %3i %4i %20.12e %20.12e %4i %20.12e %20.12e\n",(int)km.get_d(),converge,nan_s1,s1.get_d(),sum1.get_d(),nan_s2,s2.get_d(),sum2.get_d());
+
+
+  } while ( converge < 20  &&
+                  km < 1e2 );
+
+  sum2 *= alpha/2;
+//printf("%14.7e   %14.7e + %14.7e + %14.7e =  %14.7e\n      ", x, sum1.get_d(), sum2.get_d(), sum3.get_d(), sum1.get_d() + sum2.get_d() + sum3.get_d() );
+  return (sum1.get_d()+sum2.get_d());
+
 }
 
 
@@ -946,10 +1038,10 @@ lens.setAlpha( 0.4 );
 
 //kappa(x)=kc*x*k1(x)=kc*x*G2002=kc*k*2.55912
 
-    double kappa    ;//= kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) * foxH2012( x, lens.getAlpha() );
-    double kappaAVG ;//= kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) * foxH2123( x, lens.getAlpha() );
-kappa    = foxH2012( x, lens.getAlpha() )*std::sqrt(M_PI)/x;
-kappaAVG = foxH2123( x, lens.getAlpha() )*x*kappa_c/2;
+    double kappa    = kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) * foxH2012( 2*x, lens.getAlpha() );
+    double kappaAVG = kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) * foxH2123( x, lens.getAlpha() );
+//kappa    = foxH2012( x, lens.getAlpha() )*std::sqrt(M_PI)/x;
+//kappaAVG = foxH2123( x, lens.getAlpha() )*x*kappa_c/2;
     // RTS avg across bin
     gArr[i] = ( kappaAVG - kappa ) / ( 1 - kappa );
 //printf("%7s %14s     %14s %14s      %14s %14s\n", "dist", "R_s", "k_EIN", "k_NFW", "k_AVG_EIN", "k_AVG_NFW");
