@@ -57,6 +57,10 @@ double SDAvgNFWFull( const double     r ,  //Distance to evaluate SD of NFW prof
                      const double   r_s ,  //Scale radius of profile
                      const double rho_o ); //Initial density of profile
 
+bool num_den(  int       &p ,  // Finds ratio of p/q, if rational
+               int       &q ,
+               double alpha ,
+               int     maxK );
 
 
 void generateEinRTS(
@@ -72,7 +76,7 @@ void   foxH2012(
                 double         z[]     ,  // Z from fox H function
                 double    N_bins       ,  // Number of bins of z
                 double     alpha       ,  // Shape parameter Ein profile
-                double tolerance = 1e-2); // Tolence level for convergence
+                double tolerance = 1e-6); // Tolence level for convergence
 
 double foxH2123(
                 double         z       ,  // Z from fox H function

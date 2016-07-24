@@ -52,9 +52,8 @@ std::string logFileName = "";
 int main(int arg,char **argv){
 
 //int prec = 100;
-int prec = 1000;
+int prec = 500;
 mpf_set_default_prec( prec );
-
 
   // Initializes the log file, generates logfiles directory
   //  and a file name based on current time

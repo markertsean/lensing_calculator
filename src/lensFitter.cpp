@@ -674,35 +674,17 @@ double    SDNFWFull(
 
 
 
+bool num_den(  int       &p ,  // Finds ratio of p/q, if rational
+               int       &q ,
+               double alpha ,
+               int     maxK ){
 
-
-
-
-//   2 0[              (0,1)     ]    1     ^ G(2/as)G(s-1/2)           -2s         (-1)^k G(1/a-2/a k)  2k        a(-1)^k G(-1/2-a/2 k)  ak+1
-// H    [                        ]= -----  |  ------------------------ X   ds=  Sum ------ ------------ X    + Sum ------- ------------- X
-//   1 2[(0,2/a)(-1/2,1)         ]  2pi i U            G( s )                   k=0 (k  )! G(1/2-    k)        k=1 2(k)!   G(    -a/2 k)
-void   foxH2012(
-                double    retArr[]     ,  // Values to return
-                double         x[]     ,  // Z from fox H function
-                double    N_bins       ,  // Number of bins of z
-                double     alpha       ,  // Shape parameter Ein profile
-                double tolerance       ){ // Tolence level for convergence
-
-
-
-  // Sum3 only for specific conditions, when second order poles
-  bool secondOrder = false;
-
-  int maxK = 1e2;
-  int p(0), q(0);
-
-  // Determine if second order poles, if they are will have p and q nonzero
-  {
 
     int k = 0;
     int q1(0), q2(0);
 
-    bool first_s1_nan = true; // The NaNs are used to find ratio p/q = n / 1/alpha
+    bool  secondOrder = false; // Whether rational
+    bool first_s1_nan = true;  // The NaNs are used to find ratio p/q = n = 1/alpha
     bool   sec_s1_nan = true;
     bool first_s2_nan = true;
 
@@ -710,10 +692,9 @@ void   foxH2012(
       ++k;
 
       double testVal1 = tgamma( (1.0 - 2. * k) / alpha ) ;
-      double testVal2 = tgamma(  0.5 -      k          ) ;
+      double testVal2 ;
 
-      bool nan_s1 = !( testVal1 == testVal1 && // If s1 is NaN
-                       testVal2 == testVal2 );
+      bool nan_s1 = !( testVal1 == testVal1 ); // If s1 is NaN
       if ( first_s1_nan && nan_s1 ){
         q1 = k;
         first_s1_nan = false;
@@ -733,43 +714,87 @@ void   foxH2012(
         first_s2_nan = false;
       }
 
-      if ( p!=0  || q1!=0 ||  q2!=0 ) secondOrder = true;
-      if ( p!=0  && q1!=0 &&  q2!=0 ) break;
-
-    } while ( k < maxK || secondOrder ); // Abort if won't be second order in our integration range
+      if ( p!=0  && q1!=0 &&  q2!=0 ) {
+        secondOrder = true;
+        break;
+      }
+    } while ( k < maxK ); // Abort if won't be second order in our integration range
 
     q = q2-q1;
+
+  if( q == 0 || p == 0 ){
+
+    q=0;
+    p=0;
+    secondOrder = false;
+  }
+
+  return secondOrder;
+}
+
+
+
+//   2 0[              (0,1)     ]    1     ^ G(2/as)G(s-1/2)           -2s         (-1)^k G(1/a-2/a k)  2k        a(-1)^k G(-1/2-a/2 k)  ak+1
+// H    [                        ]= -----  |  ------------------------ X   ds=  Sum ------ ------------ X    + Sum ------- ------------- X
+//   1 2[(0,2/a)(-1/2,1)         ]  2pi i U            G( s )                   k=0 (k  )! G(1/2-    k)        k=1 2(k)!   G(    -a/2 k)
+void   foxH2012(
+                double    retArr[]     ,  // Values to return
+                double         x[]     ,  // Z from fox H function
+                double    N_bins       ,  // Number of bins of z
+                double     alpha       ,  // Shape parameter Ein profile
+                double tolerance       ){ // Tolence level for convergence
+
+
+
+  // Sum3 only for specific conditions, when second order poles
+
+  int maxK = 1e3;
+  int maxC = 20 ;
+  int p(0), q(0);
+
+  bool secondOrder = false;
+
+  // Sets ratio p/q = n = 1/alpha, both 0 if nothing found
+  if ( num_den( p, q, alpha, maxK ) ) {
+    secondOrder = true;
+  } else{
+    p = q = 0;
   }
 
 
-  int converge(0);
-  int     sign(1);
-  int k0 = ( q - 1 ) / 2;
 
+  int     sign(1);         // -1/1
+  int k0 = ( q - 1 ) / 2;  // For checking sums
+
+  short converge [ (int)N_bins ] ; // Count number of times converged
+  short firstIndex = 0           ; // So don't loop over converged indexes
+
+
+  mpf_class   alph( alpha ); // Keep high precision
   mpf_class     km( 0     );
-  mpf_class   alph( alpha );
-  mpf_class     s1( 0     );
+
+  mpf_class     s1( 0     ); // Individual terms in sum
   mpf_class     s2( 0     );
   mpf_class     s3( 0     );
 
-  mpf_class  invJunk( 0 );
-  mpf_class  diG1   ( 0 );
+  mpf_class  invJunk( 0 ); // Sum3 inverse x term
+  mpf_class  diG1   ( 0 ); // Sum3 gamma terms
   mpf_class  diG2   ( 0 );
   mpf_class  diG3   ( 0 );
   mpf_class  s      ( 0 );
 
-  mpf_class invFactorial( 1 );
+  mpf_class invFactorial( 1 ); // Inverse of the factorial
 
 
   typedef std::vector<mpf_class> mpf_v;
 
   // Sum terms
-  mpf_v sum1(N_bins), oldSum1( N_bins );
+  mpf_v sum1(N_bins), oldSum1( N_bins ); // Oldsum for convergence
   mpf_v sum2(N_bins), oldSum2( N_bins );
   mpf_v sum3(N_bins), oldSum3( N_bins );
 
-  mpf_v      z ( N_bins );
-  mpf_v x2kPow ( N_bins );
+  mpf_v      z ( N_bins ); // High precision x
+  mpf_v x2kPow ( N_bins ); // Powers, x^something
   mpf_v x1kPow ( N_bins );
   mpf_v x4kPow ( N_bins );
   mpf_v xakPow ( N_bins );
@@ -779,14 +804,15 @@ void   foxH2012(
   // k = 0 term
   sum1[0] = gamma( 1 / alph ) / gamma( mpf_class( 0.5 ) );
 
+  // Initialize array elements
   for ( int i  = 0; i < N_bins; ++i ){
-    oldSum1[i] = 0;
-    oldSum2[i] = 0;
-    oldSum3[i] = 0 + tolerance/2;
-
     sum1[i] = sum1[0];
     sum2[i] =      0 ;
     sum3[i] =      0 ;
+
+    oldSum1[i] = sum1[0];
+    oldSum2[i] = 0;
+    oldSum3[i] = 0 + tolerance/2;
 
     z[i] = x[i];
 
@@ -796,43 +822,69 @@ void   foxH2012(
     xakPow[i] =  pow( z[i], alpha );
 
     logJunk[i] = -ln( z[i] / 2 );
+
+    converge[i] = 0;
+
   }
 
+  mpf_class rootPi( gamma( mpf_class(0.5) ) );
+
+  // Sum over km
   do {
 
       km = km + 1;
 
       int k = (int) km.get_d();
 
-      sign         = -sign             ;  // -1^k
-      invFactorial = invFactorial / km ; // 1/k!
+      sign         = -sign             ; // -1^k
+      invFactorial = invFactorial / km ; //  1/k!
 
+      // Raise x's to the k's
       for ( int i = 0; i < N_bins; ++i ){
-        x2kPow[i] = x2kPow[i] * z[i] * z[i]     ;  //  x^2k
-        x1kPow[i] = x1kPow[i] * xakPow[i] ;  //  x^1+ak
-        x4kPow[i] = x4kPow[i] * ( z[i] / 2 ) * ( z[i] / 2);  // (z/x)^2k
-
+        x2kPow[i] = x2kPow[i] * z[i] * z[i] ;                //  x   ^2k
+        x1kPow[i] = x1kPow[i] * xakPow[i]   ;                //  x   ^1+ak
+        x4kPow[i] = x4kPow[i] * ( z[i] / 2 ) * ( z[i] / 2);  // (x/2)^2k
       }
 
+      double testVal1 = tgamma( (1.0 - 2. * k) / alpha ) ;
+      double testVal2 ;
 
-      if (       !secondOrder ||  // If second order, need special condition
-           ( (k+k0) % q != 0) ){
 
-            s1   = sign * invFactorial * gamma(  ( 1 - 2 * km ) / alph ) / gamma(  0.5 - km );
+      // First sum
+      if ( (     !secondOrder     ||  // If second order, need special condition
+           ( (k+k0) % q != 0 ) )
+&&  // Still need to check for testVal values
+           ( testVal1 == testVal1 &&
+             testVal2 == testVal2 )
+){
 
-        for ( int i = 0; i < N_bins; ++i ){
+            s1   = sign * invFactorial *
+                  gamma(  ( 1 - 2 * km ) / alph ) /
+                  gamma(  0.5 -     km );
+
+        for ( int i = firstIndex; i < N_bins; ++i ){
           oldSum1[i]  = sum1[i];
              sum1[i] += s1 * x2kPow[i];
         }
 
       }
 
-      if (   !secondOrder ||
-           ( k % p != 0 ) ){
+      testVal1 = tgamma( -( 1. + alpha * k ) / 2. );
+      testVal2 = tgamma(       - alpha * k   / 2. );
 
-             s2  = sign * invFactorial * gamma( -( 1 + alph * km ) / 2 ) / gamma( - km * alph / 2 );
 
-        for ( int i = 0; i < N_bins; ++i ){
+      if ( (  !secondOrder        ||
+           ( k % p != 0 )       )
+&&
+           ( testVal1 == testVal1 &&
+             testVal2 == testVal2 )
+){
+
+             s2  = sign * invFactorial *
+                  gamma( -( 1 + alph * km ) / 2 ) /
+                  gamma( - km * alph / 2  );
+
+        for ( int i = firstIndex; i < N_bins; ++i ){
           oldSum2[i]  = sum2[i];
              sum2[i] += s2 * x1kPow[i];
         }
@@ -861,7 +913,7 @@ void   foxH2012(
              gamma(   2 * km + 1 ) /
              gamma( ( 2 * km - 1 ) / alph + 1 ) ;
 
-        for ( int i = 0; i < N_bins; ++i ){
+        for ( int i = firstIndex; i < N_bins; ++i ){
           oldSum3[i]  = sum3[i];
              sum3[i] += s3 * x4kPow[i] *
              ( logJunk[i] +
@@ -874,24 +926,40 @@ void   foxH2012(
 
       }
 
+      // Check each for convergence
+      // Find what the total sum will be, compare it to previous
+      // If converged maxC times, can stop
+      for ( int i = firstIndex; i < N_bins; ++i ){
 
-      //totSum is term for current k
-      if ( (fabs((sum1[N_bins-1].get_d()-oldSum1[N_bins-1].get_d())/oldSum1[N_bins-1].get_d()) < tolerance ) &&  // Checks for variables converging, or NaN
-           (fabs((sum2[N_bins-1].get_d()-oldSum2[N_bins-1].get_d())/oldSum2[N_bins-1].get_d()) < tolerance ) &&
-          ((fabs((sum3[N_bins-1].get_d()-oldSum3[N_bins-1].get_d())/oldSum3[N_bins-1].get_d()) < tolerance ) ||
-                                                                                               !secondOrder) ){
-        converge +=1;
+        mpf_class    sum(    sum1[i] + alph/2 *    sum2[i] + secondOrder * alph/rootPi *    sum3[i] );
+        mpf_class oldSum( oldSum1[i] + alph/2 * oldSum2[i] + secondOrder * alph/rootPi * oldSum3[i] );
+
+        mpf_class diff( abs( sum - oldSum ) / sum );
+
+        if ( diff < tolerance ){
+          converge[i] += 1;
+        } else {
+          converge[i]  = 0;
+        }
+
+        if ( converge [i] == maxC       && // If first sum  we checked converged,
+                       i  == firstIndex ){ //    don't need to check anymore
+            firstIndex += 1;
+        }
+printf("%3i %3i %3i %10.2e %10.2e %10.2e %10.2e %10.2e %10.2e %10.2e %10.2e\n",
+(int)km.get_d(),converge[i],firstIndex,
+s1.get_d()* x2kPow[i].get_d(), sum1[i].get_d(),
+s2.get_d()* x1kPow[i].get_d(), sum2[i].get_d(),
+s3.get_d()* x4kPow[i].get_d(), sum3[i].get_d(),
+diff.get_d(),
+sum1[i].get_d() + alpha/2 * sum2[i].get_d() + alpha/tgamma( 0.5 ) * sum3[i].get_d()
+);
       }
-      else{
-        converge = 0;
-      }
-//printf("%3i %3i %14.6e %14.6e %14.6e %14.6e %14.6e %14.6e\n",(int)km.get_d(),converge, s1.get_d(), sum1.get_d(),
-//                                                                                       s2.get_d(), sum2.get_d(),
-//                                                                                       s3.get_d(), sum3.get_d());
 
+printf("\n");
 
-  } while ( converge < 20   &&
-                  km < maxK );
+  } while ( firstIndex != N_bins &&
+                    km  < maxK   );
 
   // The final sum, sum3 is 0 if not second order
   for ( int i = 0; i < N_bins; ++i ){
@@ -1072,35 +1140,18 @@ void generateEinRTS(
 
 printf("%7s %14s     %14s %14s      %14s %14s\n", "dist", "gArr", "k_EIN", "k_NFW", "k_AVG_EIN", "k_AVG_NFW");
 lens.setAlpha( 1. );
-//lens.setAlpha( 999/1000. );
+//lens.setAlpha( 1.-1e-3 );
 
   double        xArr[u.getNbins()];
   double    kappaArr[u.getNbins()];
   double kappaAvgArr[u.getNbins()];
 
   for ( int i = 0; i < u.getNbins(); ++i )
-  {
-    double x        = sourceDist[i] / lens.getR_s() ;//* pow( 2./lens.getAlpha(), 1./lens.getAlpha() );
+    xArr[i] =  sourceDist[i] / lens.getR_s() * pow( 2./lens.getAlpha(), 1./lens.getAlpha() );
 
-    xArr[i] = x;
-
-//kappa(x)=kc*x*k1(x)=kc*x*G2002=kc*k*2.55912
-
-//    double kappa    = kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) * foxH2012( 2*x, lens.getAlpha() );
-//    double kappaAVG ;//= kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) * foxH2123( x, lens.getAlpha() );
-//kappa    = foxH2012( x, lens.getAlpha() )*std::sqrt(M_PI)/x;
-//kappaAVG = foxH2123( x, lens.getAlpha() )*x*kappa_c/2;
-    // RTS avg across bin
-//    gArr[i] = ( kappaAVG - kappa ) / ( 1 - kappa );
-//printf("%7s %14s     %14s %14s      %14s %14s\n", "dist", "R_s", "k_EIN", "k_NFW", "k_AVG_EIN", "k_AVG_NFW");
-//printf("%7.2f %14.7e     %14.7e %14.7e      %14.7e %14.7e\n",sourceDist[i],x,
-//                                                             kappa   , SDNFWFull   ( sourceDist[i], lens.getR_s(), lens.getRho_o())/sourceSc,
-//                                                             kappaAVG, SDAvgNFWFull( sourceDist[i], lens.getR_s(), lens.getRho_o())/sourceSc);
-//exit(0);
-//printf("%12.3e %12.3e %12.3e\n", kappa/kappa_cM, kappaAVG/kappa_cM, gArr[i]);
-  }
 
   foxH2012( kappaArr, xArr, u.getNbins(), lens.getAlpha() );
+
 
   for ( int i = 0; i < u.getNbins(); ++i ){
 

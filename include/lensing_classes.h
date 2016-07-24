@@ -178,8 +178,8 @@ class densProfile{
                     ( log( 1 + concentration ) - concentration / ( 1 + concentration) );
         }
         else {
-          rho_o   =  M_enc / ( 2. * M_PI  *            r_s * r_s * r_s * exp( 4./alpha ) *
-                              pow( alpha / 2., 3. / alpha - 1 ) *    tgamma( 3./alpha ) );
+          rho_o   =  M_enc * alpha/ ( 4. * M_PI *    r_s * r_s * r_s   * exp(    2./alpha ) *
+                                     pow( alpha / 2., 3. / alpha  )    * tgamma( 3./alpha ) );
         }
       }
     }
@@ -193,8 +193,8 @@ class densProfile{
                     ( log( 1 + concentration ) - concentration / ( 1 + concentration) );
         }
         else {
-          M_enc   = 2. * M_PI  *  rho_o *   r_s * r_s * r_s * exp( 4./alpha ) *
-                    pow( alpha / 2., 3. / alpha - 1 ) *    tgamma( 3./alpha );
+          M_enc   = 4. * M_PI  *  rho_o  *   r_s  * r_s * r_s * exp( 2./alpha ) *
+                    pow( alpha / 2., 3. / alpha ) / alpha *  tgamma( 3./alpha );
         }
       }
 

@@ -297,7 +297,7 @@ mpf_class diGamma( mpf_class z ){
   if ( z >   lowVal &&
        z <  highVal ){   // We can integrate
 
-    mpf_class gamma( ln_ems ); // Euler-Mascheroni constant
+    //mpf_class gammaC( ln_ems ); // Euler-Mascheroni constant
 
     mpf_class nPhi ( ln( z ) - mpf_class(1) / ( mpz_class(2) * z )  ); // To add to sum
 
