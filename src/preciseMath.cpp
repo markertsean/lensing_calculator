@@ -99,9 +99,16 @@ void makeF(matrix<mpdouble> &F, mpdouble g, int n)
 
 // Uses Lanczos approx
 mpf_class gamma( mpf_class x ){
+//int foo = 50;
+//std::cout.precision(foo);
+//std::scientific;
 
-  double  g( 20.3209821879863739013671875 );
-  int     n( 24 );
+//std::cout << std::setw( foo ) << x << std::endl;
+
+//  double  g( 20.3209821879863739013671875 );
+//  int     n( 24 );
+  double  g( 30 );
+  int     n( 35 );
 
 	mpdouble zRe, zIm;
 
@@ -255,7 +262,7 @@ mpf_class exp( mpf_class inpVal ){
     fac = fac * k; // Calculates the factoral
 
     sum = sum + xk / fac;
-  } while ( k < 3e1 );
+  } while ( k < 5e1 );
 
 
   return ea * sum;
@@ -345,3 +352,65 @@ mpf_class diGamma( mpf_class z ){
   }
 }
 
+
+// Spouges approximation
+mpf_class spouges( mpf_class z ){
+
+  int prec = 1000;
+
+  // Sqrt 2pi
+  mpf_class c0("2.5066282746310005024157652848110452530069867406099383166299235763422936546078419749465958383780572661160099726652",prec);
+
+  // e
+  mpf_class  e("2.7182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274274663919320",prec);
+
+
+  mpf_class s( z - 1 , prec);
+
+  mpf_class    a( 70 , prec);
+
+
+  // ck= (-1)^(k-1)  /  (k-1)! * (-k+a)^(k-1/2) e^(-k+a)
+  mpf_class ck(0,prec);
+
+  mpf_class  k(1,prec);
+
+  mpf_class sum(0,prec);
+
+
+  // Parts of ck
+  mpf_class    sign(         1  ,prec ); // Start positive at k=1
+  mpf_class  expVal(  exp( a-1 ),prec ); // Exponential part ~45 digits of precision
+  mpf_class sqrtVal( sqrt( a-1 ),prec ); // Power part       exact
+  mpf_class factVal(         1  ,prec ); // Factorial        exact
+
+  // k=0 and 1 terms
+  sum += c0 + ( sqrtVal * expVal ) / ( s + 1 ) ;
+
+  int ki = 1;
+
+  do{
+         ki = ki   +  1 ;
+          k = k    +  1 ;
+       sign = sign * -1 ;
+
+    factVal = factVal * (k-1) ;  // (k-1)!
+     expVal =  expVal / e     ;  // e^(a-k)
+
+                                            // (a-k)^(k-1/2)
+    sqrtVal = mpf_class(1) / sqrt( a - k ); // (a-k)^( -1/2)
+    for ( int i = 0; i<ki; ++i )
+      sqrtVal = sqrtVal * ( a-k );          // (a-k)^ k
+
+    //         ck / ( s + k )
+    sum += ( sign / factVal * expVal * sqrtVal ) / ( s + k );
+
+  } while ( k < (a-1) );
+
+  // Error
+  // sqrt(70)*(2pi)^(-(70+1/2))
+  printf("%10.2e\n",sqrt(a.get_d())*pow(c0.get_d(),-2*(a.get_d()+0.5)));
+
+  return pow( s + a, s + mpf_class(0.5) ) * exp(-(s+a)) * sum;
+
+}

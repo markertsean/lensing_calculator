@@ -76,7 +76,7 @@ void   foxH2012(
                 double         z[]     ,  // Z from fox H function
                 double    N_bins       ,  // Number of bins of z
                 double     alpha       ,  // Shape parameter Ein profile
-                double tolerance = 1e-6); // Tolence level for convergence
+                double tolerance = 1e-7); // Tolence level for convergence
 
 double foxH2123(
                 double         z       ,  // Z from fox H function

@@ -55,6 +55,15 @@ int main(int arg,char **argv){
 int prec = 500;
 mpf_set_default_prec( prec );
 
+int foo = 50;
+std::cout.precision(foo);
+std::scientific;
+
+std::cout << std::setw( foo ) << spouges( mpf_class( 5 ) ) << std::endl;
+
+exit(0);
+//*/
+
   // Initializes the log file, generates logfiles directory
   //  and a file name based on current time
   initLogFile();

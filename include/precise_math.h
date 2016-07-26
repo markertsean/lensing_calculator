@@ -29,6 +29,7 @@ mpf_class pow( mpf_class  a , // a^b
 // Roughly 1e5 times slower than log
 mpf_class ln( mpf_class inpVal );
 
+mpf_class spouges( mpf_class z );
 
 
 #endif // PRECISE_MATH
