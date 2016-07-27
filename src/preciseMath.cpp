@@ -280,9 +280,16 @@ mpf_class pow( mpf_class  a ,
         =       b ln a
       c = exp ( b ln a)
   */
+  if ( a > 0 )
+    return exp( b * ln( a ) );
 
-  return exp( b * ln( a ) );
+  mpf_class piV(ln_pis);
 
+  // Negative a slightly different, complex plane
+  if ( a < 0 )
+    return exp( b * ln( -a ) ) * cos( piV * b );
+
+  return 0;
 }
 
 
@@ -356,25 +363,23 @@ mpf_class diGamma( mpf_class z ){
 // Spouges approximation
 mpf_class spouges( mpf_class z ){
 
-  int prec = 1000;
+  int prec = 2000;
+  int   ki =    1;
 
   // Sqrt 2pi
   mpf_class c0("2.5066282746310005024157652848110452530069867406099383166299235763422936546078419749465958383780572661160099726652",prec);
 
   // e
-  mpf_class  e("2.7182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274274663919320",prec);
+  mpf_class  e(ln_es,prec);
 
 
-  mpf_class s( z - 1 , prec);
-
-  mpf_class    a( 70 , prec);
+  mpf_class  s( z - 1 , prec);
+  mpf_class  a( 175    , prec);
 
 
   // ck= (-1)^(k-1)  /  (k-1)! * (-k+a)^(k-1/2) e^(-k+a)
-  mpf_class ck(0,prec);
-
-  mpf_class  k(1,prec);
-
+  mpf_class   k(1,prec);
+  mpf_class  ck(0,prec);
   mpf_class sum(0,prec);
 
 
@@ -387,7 +392,6 @@ mpf_class spouges( mpf_class z ){
   // k=0 and 1 terms
   sum += c0 + ( sqrtVal * expVal ) / ( s + 1 ) ;
 
-  int ki = 1;
 
   do{
          ki = ki   +  1 ;
@@ -409,8 +413,52 @@ mpf_class spouges( mpf_class z ){
 
   // Error
   // sqrt(70)*(2pi)^(-(70+1/2))
-  printf("%10.2e\n",sqrt(a.get_d())*pow(c0.get_d(),-2*(a.get_d()+0.5)));
+  //printf("%10.2e\n",sqrt(a.get_d())*pow(c0.get_d(),-2*(a.get_d()+0.5)));
 
   return pow( s + a, s + mpf_class(0.5) ) * exp(-(s+a)) * sum;
 
 }
+
+
+
+mpf_class cos( mpf_class z ){
+
+  mpf_class      pi( ln_pis );
+  mpz_class retSign(      1 );
+
+  mpf_class x( abs(z) );
+
+  while( x > (mpf_class(2) * pi) ){ // Modulus, put in range 0-2pi
+    x  = x - (mpf_class(2) * pi);
+  }
+
+  if ( x > pi ){                    // Put in range 0- pi
+    retSign =   -  1;
+          x = x - pi;
+  }
+
+  mpf_class  sum(  1 );
+  mpz_class sign(  1 );
+  mpz_class    k(  0 );
+
+  mpf_class    y(  1 );
+  mpf_class fact(  1 );
+
+  mpf_class   x2( x*x);
+
+  do{
+
+         k = k    +  2;
+         y = y    * x2;
+      sign = sign * -1;
+      fact = fact *  k * (k-1) ;
+
+    sum = sum + sign * y / fact;
+
+  } while( abs(y/fact/sum) > 1e-50 );
+
+  return retSign * sum;
+}
+
+
+

@@ -55,12 +55,17 @@ int main(int arg,char **argv){
 int prec = 500;
 mpf_set_default_prec( prec );
 
+/*
 int foo = 50;
 std::cout.precision(foo);
 std::scientific;
+mpf_class piV(ln_pis);
 
-std::cout << std::setw( foo ) << spouges( mpf_class( 5 ) ) << std::endl;
+mpf_class bar( -151.1 );
 
+std::cout << std::setw( foo ) << bar             << std::endl;
+std::cout << std::setw( foo ) << bar.get_d()     << std::endl;
+std::cout << std::setw( foo ) << spouges( bar ) << std::endl;
 exit(0);
 //*/
 

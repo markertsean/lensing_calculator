@@ -749,7 +749,7 @@ void   foxH2012(
   // Sum3 only for specific conditions, when second order poles
 
   int maxK = 1e3;
-  int maxC = 30 ;
+  int maxC = 20 ;
   int p(0), q(0);
 
   bool secondOrder = false;
@@ -852,7 +852,7 @@ std::scientific;
       }
 
       double testVal1 = tgamma( (1.0 - 2. * k) / alpha ) ;
-      double testVal2 ;
+      double testVal2 = tgamma(  0.5 -      k          ) ;
 
       // First sum
       if ( (     !secondOrder     ||  // If second order, need special condition
@@ -861,22 +861,50 @@ std::scientific;
              testVal2 == testVal2 )){
 
             s1   = sign *
-                  gamma(  ( 1 - 2 * km ) / alph ) /
-                  gamma(  0.5 -     km );
+//                  gamma(  ( 1 - 2 * km ) / alph ) /
+//                  gamma(  0.5 -     km );
+                  spouges(  ( 1 - 2 * km ) / alph ) /
+                  spouges(  0.5 -     km );
         for ( int i = firstIndex; i < N_bins; ++i ){
           oldSum1[i]  = sum1[i];
              sum1[i] += s1 * x2kPow[i];
         }
+//Issues begin around term 80
+
+/*
+{
+mpf_class blah(  ( mpf_class(1) - mpf_class(2) * km ) / alph  );
+mpf_class  foo(   gamma(blah) );
+mpf_class  bar( spouges(blah) );
+
+std::cout << std::setw(20) << "(1-2k)/a: " << std::scientific << std::setw(prec+5) << blah << std::endl;
+std::cout << std::setw(20) << "g: " << std::scientific << std::setw(prec+5) << foo << std::endl;
+std::cout << std::setw(20) << "s: " << std::scientific << std::setw(prec+5) << bar << std::endl;
+std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) << foo/bar << std::endl;
+}
+
+{
+
+mpf_class blah(  mpf_class(1/2.) - km );
+mpf_class  foo(   gamma(blah) );
+mpf_class  bar( spouges(blah) );
+
+std::cout << std::setw(20) << "1/2-k: " << std::scientific << std::setw(prec+5) << blah << std::endl;
+std::cout << std::setw(20) << "g: " << std::scientific << std::setw(prec+5) << foo << std::endl;
+std::cout << std::setw(20) << "s: " << std::scientific << std::setw(prec+5) << bar << std::endl;
+std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) << foo/bar << std::endl;
+}
+//*/
+/*
 std::cout << std::setw(15) << "k: " << std::scientific << std::setw(prec+5) << km << std::endl;
 std::cout << std::setw(15) << "z: " << std::scientific << std::setw(prec+5) << z[N_bins-1] << std::endl;
 std::cout << std::setw(15) << "a: " << std::scientific << std::setw(prec+5) << alph << std::endl;
-std::cout << std::setw(15) << "s: " << std::scientific << std::setw(prec+5) << sign << std::endl;
 std::cout << std::setw(15) << "(1-2k)/a: " << std::scientific << std::setw(prec+5) << mpf_class(( mpf_class(1) - mpf_class(2) * km ) / alph) << std::endl;
-std::cout << std::setw(15) << "g((1-2k)/a): " << std::scientific << std::setw(prec+5) << gamma(  mpf_class((  - mpf_class(2) * km ) / alph) ) << std::endl;
-std::cout << std::setw(15) << "g(1/2-k): " << std::scientific << std::setw(prec+5) << gamma(  0.5 -     km ) << std::endl;
+std::cout << std::setw(15) << "g/s((1-2k)/a): " << std::scientific << std::setw(prec+5) << gamma(( mpf_class(1) - mpf_class(2) * km ) / alph) / spouges(( mpf_class(1) - mpf_class(2) * km ) / alph) << std::endl;
+std::cout << std::setw(15) << "g(1/2-k): " << std::scientific << std::setw(prec+5) << spouges(  0.5 -     km ) << std::endl;
 std::cout << std::setw(15) << "x^2k: " << std::scientific << std::setw(prec+5) << x2kPow[N_bins-1] << std::endl;
 std::cout << std::setw(15) << "s1: " << std::scientific << std::setw(prec+5) << s1 << std::endl;
-
+//*/
       }
 
 
@@ -890,13 +918,38 @@ std::cout << std::setw(15) << "s1: " << std::scientific << std::setw(prec+5) << 
              testVal2 == testVal2 )){
 
              s2  = sign *
-                  gamma( -( 1 + alph * km ) / 2 ) /
-                  gamma( - km * alph / 2  );
+//                  gamma( -( 1 + alph * km ) / 2 ) /
+//                  gamma( - km * alph / 2  );
+                  spouges( -( 1 + alph * km ) / 2 ) /
+                  spouges( - km * alph / 2  );
 
         for ( int i = firstIndex; i < N_bins; ++i ){
           oldSum2[i]  = sum2[i];
              sum2[i] += s2 * x1kPow[i];
         }
+/*
+{
+mpf_class blah(  -(mpf_class(1)+alph*km)/2 );
+mpf_class  foo(   gamma(blah) );
+mpf_class  bar( spouges(blah) );
+
+std::cout << std::setw(20) << "-(1+ak)/2: " << std::scientific << std::setw(prec+5) << blah << std::endl;
+std::cout << std::setw(20) << "g: " << std::scientific << std::setw(prec+5) << foo << std::endl;
+std::cout << std::setw(20) << "s: " << std::scientific << std::setw(prec+5) << bar << std::endl;
+std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) << foo/bar << std::endl;
+}
+
+{
+mpf_class blah(  -(alph*km)/2 );
+mpf_class  foo(   gamma(blah) );
+mpf_class  bar( spouges(blah) );
+
+std::cout << std::setw(20) << "-(1+ak)/2: " << std::scientific << std::setw(prec+5) << blah << std::endl;
+std::cout << std::setw(20) << "g: " << std::scientific << std::setw(prec+5) << foo << std::endl;
+std::cout << std::setw(20) << "s: " << std::scientific << std::setw(prec+5) << bar << std::endl;
+std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) << foo/bar << std::endl;
+}
+//*/
       }
 
       if (        secondOrder &&  // If second order, need extra sum
@@ -919,8 +972,10 @@ std::cout << std::setw(15) << "s1: " << std::scientific << std::setw(prec+5) << 
         }
 
         s3   = s3Sign *
-             gamma(   2 * km + 1 ) /
-             gamma( ( 2 * km - 1 ) / alph + 1 ) ;
+//             gamma(   2 * km + 1 ) /
+//             gamma( ( 2 * km - 1 ) / alph + 1 ) ;
+             spouges(   2 * km + 1 ) /
+             spouges( ( 2 * km - 1 ) / alph + 1 ) ;
 
         for ( int i   = firstIndex; i < N_bins; ++i ){
           oldSum3[i]  = sum3[i];
@@ -931,10 +986,28 @@ std::cout << std::setw(15) << "s1: " << std::scientific << std::setw(prec+5) << 
                   diG2    / alph -
                   diG3    );
         }
-//k=50 dig 3.978556964869691059582228446171011617765481001065596170796
-// @x=42 () 0.906714530850475967939875833469084518756389159779381446573
-//    front 6.63863549486204310421217436482205145584584570229294810^-90
-//coming out as 9e3???
+/*
+{
+mpf_class blah(  km*2 + 1 );
+mpf_class  foo(   gamma(blah) );
+mpf_class  bar( spouges(blah) );
+
+std::cout << std::setw(20) << "2*k+1: " << std::scientific << std::setw(prec+5) << blah << std::endl;
+std::cout << std::setw(20) << "g: " << std::scientific << std::setw(prec+5) << foo << std::endl;
+std::cout << std::setw(20) << "s: " << std::scientific << std::setw(prec+5) << bar << std::endl;
+std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) << foo/bar << std::endl;
+}
+{
+mpf_class blah( (2*km-1)/alph + 1  );
+mpf_class  foo(   gamma(blah) );
+mpf_class  bar( spouges(blah) );
+
+std::cout << std::setw(20) << "-(1+ak)/2: " << std::scientific << std::setw(prec+5) << blah << std::endl;
+std::cout << std::setw(20) << "g: " << std::scientific << std::setw(prec+5) << foo << std::endl;
+std::cout << std::setw(20) << "s: " << std::scientific << std::setw(prec+5) << bar << std::endl;
+std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) << foo/bar << std::endl;
+}
+//*/
 
      }
 
@@ -973,7 +1046,8 @@ std::cout <<                   std::scientific << std::setw(prec+5) <<          
 std::cout << "            " << std::scientific << std::setw(prec+5) << alph / 2      * sum2[i] << std::endl;
 std::cout << "            " << std::scientific << std::setw(prec+5) << alph / rootPi * sum3[i] << std::endl;
 std::cout << "            " << std::scientific << std::setw(prec+5) <<retV << std::endl;
-/*
+//*/
+
 printf("%3i %3i   %10.2e %10.2e + a/2 %10.2e %10.2e + a/rp %10.2e %10.2e = %10.2e\n",
 (int)km.get_d(),converge[i],
 s1.get_d()* x2kPow[i].get_d(), sum1[i].get_d(),
