@@ -374,7 +374,7 @@ mpf_class spouges( mpf_class z ){
 
 
   mpf_class  s( z - 1 , prec);
-  mpf_class  a( 175    , prec);
+  mpf_class  a( 400   , prec);
 
 
   // ck= (-1)^(k-1)  /  (k-1)! * (-k+a)^(k-1/2) e^(-k+a)
@@ -392,6 +392,7 @@ mpf_class spouges( mpf_class z ){
   // k=0 and 1 terms
   sum += c0 + ( sqrtVal * expVal ) / ( s + 1 ) ;
 
+  mpf_class oldSum( 0 );
 
   do{
          ki = ki   +  1 ;
@@ -406,14 +407,18 @@ mpf_class spouges( mpf_class z ){
     for ( int i = 0; i<ki; ++i )
       sqrtVal = sqrtVal * ( a-k );          // (a-k)^ k
 
+    oldSum = sum;
+
     //         ck / ( s + k )
     sum += ( sign / factVal * expVal * sqrtVal ) / ( s + k );
 
-  } while ( k < (a-1) );
+  // If converge early, can leave
+  } while (                    k < (a-1) &&
+    abs( (oldSum-sum) / oldSum ) > 1e-50 );
 
   // Error
   // sqrt(70)*(2pi)^(-(70+1/2))
-  //printf("%10.2e\n",sqrt(a.get_d())*pow(c0.get_d(),-2*(a.get_d()+0.5)));
+  //printf("%3i %10.2e\n",ki, sqrt(a.get_d())*pow(c0.get_d(),-2*(a.get_d()+0.5)));
 
   return pow( s + a, s + mpf_class(0.5) ) * exp(-(s+a)) * sum;
 

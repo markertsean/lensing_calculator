@@ -748,11 +748,15 @@ void   foxH2012(
 
   // Sum3 only for specific conditions, when second order poles
 
-  int maxK = 1e3;
-  int maxC = 20 ;
-  int p(0), q(0);
+  int maxK = 5e2;           // Maximum number of terms in sum
+  int maxC = 30 ;           // Number of times to converge
 
-  bool secondOrder = false;
+  double maxG = 1e-300;     // Max ratio of Gamma/Gamma to accept, otherwise drop
+
+
+  bool secondOrder = false; // For all second order terms
+  int p(0), q(0);           // Nonzero for second order
+
 
   // Sets ratio p/q = n = 1/alpha, both 0 if nothing found
   if ( num_den( p, q, alpha, 10*maxK ) ) {
@@ -761,30 +765,32 @@ void   foxH2012(
     p = q = 0;
   }
 
-  int k0 = ( q - 1 ) / 2;  // For checking sums
+  int k0 = ( q - 1 ) / 2;          // For checking sums
+
+  short sConv[3];                  // Whether to keep summing each individual sum
 
   short converge [ (int)N_bins ] ; // Count number of times converged
   short firstIndex = 0           ; // So don't loop over converged indexes
 
 
-  mpf_class   alph( alpha ); // Keep high precision
+  mpf_class   alph( alpha );       // Keep high precision
   mpf_class     km( 0     );
-  mpf_class   sign( 1     ); // -1 or 1
+  mpf_class   sign( 1     );       // -1 or 1
   mpf_class s3Sign( 1     );
 
-  if ( p % 2 != 0 ) s3Sign = -1;
+  if ( p % 2 != 0 ) s3Sign = -1;   // Negative if p is odd
 
-  mpf_class     s1( 0     ); // Individual terms in sum
+  mpf_class     s1( 0     );       // Individual terms in sum
   mpf_class     s2( 0     );
   mpf_class     s3( 0     );
 
-  mpf_class  invJunk( 0 ); // Sum3 inverse x term
-  mpf_class  diG1   ( 0 ); // Sum3 gamma terms
+  mpf_class  invJunk( 0 );         // Sum3 inverse x term
+  mpf_class  diG1   ( 0 );         // Sum3 gamma terms
   mpf_class  diG2   ( 0 );
   mpf_class  diG3   ( 0 );
   mpf_class  s      ( 0 );
 
-  mpf_class invFactorial( 1 ); // Inverse of the factorial
+  mpf_class invFactorial( 1 );     // Inverse of the factorial
 
 
   typedef std::vector<mpf_class> mpf_v;
@@ -794,15 +800,14 @@ void   foxH2012(
   mpf_v sum2(N_bins), oldSum2( N_bins );
   mpf_v sum3(N_bins), oldSum3( N_bins );
 
-  mpf_v      z ( N_bins ); // High precision x
+  mpf_v      z ( N_bins );               // High precision x
   mpf_v      z2( N_bins );
-  mpf_v x2kPow ( N_bins ); // Powers, x^something, with the inverse factorial term
+  mpf_v x2kPow ( N_bins );               // Powers, x^something, with the inverse factorial term
   mpf_v x1kPow ( N_bins );
   mpf_v x4kPow ( N_bins );
   mpf_v xakPow ( N_bins );
   mpf_v logJunk( N_bins );
 
-  // Initialize
   // k = 0 term
   sum1[0] = gamma( 1 / alph ) / gamma( mpf_class( 0.5 ) );
 
@@ -830,19 +835,20 @@ void   foxH2012(
 
   }
 
-  mpf_class rootPi( gamma( mpf_class(0.5) ) );
-int prec = 50;
-std::cout << p << " " << q << " " << sum1[0].get_prec()<< std::endl;
-std::cout.precision(prec);
-std::scientific;
+  sConv[0] = 0;
+  sConv[1] = 0;
+  sConv[2] = 0;
+
+  mpf_class rootPi( gamma( mpf_class(0.5) ) ); // Used a lot
+
   // Sum over km
   do {
 
-      km = km + 1;
+      km    = km + 1;
 
       int k = (int) km.get_d();
 
-      sign = sign * -1         ; // -1^k
+      sign  = sign * -1         ; // -1^k
 
       // Raise x's to the k's
       for ( int i = 0; i < N_bins; ++i ){
@@ -851,109 +857,74 @@ std::scientific;
         x1kPow[i] = x1kPow[i] / km      * xakPow[i]  ;  //  x   ^1+ak  /k!
       }
 
-      double testVal1 = tgamma( (1.0 - 2. * k) / alpha ) ;
+      double testVal1 = tgamma( (1.0 - 2. * k) / alpha ) ; // Tests whether NaNs
       double testVal2 = tgamma(  0.5 -      k          ) ;
 
       // First sum
-      if ( (     !secondOrder     ||  // If second order, need special condition
-           ( (k+k0) % q != 0 ) )  &&  // Still need to check for testVal values
-           ( testVal1 == testVal1 &&  // Make sure no NaNs
-             testVal2 == testVal2 )){
+      if ( (     !secondOrder     ||   // If second order, need special condition
+           ( (k+k0) % q != 0 ) )  &&   // Still need to check for testVal values
+           ( testVal1 == testVal1 &&   // Make sure no NaNs
+             testVal2 == testVal2)&&
+           ( sConv[0] == 0       )){   // Sum has not converged
 
-            s1   = sign *
-//                  gamma(  ( 1 - 2 * km ) / alph ) /
-//                  gamma(  0.5 -     km );
-                  spouges(  ( 1 - 2 * km ) / alph ) /
-                  spouges(  0.5 -     km );
-        for ( int i = firstIndex; i < N_bins; ++i ){
-          oldSum1[i]  = sum1[i];
-             sum1[i] += s1 * x2kPow[i];
+
+            mpf_class g1( spouges(  ( 1 - 2 * km ) / alph ) ); // Gamma function to 50 digits of precision
+            mpf_class g2( spouges(  0.5 -     km ) );
+
+            mpf_class g( g1/g2 );
+
+            if ( abs( g ) < maxG  ) // If out of our range, stop summing
+              sConv[0] = 1;
+
+            s1   = sign * g;      // Term in the sum
+
+        for ( int i = firstIndex; i < N_bins; ++i ){  // Only take sums that haven't converged
+
+           sum1[i] += s1 * x2kPow[i];
+
         }
-//Issues begin around term 80
 
-/*
-{
-mpf_class blah(  ( mpf_class(1) - mpf_class(2) * km ) / alph  );
-mpf_class  foo(   gamma(blah) );
-mpf_class  bar( spouges(blah) );
-
-std::cout << std::setw(20) << "(1-2k)/a: " << std::scientific << std::setw(prec+5) << blah << std::endl;
-std::cout << std::setw(20) << "g: " << std::scientific << std::setw(prec+5) << foo << std::endl;
-std::cout << std::setw(20) << "s: " << std::scientific << std::setw(prec+5) << bar << std::endl;
-std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) << foo/bar << std::endl;
-}
-
-{
-
-mpf_class blah(  mpf_class(1/2.) - km );
-mpf_class  foo(   gamma(blah) );
-mpf_class  bar( spouges(blah) );
-
-std::cout << std::setw(20) << "1/2-k: " << std::scientific << std::setw(prec+5) << blah << std::endl;
-std::cout << std::setw(20) << "g: " << std::scientific << std::setw(prec+5) << foo << std::endl;
-std::cout << std::setw(20) << "s: " << std::scientific << std::setw(prec+5) << bar << std::endl;
-std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) << foo/bar << std::endl;
-}
-//*/
-/*
-std::cout << std::setw(15) << "k: " << std::scientific << std::setw(prec+5) << km << std::endl;
-std::cout << std::setw(15) << "z: " << std::scientific << std::setw(prec+5) << z[N_bins-1] << std::endl;
-std::cout << std::setw(15) << "a: " << std::scientific << std::setw(prec+5) << alph << std::endl;
-std::cout << std::setw(15) << "(1-2k)/a: " << std::scientific << std::setw(prec+5) << mpf_class(( mpf_class(1) - mpf_class(2) * km ) / alph) << std::endl;
-std::cout << std::setw(15) << "g/s((1-2k)/a): " << std::scientific << std::setw(prec+5) << gamma(( mpf_class(1) - mpf_class(2) * km ) / alph) / spouges(( mpf_class(1) - mpf_class(2) * km ) / alph) << std::endl;
-std::cout << std::setw(15) << "g(1/2-k): " << std::scientific << std::setw(prec+5) << spouges(  0.5 -     km ) << std::endl;
-std::cout << std::setw(15) << "x^2k: " << std::scientific << std::setw(prec+5) << x2kPow[N_bins-1] << std::endl;
-std::cout << std::setw(15) << "s1: " << std::scientific << std::setw(prec+5) << s1 << std::endl;
-//*/
       }
 
 
       testVal1 = tgamma( -( 1. + alpha * k ) / 2. );
       testVal2 = tgamma(       - alpha * k   / 2. );
 
+
       // Sum 2
       if ( (  !secondOrder        ||
            ( k % p != 0 )       ) &&
            ( testVal1 == testVal1 &&
-             testVal2 == testVal2 )){
+             testVal2 == testVal2)&&
+           ( sConv[1] == 0       )){
 
-             s2  = sign *
-//                  gamma( -( 1 + alph * km ) / 2 ) /
-//                  gamma( - km * alph / 2  );
-                  spouges( -( 1 + alph * km ) / 2 ) /
-                  spouges( - km * alph / 2  );
+
+            mpf_class g1( spouges( -( 1 + alph * km ) / 2 ) ); // Gamma functions
+            mpf_class g2( spouges( - km * alph / 2  ) );
+
+            mpf_class g( g1/g2 );
+
+            if ( abs( g ) < maxG  ) // If out of our range, stop summing
+              sConv[1] = 1;
+
+
+            s2  = sign * g;      // Term in sum
 
         for ( int i = firstIndex; i < N_bins; ++i ){
-          oldSum2[i]  = sum2[i];
-             sum2[i] += s2 * x1kPow[i];
+
+          sum2[i] += s2 * x1kPow[i];
+
         }
-/*
-{
-mpf_class blah(  -(mpf_class(1)+alph*km)/2 );
-mpf_class  foo(   gamma(blah) );
-mpf_class  bar( spouges(blah) );
 
-std::cout << std::setw(20) << "-(1+ak)/2: " << std::scientific << std::setw(prec+5) << blah << std::endl;
-std::cout << std::setw(20) << "g: " << std::scientific << std::setw(prec+5) << foo << std::endl;
-std::cout << std::setw(20) << "s: " << std::scientific << std::setw(prec+5) << bar << std::endl;
-std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) << foo/bar << std::endl;
-}
-
-{
-mpf_class blah(  -(alph*km)/2 );
-mpf_class  foo(   gamma(blah) );
-mpf_class  bar( spouges(blah) );
-
-std::cout << std::setw(20) << "-(1+ak)/2: " << std::scientific << std::setw(prec+5) << blah << std::endl;
-std::cout << std::setw(20) << "g: " << std::scientific << std::setw(prec+5) << foo << std::endl;
-std::cout << std::setw(20) << "s: " << std::scientific << std::setw(prec+5) << bar << std::endl;
-std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) << foo/bar << std::endl;
-}
-//*/
       }
 
+
+      testVal1 = tgamma(   2 * km.get_d() + 1 );
+      testVal2 = tgamma( ( 2 * km.get_d() - 1 ) / alph.get_d() + 1 );
+
       if (        secondOrder &&  // If second order, need extra sum
-           ( (k+k0) % q == 0) ){
+           ( (k+k0) % q == 0) &&
+           ( sConv[2]   == 0 )){
 
         invJunk = - 1.   / ( 2 * km ) ;
 
@@ -971,43 +942,29 @@ std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) <<
           diG3 = 0;
         }
 
-        s3   = s3Sign *
-//             gamma(   2 * km + 1 ) /
-//             gamma( ( 2 * km - 1 ) / alph + 1 ) ;
-             spouges(   2 * km + 1 ) /
-             spouges( ( 2 * km - 1 ) / alph + 1 ) ;
+        mpf_class g1( spouges(   2 * km + 1 ) );
+        mpf_class g2( spouges( ( 2 * km - 1 ) / alph + 1 ) );
+
+        mpf_class g( g1/g2 );
+
+        if ( abs( g ) < maxG  ) // If out of our range, stop summing
+           sConv[2] = 1;
+
+
+        s3   = s3Sign * g;
 
         for ( int i   = firstIndex; i < N_bins; ++i ){
-          oldSum3[i]  = sum3[i];
+
              sum3[i] += s3 * x4kPow[i] *
              ( logJunk[i] +
                invJunk    +
                   diG1    +
                   diG2    / alph -
                   diG3    );
+
+
         }
-/*
-{
-mpf_class blah(  km*2 + 1 );
-mpf_class  foo(   gamma(blah) );
-mpf_class  bar( spouges(blah) );
 
-std::cout << std::setw(20) << "2*k+1: " << std::scientific << std::setw(prec+5) << blah << std::endl;
-std::cout << std::setw(20) << "g: " << std::scientific << std::setw(prec+5) << foo << std::endl;
-std::cout << std::setw(20) << "s: " << std::scientific << std::setw(prec+5) << bar << std::endl;
-std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) << foo/bar << std::endl;
-}
-{
-mpf_class blah( (2*km-1)/alph + 1  );
-mpf_class  foo(   gamma(blah) );
-mpf_class  bar( spouges(blah) );
-
-std::cout << std::setw(20) << "-(1+ak)/2: " << std::scientific << std::setw(prec+5) << blah << std::endl;
-std::cout << std::setw(20) << "g: " << std::scientific << std::setw(prec+5) << foo << std::endl;
-std::cout << std::setw(20) << "s: " << std::scientific << std::setw(prec+5) << bar << std::endl;
-std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) << foo/bar << std::endl;
-}
-//*/
 
      }
 
@@ -1016,17 +973,17 @@ std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) <<
       // If converged maxC times, can stop
       for ( int i = firstIndex; i < N_bins; ++i ){
 
-        mpf_class    sum(    sum1[i] + alph/2 *    sum2[i] );
+        mpf_class    sum(    sum1[i] + alph/2 *    sum2[i] ); // Add the two sums
         mpf_class oldSum( oldSum1[i] + alph/2 * oldSum2[i] );
 
 
         if ( secondOrder ){
-             sum =    sum + alph/rootPi *    sum3[i];
+             sum =    sum + alph/rootPi *    sum3[i];         // If necessary add third
           oldSum = oldSum + alph/rootPi * oldSum3[i];
         }
 
 
-        mpf_class diff( abs( sum - oldSum ) / sum );
+        mpf_class diff( abs( ( sum - oldSum ) / sum ) ) ;     // How much it has changes
 
         if ( diff < tolerance ){
           converge[i] += 1;
@@ -1039,37 +996,14 @@ std::cout << std::setw(20) << "g/s: " << std::scientific << std::setw(prec+5) <<
             firstIndex += 1;
         }
 
-mpf_class retV( sum1[i] + alph/2 * sum2[i] + alph/rootPi * sum3[i] );
-/*
-printf("%3i %3i %3i ", (int)km.get_d(),i,converge[i]);
-std::cout <<                   std::scientific << std::setw(prec+5) <<                 sum1[i] << std::endl;
-std::cout << "            " << std::scientific << std::setw(prec+5) << alph / 2      * sum2[i] << std::endl;
-std::cout << "            " << std::scientific << std::setw(prec+5) << alph / rootPi * sum3[i] << std::endl;
-std::cout << "            " << std::scientific << std::setw(prec+5) <<retV << std::endl;
-//*/
+        oldSum1[i] = sum1[i]; // For next iteration, this counts NaNs as converging
+        oldSum2[i] = sum2[i];
+        oldSum3[i] = sum3[i];
 
-printf("%3i %3i   %10.2e %10.2e + a/2 %10.2e %10.2e + a/rp %10.2e %10.2e = %10.2e\n",
-(int)km.get_d(),converge[i],
-s1.get_d()* x2kPow[i].get_d(), sum1[i].get_d(),
-s2.get_d()* x1kPow[i].get_d(), sum2[i].get_d(),
-s3.get_d()* x4kPow[i].get_d(), sum3[i].get_d(),
-retV.get_d()
-);
-//*/
       }
-/*
-            s1   = sign *
-                  gamma(  ( 1 - 2 * km ) / alph ) /
-                  gamma(  0.5 -     km );
-        for ( int i = firstIndex; i < N_bins; ++i ){
-          oldSum1[i]  = sum1[i];
-             sum1[i] += s1 * x2kPow[i];
-        }
-*/
-printf("\n");
-
-  } while ( firstIndex != N_bins &&
+  } while ( firstIndex != N_bins &&  // firstIndex will increase when first one converges
                     km  < maxK   );
+
 
   mpf_class returnValues( 0 );
 
@@ -1255,8 +1189,8 @@ void generateEinRTS(
                          tgamma( 1./ lens.getAlpha() ) / sourceSc;
 
 printf("%7s %14s     %14s %14s      %14s %14s\n", "dist", "gArr", "k_EIN", "k_NFW", "k_AVG_EIN", "k_AVG_NFW");
-//lens.setAlpha( 1. );
-lens.setAlpha( 1.-1e-2 );
+lens.setAlpha( 0.4843 );
+//lens.setAlpha( 1.-1e-3 );
 
   double        xArr[u.getNbins()];
   double    kappaArr[u.getNbins()];
@@ -1271,8 +1205,8 @@ lens.setAlpha( 1.-1e-2 );
 
   for ( int i = 0; i < u.getNbins(); ++i ){
 
-//       kappaArr[i] = kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) *    kappaArr[i] ;
-kappaArr[i]    = std::sqrt(M_PI) / xArr[i] * kappaArr[i];
+       kappaArr[i] = kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) *    kappaArr[i] ;
+//kappaArr[i]    = std::sqrt(M_PI) / xArr[i] * kappaArr[i];
 //    kappaAvgArr[i] = kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) * kappaAvgArr[i] ;
     gArr[i] = ( kappaAvgArr[i] - kappaArr[i] ) / ( 1 - kappaArr[i] );
 
