@@ -72,16 +72,19 @@ void generateEinRTS(
 
 
 void   foxH2012(
-                double    retArr[]     ,  // Values to return
+                double  f2012Arr[]     ,  // Values to return
+                double  f2123Arr[]     ,  // Values to return
                 double         z[]     ,  // Z from fox H function
                 double    N_bins       ,  // Number of bins of z
                 double     alpha       ,  // Shape parameter Ein profile
                 double tolerance = 1e-4); // Tolence level for convergence
 
 double foxH2123(
-                double         z       ,  // Z from fox H function
+                double    retArr[]     ,  // Values to return
+                double         z[]     ,  // Z from fox H function
+                double    N_bins       ,  // Number of bins of z
                 double     alpha       ,  // Shape parameter Ein profile
-                double tolerance = 1e-2); // Tolence level for convergence
+                double tolerance = 1e-4); // Tolence level for convergence
 
 
 
