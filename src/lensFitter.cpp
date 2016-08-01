@@ -58,6 +58,8 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
 
   double decrement = 1/4.; // Amount to decrease step size by
 
+  double boundDist = 1e-1; // Percent distance can be close to edge
+
 
   // Step sizes partially random
   double cStep = ( u.getConMax  () - u.getConMin  () ) / randVal( bigStep, smallStep ) ;
@@ -71,13 +73,13 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
 
 
   // Previous values, to test for convergence
-  double prevM=1;
-  double prevC=1;
-  double prevA=1;
+  double prevM = 1;
+  double prevC = 1;
+  double prevA = 1;
 
 
-  int loopCounter = 0;                      // Number of times we have rolled
-  int convCounter = 0;                      // Number of times we have been in tolerance
+  int loopCounter = 0;  // Number of times we have rolled
+  int convCounter = 0;  // Number of times we have been in tolerance
 
   // Roll the ball
   do{
@@ -90,6 +92,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
 
       // Sets the parameters for moving along the hill
       for ( int j = -1; j < 2; ++j ){
+        if ( ball.getType() == 2 )
         aVals[j+1] =          std::min(std::max(        ball.getAlpha()   + aStep * j, u.getAlphaMin() ), u.getAlphaMax() );
         mVals[j+1] = pow( 10, std::min(std::max( log10( ball.getM_enc() ) + mStep * j, u.getMassMin () ), u.getMassMax () ) );
         cVals[j+1] =          std::min(std::max(        ball.getC    ()   + cStep * j, u.getConMin  () ), u.getConMax  () );
@@ -99,6 +102,10 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
 
       double gAnalyticArray[  u.getNbins()   ];
 
+      int maxK = 1;
+      if ( ball.getType() == 2 )
+        maxK = 3;
+
       for ( int ii = 0; ii < 3; ++ii ){
 
         testProfile.setC(     cVals[ii] );
@@ -107,47 +114,80 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
 
         testProfile.setM_enc( mVals[jj] );
 
-//      generateEinRTS( gAnalyticArray, parent[i], halo, u, sourceSigC, sourceDist);
-// Add Einasto
-        generateNFWRTS( gAnalyticArray, testProfile, u.getNbins(), dArr, sigmaC );
+      for ( int kk = 0; kk < maxK; ++ kk ){
+
+
+        // Generate RTS
+        if ( ball.getType() == 2 ){
+          testProfile.setAlpha( aVals[kk] );
+
+          generateEinRTS( gAnalyticArray, testProfile, u,            dArr, sigmaC );
+        } else {
+          generateNFWRTS( gAnalyticArray, testProfile, u.getNbins(), dArr, sigmaC );
+        }
+
+
+        // Determine goodness of fit
         compChi = chiSquared( gAnalyticArray, gArr, gErrArr, u.getNbins() );
 
-        // If a better fit, keep it
+        // Checks each possible direction for ball to roll
+        // Will roll in direction of best fit
         if (compChi < chiChoose){
           chiChoose = compChi;
-          ball.setC    ( cVals[jj] );
+          if ( ball.getType() == 2 )
+          ball.setAlpha( aVals[kk] );
+          ball.setC    ( cVals[ii] );
           ball.setM_enc( mVals[jj] );
+
 
           chi2 = compChi;
         }
 
+      }
+      }
+      }
 
-      }
-      }
 
       // Kick ball if stuck on edge
 
-      if ( fabs( ball.getC    () - u.getConMax () ) / u.getConMax () < 1e-4 ||
-           fabs( ball.getC    () - u.getConMin () ) / u.getConMin () < 1e-4 ){
-           ball.setC(              randVal( u.getConMin  (), u.getConMax  () ) );
+      if ( fabs( ball.getC    () - u.getConMax () ) / u.getConMax () < boundDist ||
+           fabs( ball.getC    () - u.getConMin () ) / u.getConMin () < boundDist ){
+           ball.setC(     randVal( u.getConMin ()   , u.getConMax () ) );
            cStep = cStep_0;
       }
 
-      if ( fabs( ball.getM_enc() - u.getMassMax() ) / u.getMassMax() < 1e-4 ||
-           fabs( ball.getM_enc() - u.getMassMin() ) / u.getMassMin() < 1e-4 ){
+      if ( fabs( ball.getM_enc() - u.getMassMax() ) / u.getMassMax() < boundDist ||
+           fabs( ball.getM_enc() - u.getMassMin() ) / u.getMassMin() < boundDist ){
            ball.setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
            mStep = mStep_0;
       }
-// Einasto
+
+      if ( ball.getType() == 2 ) {
+        if(
+           fabs( ball.getAlpha() - u.getAlphaMax () ) / u.getAlphaMax () < boundDist ||
+           fabs( ball.getAlpha() - u.getAlphaMin () ) / u.getAlphaMin () < boundDist ){
+           ball.setAlpha( randVal( u.getAlphaMin ()   , u.getAlphaMax () ) );
+           aStep = aStep_0;
+        }
+      }
 
 
       // If didn't move in one direction, decrease step size
-      if ( ball.getC    () == cVals[1] &&
+      if ( ball.getType () !=       2  &&
+           ball.getC    () == cVals[1] &&
            ball.getM_enc() == mVals[1] ){
         cStep *= decrement;
         mStep *= decrement;
+      }else
+      if (   ball.getType () ==       2  &&
+             ball.getC    () == cVals[1] &&
+             ball.getM_enc() == mVals[1] ){
+        if ( ball.getAlpha() == aVals[1] ){
+          cStep *= decrement;
+          mStep *= decrement;
+          aStep *= decrement;
+        }
       }
-// Add einasto
 
 
 
@@ -155,24 +195,31 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       // Need counter to be greater than u.consistent,
       //  a count of how many times average has been
       //  consistently below tolerance. Tests for convergence
-      if (  fabs( ball.getM_enc() - prevM ) / prevM < u.getTolerance() &&
-            fabs( ball.getC    () - prevC ) / prevC < u.getTolerance() ){
-//Einasto
-        convCounter += 1;
+      if (  fabs( ball.getM_enc() - prevM ) / prevM  < u.getTolerance() &&
+            fabs( ball.getC    () - prevC ) / prevC  < u.getTolerance() ){
+
+        if ( ball.getType() != 2 ){
+          convCounter += 1;
+        } else
+        if ( fabs( ball.getAlpha() - prevA ) / prevA  < u.getTolerance() ){  // Either alpha converged, or not einasto
+          convCounter += 1;
+        }
       } else {
         convCounter  = 0;
       }
 
 
 
-// Einasto
       prevM = ball.getM_enc();
       prevC = ball.getC    ();
 
+      if ( ball.getType() == 2 )
+      prevA = ball.getAlpha();
+
       loopCounter +=1;
+
     } while ( loopCounter < u.getMaxFitNum()   &&
               convCounter < u.getNConsistent() );
-
 }
 
 
@@ -184,8 +231,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
 void rollingFitDensProfile(
                           densProfile   &  profile ,  // Density profile we are outputting
                     const haloInfo      &     halo ,  // Info about parent halo
-                    userInfo               u ,  // Info from the user
-//                    const userInfo               u ,  // Info from the user
+                    const userInfo               u ,  // Info from the user
                     const double       *      gArr ,  // RTS binned array we "observed"
                     const double       *      dArr ,  // Distance binned array
                     const double       *   gErrArr ,
@@ -198,14 +244,12 @@ void rollingFitDensProfile(
   for (int i = 0; i  <  u.getNchrome() ; ++i)
     ball[i].setR_max( halo.getRmax() );
 
-
   // Do for each rolling ball
   #pragma omp parallel for
   for ( int i = 0; i < u.getNchrome(); ++i ){
 
-
     // Set starting parameters, location on hill
-    if ( profile.getType() == 2 );
+    if ( profile.getType() == 2 )
     ball[i].setAlpha(          randVal( u.getAlphaMin(), u.getAlphaMax() )   );
     ball[i].setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
     ball[i].setC    (          randVal( u.getConMin  (), u.getConMax  () )   );
@@ -216,7 +260,7 @@ void rollingFitDensProfile(
 
   int    minIndex =              0; //index of lowest chi2
   double minChi   = chi2[minIndex];
-  double cAvg(0), mAvg(0), weightedChi(0);
+  double cAvg(0), mAvg(0), aAvg(0), weightedChi(0);
 
   //Find lowest chi2 index
   for ( int i = 0; i < u.getNchrome(); ++i ){
@@ -228,21 +272,27 @@ void rollingFitDensProfile(
 
     weightedChi += 1/chi2[i] ;
 
+    if ( profile.getType() == 2 )
+    aAvg +=             ball[i].getAlpha()   /  chi2[i]  ;
     cAvg +=             ball[i].getC()       /  chi2[i]  ;
     mAvg += std::log10( ball[i].getM_enc() ) /  chi2[i]  ;
-//Einasto
   }
 
   weightedChi = 1 / weightedChi;
+
+  if ( profile.getType() == 2 )
+  aAvg = aAvg * weightedChi ;
+
   cAvg = cAvg * weightedChi ;
   mAvg = mAvg * weightedChi ;
 
   profile.setC    (  ball[minIndex].getC    ()  );
   profile.setM_enc(  ball[minIndex].getM_enc()  );
-//Einasto
 
-printf("\n");
-//printf("%14.4e %7.5f %14.4e\n", weightedChi, cAvg, pow(10, mAvg ) );
+  if ( profile.getType() == 2 )
+  profile.setAlpha(  ball[minIndex].getAlpha()  );
+
+printf("%14.4e %7.5f %14.4e %7.5f\n", weightedChi, cAvg, pow(10, mAvg ), aAvg );
 printf("%14.4e ", minChi);
 
 
@@ -259,7 +309,6 @@ void fitDensProfile(
                           densProfile   &  profile ,  // Density profile we are outputting
                     const haloInfo      &     halo ,  // Info about parent halo
                     userInfo               u ,  // Info from the user
-//                    const userInfo               u ,  // Info from the user
                     const double       *      gArr ,  // RTS binned array we "observed"
                     const double       *      dArr ,  // Distance binned array
                     const double       *   gErrArr ,
@@ -291,6 +340,8 @@ void fitDensProfile(
      child[i].setR_max( halo.getRmax() );
   }
 
+  double sigmaC = cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() );
+
   // Generate first parent values
   #pragma omp parallel for
   for ( int i=0; i<u.getNchrome(); ++i ){
@@ -307,9 +358,9 @@ void fitDensProfile(
 
     // Gives analytic value for RTS, for source locations, radially averaged
     if ( profile.getType() == 1 ){
-      generateNFWRTS( gAnalyticArray, parent[i], u.getNbins(), dArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ) ); // Note this distance is physical seperation
+      generateNFWRTS( gAnalyticArray, parent[i], u.getNbins(), dArr, sigmaC ); // Note this distance is physical seperation
     } else{
-//      generateEinRTS( gAnalyticArray, parent[i], halo, u, sourceSigC, sourceDist);
+      generateEinRTS( gAnalyticArray, parent[i], u           , dArr, sigmaC );
     }
 
     // Calc chi2 between theoretical predictions and real values
@@ -416,10 +467,10 @@ void fitDensProfile(
 
       // Generate analytic RTS for child
       if ( profile.getType() == 1 ){
-        generateNFWRTS( gAnalyticArray, child[i], u.getNbins(), dArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ) ); // Note this distance is physical seperation
+        generateNFWRTS( gAnalyticArray, child[i], u.getNbins(), dArr, sigmaC ); // Note this distance is physical seperation
 
       } else{
-//        generateEinRTS( gAnalyticArray, child[i], halo, u, sourceSigC, sourceDist);
+        generateEinRTS( gAnalyticArray, child[i], u           , dArr, sigmaC ); // Note this distance is physical seperation
       }
 
 
@@ -464,7 +515,7 @@ printf("%7i    %14.4e %14.4e %14.4e   %3i\n",loopCounter, totAvg, oldAvg, fabs(t
     ++loopCounter;
   } while ( u.getNConsistent() > counter && loopCounter < u.getMaxFitNum() ) ;
 
-
+printf("468\n");
   // Once converged, just find best child
 
   int    minIndex =              0; //index of lowest chi2
@@ -1143,11 +1194,11 @@ double foxH2123(
 
 
 void generateEinRTS(
-                    double          *gArr ,  // RTS array to output
-                    densProfile     &lens ,  // Input density profile to generate profile for
-                    userInfo            u ,  // Information from the user
-                    double     sourceSc   ,  // Critical surface density for the sources
-                    double    *sourceDist ){ // Projected distances between source and lens
+                          double          *gArr ,  // RTS array to output
+                    const densProfile     &lens ,  // Input density profile to generate profile for
+                    const userInfo            u ,  // Information from the user
+                    const double    *sourceDist ,  // Projected distances between source and lens
+                    const double     sourceSc   ){ // Critical surface density for the sources
 
 
   for (int i=0;i<u.getNbins();++i)

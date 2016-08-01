@@ -21,7 +21,6 @@ double chiSquared(
 
       temp  = ( array1[i] - array2[i] ) / errorArr[i] ;
       chi2 += temp * temp;
-
     }
 
   }

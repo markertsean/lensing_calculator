@@ -16,8 +16,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
 void rollingFitDensProfile(
                           densProfile   &  profile ,  // Density profile we are outputting
                     const haloInfo      &     halo ,  // Info about parent halo
-                    userInfo               u ,  // Info from the user
-//                    const userInfo               u ,  // Info from the user
+                    const userInfo               u ,  // Info from the user
                     const double       *      gArr ,  // RTS binned array we "observed"
                     const double       *      dArr ,  // Distance binned array
                     const double       *   gErrArr ,
@@ -64,11 +63,11 @@ bool num_den(  int       &p ,  // Finds ratio of p/q, if rational
 
 
 void generateEinRTS(
-		    double           *gArr,  //Radially averaged RTS array function will return
-		    densProfile      &lens,  //Input density profile
-        userInfo             u,  //Info from user
-		    double        sourceSc,  //Critical surface density of a source
-		    double     *sourceDist); //Projected radial distance of sources to lens centers
+		          double           *gArr,  //Radially averaged RTS array function will return
+		    const densProfile      &lens,  //Input density profile
+        const userInfo             u,  //Info from user
+		    const double     *sourceDist,  //Projected radial distance of sources to lens centers
+		    const double        sourceSc); //Critical surface density of a source
 
 
 void   foxH2012(

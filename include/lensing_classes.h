@@ -133,35 +133,46 @@ class densProfile{
     inline densProfile( double inpA );
 
     // Modifiers, as parameters are modified need to adjust dependant values
-    void setAlpha( double inpA ){         alpha = inpA;                         modRho_o(); }
-    void setR_max( double inpR ){         r_max = inpR;   modR_s();             modRho_o(); }
-    void setC    ( double inpC ){ concentration = inpC;   modR_s();             modRho_o(); }
-    void setC    ( double inpC, int i ){ concentration = inpC;printf("Rs\n");   modR_s();printf("Rho\n");             modRho_o(); }
-    void setR_s  ( double inpR ){           r_s = inpR;               modC();   modRho_o(); }
-    void setRho_o( double inpR ){         rho_o = inpR;                         modM_enc(); }
-    void setM_enc( double inpM ){         M_enc = inpM;                         modRho_o(); }
-    void resetM_enc(           ){                                               modM_enc(); }
+    void setAlpha( double inpA ){         alpha = inpA; }
+    void setR_max( double inpR ){         r_max = inpR; }
+    void setC    ( double inpC ){ concentration = inpC; }
+    void setM_enc( double inpM ){         M_enc = inpM; }
 
-// Rs    -> C, Rm
-// C     -> Rs, Rm
-// Rho_o -> M, Rm, C, alpha
-// M     -> Rho_o, Rm, C
 
     // If when getting an undefined variable, need to spit out a warning
-    double getC    () const {  if ( concentration==-1.0 ) unDefVar("\"concentration\"");   return concentration;  }
-    double getRho_o() const {  if (         rho_o==-1.0 ) unDefVar("\"rho_o\""        );   return         rho_o;  }
-    double getR_max() const {  if (         r_max==-1.0 ) unDefVar("\"R_max\""        );   return         r_max;  }
-    double getR_s  () const {  if (           r_s==-1.0 ) unDefVar("\"R_scale\""      );   return           r_s;  }
-    double getM_enc() const {  if (         M_enc==-1.0 ) unDefVar("\"M_enc\""        );   return         M_enc;  }
-    double getAlpha() const {  if (         alpha==-1.0 ) unDefVar("\"alpha\""        );   return         alpha;  }
-    double getType () const {                                                              return          type;  }
+    double getR_s  () const {  if ( concentration==-1.0 ) unDefVar("\"concentration\"");
+                               if (         r_max==-1.0 ) unDefVar("\"R_max  \""      );   return r_max / concentration;  }
+    double getC    () const {  if ( concentration==-1.0 ) unDefVar("\"concentration\"");   return         concentration;  }
+    double getR_max() const {  if (         r_max==-1.0 ) unDefVar("\"R_max\""        );   return                 r_max;  }
+    double getM_enc() const {  if (         M_enc==-1.0 ) unDefVar("\"M_enc\""        );   return                 M_enc;  }
+    double getAlpha() const {  if (         alpha==-1.0 ) unDefVar("\"alpha\""        );   return                 alpha;  }
+    double getType () const {                                                              return                  type;  }
+    double getRho_o() const {
 
+                               if ( M_enc > 0 && r_max > 0 && concentration > 0){ //All needed parameters def
+
+                                  if ( type == 1 ){ // NFW
+                                                      return  M_enc / (4. * M_PI * r_max*r_max*r_max )  *
+                                                             concentration*concentration*concentration /
+                                                            ( log( 1 + concentration ) - concentration / ( 1 + concentration) );
+                                                  }
+
+                                  else { // Einasto
+                                         double rs = r_max / concentration;
+
+                                         return  M_enc * alpha / (   4. * M_PI    *    rs * rs * rs   *
+                                                    exp(             2. / alpha ) *
+                                                    pow( alpha / 2., 3. / alpha ) *
+                                                    tgamma(          3. / alpha ) );
+                                  }
+                                }
+
+                                return -1;
+                              }
 
   private:
     double concentration;
     double alpha        ;
-    double rho_o        ;
-    double r_s          ;
     double r_max        ;
     double M_enc        ;
     int    type         ; //1 NFW, 2 Einasto
@@ -169,47 +180,12 @@ class densProfile{
     void   unDefVar( std::string inpS ) const {
       std::cerr<<"WARNING: variable "<<inpS<<" undefined in <lensProfile>"<<std::endl;
     }
-
-    void modRho_o(){
-      if ( M_enc > 0 && r_max > 0 && concentration > 0){ //All needed parameters def
-        if ( type == 1 ){
-          rho_o   =  M_enc / (4. * M_PI * r_max*r_max*r_max )  *
-                     concentration*concentration*concentration /
-                    ( log( 1 + concentration ) - concentration / ( 1 + concentration) );
-        }
-        else {
-          rho_o   =  M_enc * alpha/ ( 4. * M_PI *    r_s * r_s * r_s   * exp(    2./alpha ) *
-                                     pow( alpha / 2., 3. / alpha  )    * tgamma( 3./alpha ) );
-        }
-      }
-    }
-
-    void modM_enc(){
-
-      if ( rho_o > 0 && r_max > 0 && concentration > 0){ // All needed parameters def
-        if ( type == 1 ){
-          M_enc   =  rho_o * (4. * M_PI * r_max*r_max*r_max )  /
-                     concentration*concentration*concentration *
-                    ( log( 1 + concentration ) - concentration / ( 1 + concentration) );
-        }
-        else {
-          M_enc   = 4. * M_PI  *  rho_o  *   r_s  * r_s * r_s * exp( 2./alpha ) *
-                    pow( alpha / 2., 3. / alpha ) / alpha *  tgamma( 3./alpha );
-        }
-      }
-
-    }
-
-    void modR_s(){  if (   concentration > 0 && r_max > 0 )           r_s = r_max / concentration;  }
-    void modC  (){  if (             r_s > 0 && r_max > 0 ) concentration = r_max / r_s          ;  }
-
 };
+
 
 densProfile::densProfile(){
   concentration = -1.0;
   alpha         = -1.0;
-  rho_o         = -1.0;
-  r_s           = -1.0;
   r_max         = -1.0;
   M_enc         = -1.0;
   type          =    1;
@@ -219,8 +195,6 @@ densProfile::densProfile(){
 densProfile::densProfile( double inpA ){
   concentration = -1.0;
   alpha         = inpA;
-  rho_o         = -1.0;
-  r_s           = -1.0;
   r_max         = -1.0;
   M_enc         = -1.0;
   type          =    2;
@@ -402,10 +376,10 @@ userInfo::userInfo(){
 */
 
   // Good for ball fitting
-  maxFitAttempts = 1e4   ;
-   N_chromosomes = 3e3   ;
+  maxFitAttempts = 1e2   ;
+   N_chromosomes = 1e3   ;
       consistent = 2e1   ;
-       tolerance = 1e-4  ;
+       tolerance = 1e-5  ;
 
 
       N_chiTrack = 1e1   ;

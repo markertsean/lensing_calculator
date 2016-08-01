@@ -51,23 +51,6 @@ std::string logFileName = "";
 
 int main(int arg,char **argv){
 
-//int prec = 100;
-int prec = 500;
-mpf_set_default_prec( prec );
-
-/*
-int foo = 50;
-std::cout.precision(foo);
-std::scientific;
-mpf_class piV(ln_pis);
-
-mpf_class bar( -151.1 );
-
-std::cout << std::setw( foo ) << bar             << std::endl;
-std::cout << std::setw( foo ) << bar.get_d()     << std::endl;
-std::cout << std::setw( foo ) << spouges( bar ) << std::endl;
-exit(0);
-//*/
 
   // Initializes the log file, generates logfiles directory
   //  and a file name based on current time
@@ -79,6 +62,13 @@ exit(0);
   logMessage( std::string("Seed = ") + std::to_string( (long long) seed ) );
 
   srand(seed); // Sets random seed
+
+  // For Einasto fitting use GNU Multi Precision Library
+  int prec = 500;
+  mpf_set_default_prec( prec );
+
+  logMessage( std::string("GMP Prec = ") + std::to_string( (long long) prec ) );
+
 
   //////////////////////////////////
   ////////////READ IN///////////////
@@ -340,22 +330,14 @@ userInput.setNpix( 9*9);
 
   std::cout << " Sources averaged" << std::endl;;
 
-double m_to_use= 1e13;
-double R_to_use=  2.0;
-double C_to_use=  7.0;
-
+//densProfile myProfile(0.41984538);
 densProfile myProfile;
-myHalo.setRmax(     R_to_use );
-myHalo.setC(        C_to_use );
-myHalo.setM(        m_to_use );
-myProfile.setR_max( R_to_use );
-myProfile.setM_enc( m_to_use );
-myProfile.setC(     C_to_use );
-
+myProfile.setR_max( myHalo.getRmax() );
+myProfile.setC( 5.0 );
+myProfile.setM_enc( 1e14 );
+//printf("%7.2f %7.2f %14.4e\n",myProfile.getR_max(),myProfile.getC(),myProfile.getM_enc());
 for ( int i = 0; i < userInput.getNbins(); ++i ){
   distArr[i] = i * userInput.getPhysFOV() / 2 / userInput.getNbins() +1e-3;
-
-  double  srcZ;
 
 
   double    SD =    SDNFW( distArr[i], myProfile ); //At radius
@@ -366,20 +348,20 @@ for ( int i = 0; i < userInput.getNbins(); ++i ){
   gTanArr[i] = ( avgSD - SD ) / ( SigCr - SD );
   gErrArr[i] = 0.3;
 
-printf("%7.3f %14.5e %14.5e\n",distArr[i], gTanArr[i], gErrArr[i]);
+printf("%7.3f %14.5e %14.5e %14.4e\n",distArr[i], gTanArr[i], gErrArr[i], SigCr);
 }
+
+//generateEinRTS( gTanArr, myProfile, userInput, distArr, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ) );
+//for ( int i = 0; i < userInput.getNbins(); ++i ){
+//  printf("%7.3f %14.5e %14.5e\n",distArr[i], gTanArr[i], gErrArr[i]);
+//}
+
 printf("\n");
-{
+gErrArr[0] = 0;
+gErrArr[userInput.getNbins() - 1] = 0;
+gErrArr[userInput.getNbins() - 2] = 0;
 
-densProfile einProfile(0.41);
-einProfile.setR_max( R_to_use );
-einProfile.setM_enc( m_to_use );
-einProfile.setC(     C_to_use );
 
-std::cout << einProfile.getR_s() << std::endl;
-generateEinRTS( gTanArr, einProfile, userInput, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ), distArr );
-}
-exit(0);
   //////////////////////////////////////////////////////////
   ////////////////////////FIT PROFILE///////////////////////
   //////////////////////////////////////////////////////////
@@ -387,18 +369,36 @@ exit(0);
   // Attempts to fit the density using the radial averages of distance and RTS
 
 
-  densProfile nfwProfile, einProfile( 0.2 ); // 0.2 sets profile as Einasto with alpha = 0.2
+  densProfile nfwProfile, einProfile( 0.415843 ); // 0.2 sets profile as Einasto with alpha = 0.2
 
   nfwProfile.setR_max( myHalo.getRmax() );
   einProfile.setR_max( myHalo.getRmax() );
 
+double gtanNFW[ userInput.getNbins() ];
+double gtanEIN[ userInput.getNbins() ];
+
 
   rollingFitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
-//  fitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
-
 printf("%7.5f %14.4e\n",nfwProfile.getC(), nfwProfile.getM_enc() );
 
+  rollingFitDensProfile( einProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
+//  fitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
+printf("%7.5f %14.4e %7.5f\n",einProfile.getC(), einProfile.getM_enc(), einProfile.getAlpha() );
+printf("               %7.5f %14.4e %7.5f\n",myProfile.getC(), myProfile.getM_enc(),myProfile.getAlpha() );
 
+
+
+generateEinRTS( gtanEIN, einProfile, userInput, distArr, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ) );
+
+for ( int i = 0; i < userInput.getNbins(); ++i ){
+
+  double    SD =    SDNFW( distArr[i], nfwProfile ); //At radius
+  double avgSD = SDAvgNFW( distArr[i], nfwProfile ); //Average
+  double SigCr = cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() );
+
+
+printf("%14.4e %14.4e %14.4e\n",gTanArr[i],( avgSD - SD ) / ( SigCr - SD ), gtanEIN[i]);
+}
 //printf("%12.3e %5.3lf\n",nfwProfile.getM_enc(),nfwProfile.getC());
 
 
