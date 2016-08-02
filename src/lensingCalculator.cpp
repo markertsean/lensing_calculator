@@ -52,6 +52,64 @@ std::string logFileName = "";
 int main(int arg,char **argv){
 
 
+readFoxH( 1 );
+exit(0);
+/*
+// Generate interpolation table
+
+FILE *pFile;
+FILE *pFile2;
+pFile = fopen("foxH2012.dat","w");
+pFile2= fopen("foxH2123.dat","w");
+
+int  N_bins = 103;
+int  a_bins = 103;
+
+double minA =1.3e-1;
+double minX =  1e-3;
+double maxA =  1   ;
+double maxX = 10   ;
+double xArr[N_bins];
+double aArr[a_bins];
+double kArr[N_bins];
+double kAvg[N_bins];
+
+fprintf(pFile ,"%15.10f %15.10f %3i\n",minX,maxX,N_bins);
+fprintf(pFile ,"%15.10f %15.10f %3i\n",minA,maxA,a_bins);
+fprintf(pFile2,"%15.10f %15.10f %3i\n",minX,maxX,N_bins);
+fprintf(pFile2,"%15.10f %15.10f %3i\n",minA,maxA,a_bins);
+
+
+for ( int i = 0; i < N_bins; ++i ){
+  xArr[i] = (maxX-minX) / N_bins * i + minX;
+}
+
+for ( int i = 0; i < a_bins; ++i ){
+  aArr[i] = (maxA-minA) / a_bins * i + minA;
+}
+
+// Generate tables
+
+for ( int i = 0; i < a_bins; ++i ){
+
+
+foxH2012( kArr, kAvg, xArr, N_bins, aArr[i] );
+
+
+for ( int j = 0; j < N_bins; ++j ){
+
+fprintf(pFile ,"%15.10f ",std::log10(kArr[j]));
+fprintf(pFile2,"%15.10f ",std::log10(kAvg[j]));
+
+}
+fprintf(pFile ,"\n");
+fprintf(pFile2,"\n");
+
+}
+fclose( pFile  ) ;
+fclose( pFile2 ) ;
+
+exit(0);//*/
   // Initializes the log file, generates logfiles directory
   //  and a file name based on current time
   initLogFile();
@@ -62,12 +120,6 @@ int main(int arg,char **argv){
   logMessage( std::string("Seed = ") + std::to_string( (long long) seed ) );
 
   srand(seed); // Sets random seed
-
-  // For Einasto fitting use GNU Multi Precision Library
-  int prec = 500;
-  mpf_set_default_prec( prec );
-
-  logMessage( std::string("GMP Prec = ") + std::to_string( (long long) prec ) );
 
 
   //////////////////////////////////
@@ -330,37 +382,39 @@ userInput.setNpix( 9*9);
 
   std::cout << " Sources averaged" << std::endl;;
 
-//densProfile myProfile(0.41984538);
-densProfile myProfile;
+densProfile myProfile(0.41984538);
+//densProfile myProfile;
 myProfile.setR_max( myHalo.getRmax() );
 myProfile.setC( 5.0 );
 myProfile.setM_enc( 1e14 );
 //printf("%7.2f %7.2f %14.4e\n",myProfile.getR_max(),myProfile.getC(),myProfile.getM_enc());
+
 for ( int i = 0; i < userInput.getNbins(); ++i ){
   distArr[i] = i * userInput.getPhysFOV() / 2 / userInput.getNbins() +1e-3;
 
-
+/*
   double    SD =    SDNFW( distArr[i], myProfile ); //At radius
   double avgSD = SDAvgNFW( distArr[i], myProfile ); //Average
   double SigCr = cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() );
 
 
   gTanArr[i] = ( avgSD - SD ) / ( SigCr - SD );
+//*/
   gErrArr[i] = 0.3;
 
-printf("%7.3f %14.5e %14.5e %14.4e\n",distArr[i], gTanArr[i], gErrArr[i], SigCr);
+//printf("%7.3f %14.5e %14.5e %14.4e\n",distArr[i], gTanArr[i], gErrArr[i], SigCr);
 }
 
-//generateEinRTS( gTanArr, myProfile, userInput, distArr, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ) );
-//for ( int i = 0; i < userInput.getNbins(); ++i ){
-//  printf("%7.3f %14.5e %14.5e\n",distArr[i], gTanArr[i], gErrArr[i]);
-//}
-
+generateEinRTS( gTanArr, myProfile, userInput, distArr, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ) );
+for ( int i = 0; i < userInput.getNbins(); ++i ){
+  printf("%7.3f %14.5e %14.5e\n",distArr[i], gTanArr[i], gErrArr[i]);
+}
+//*/
 printf("\n");
 gErrArr[0] = 0;
 gErrArr[userInput.getNbins() - 1] = 0;
 gErrArr[userInput.getNbins() - 2] = 0;
-
+exit(0);
 
   //////////////////////////////////////////////////////////
   ////////////////////////FIT PROFILE///////////////////////
@@ -377,10 +431,10 @@ gErrArr[userInput.getNbins() - 2] = 0;
 double gtanNFW[ userInput.getNbins() ];
 double gtanEIN[ userInput.getNbins() ];
 
-
+/*
   rollingFitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 printf("%7.5f %14.4e\n",nfwProfile.getC(), nfwProfile.getM_enc() );
-
+//*/
   rollingFitDensProfile( einProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 //  fitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 printf("%7.5f %14.4e %7.5f\n",einProfile.getC(), einProfile.getM_enc(), einProfile.getAlpha() );

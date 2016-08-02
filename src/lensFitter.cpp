@@ -146,8 +146,9 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       }
       }
       }
-
-
+printf("%10.2e  ",chi2);
+printf("c: %7.2f  M: %10.2e   a: %7.2f  ",ball.getC(),ball.getM_enc(),ball.getAlpha());
+printf("cs: %10.2e  Ms: %10.2e   as: %10.2e\n", cStep, mStep, aStep);
       // Kick ball if stuck on edge
 
       if ( fabs( ball.getC    () - u.getConMax () ) / u.getConMax () < boundDist ||
@@ -241,11 +242,14 @@ void rollingFitDensProfile(
   densProfile ball[ u.getNchrome() ];
   double      chi2[ u.getNchrome() ];
 
-  for (int i = 0; i  <  u.getNchrome() ; ++i)
+  for (int i = 0; i  <  u.getNchrome() ; ++i){
+    if ( profile.getType() == 2 )
+    ball[i].setType (              2 );
     ball[i].setR_max( halo.getRmax() );
+  }
 
   // Do for each rolling ball
-  #pragma omp parallel for
+//  #pragma omp parallel for
   for ( int i = 0; i < u.getNchrome(); ++i ){
 
     // Set starting parameters, location on hill
@@ -254,8 +258,14 @@ void rollingFitDensProfile(
     ball[i].setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
     ball[i].setC    (          randVal( u.getConMin  (), u.getConMax  () )   );
 
-    rollBall( ball[i], chi2[i], gArr, dArr, gErrArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ), u );
+if ( profile.getType() == 2 )
+ball[i].setAlpha(          randVal( 0.40, 0.42 )   );
+ball[i].setM_enc( pow( 10, randVal( 13.9, 14.1 ) ) );
+ball[i].setC    (          randVal(  4.9,  5.1 )   );
+//*/
 
+    rollBall( ball[i], chi2[i], gArr, dArr, gErrArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ), u );
+exit(0);
   }
 
   int    minIndex =              0; //index of lowest chi2
@@ -888,7 +898,7 @@ void   foxH2012(
     oldSum5[i] =      0 ;
     oldSum6[i] =      0 + tolerance/2;
 
-    z [i] = x[i];
+    z [i] = x[i] * pow( 2./alpha, 1./alpha );
     z2[i] = z[i] * z[i];
 
     x1kPow[i] = z[i];
@@ -947,6 +957,7 @@ void   foxH2012(
             mpf_class g( g1/g2 );
 
 
+
             if ( abs( g ) < maxG  ) {                     // If out of our range, stop summing
               sConv[0] = 1;
               sConv[3] = 1;
@@ -961,12 +972,12 @@ void   foxH2012(
             for ( int i = seconIndex; i < N_bins; ++i ){  // Only take sums that haven't converged
               sum4[i] += s1 * x2kPow[i] / ( km + 1 );
             }
+
       }
 
 
       testVal1 = tgamma( -( 1. + alpha * k ) / 2. );
       testVal2 = tgamma(       - alpha * k   / 2. );
-
 
       // Sum 2
       if ( (  !secondOrder        ||
@@ -978,7 +989,6 @@ void   foxH2012(
            ((sConv[1] == 0       )||   // Sum2 or 5 has not converged
             (sConv[4] == 0        ))
                                   ){
-
 
             mpf_class g1( spouges( -( 1 + alph * km ) / 2 ) ); // Gamma functions
             mpf_class g2( spouges( - km * alph / 2  ) );
@@ -997,7 +1007,6 @@ void   foxH2012(
         for ( int i = seconIndex; i < N_bins; ++i ){
           sum5[i] += s2 * x1kPow[i] / ( - 1.5 - alph * km / 2 );
         }
-
       }
 
 
@@ -1219,21 +1228,23 @@ void generateEinRTS(
 
   // Set x as defined by Retana 2012
   for ( int i = 0; i < u.getNbins(); ++i )
-    xArr[i] =  sourceDist[i] / lens.getR_s() * pow( 2./lens.getAlpha(), 1./lens.getAlpha() );
+    xArr[i] =  sourceDist[i] / lens.getR_s(); //* pow( 2./lens.getAlpha(), 1./lens.getAlpha() );
 
 
   foxH2012( kappaArr, kappaAvgArr, xArr, u.getNbins(), lens.getAlpha() );
 
 
   for ( int i = 0; i < u.getNbins(); ++i ){
-
+//printf("%14.4e ",kappaArr[i]);
        kappaArr[i] = kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) *              kappaArr[i] ;
     kappaAvgArr[i] = kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) * xArr[i] * kappaAvgArr[i] ;
 
-    if ( kappaArr[i] < 1e-13 ) kappaArr[i] = 0; // Just in case go negative can throw off results
+    if ( kappaArr[i] < 1e-13 ||
+         kappaArr[i] > 1e1    ) kappaArr[i] = 0; // Just in case go negative can throw off results
 
     gArr[i] = ( kappaAvgArr[i] - kappaArr[i] ) / ( 1 - kappaArr[i] );
 
+//printf("%14.4e %14.4e\n",kappa_c * std::sqrt(M_PI)/tgamma( 1./ lens.getAlpha() ), kappaArr[i]);
   }
 
 
@@ -1257,3 +1268,15 @@ void generateEinRTS(
   //              2 3[(0,2/a)(-1/2,1)(-3/2,1) ]  2pi i U   G(5/2-s) G( s )                       [ k=0 (k+1)! G(1/2-1/a  )        k=1 2(k)!   G(    -a/2 k)       ]
 }
 
+/*
+interpolateEinRTS(  double    x ,
+                    double    a ,){
+
+
+
+
+
+
+
+}
+//*/

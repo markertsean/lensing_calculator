@@ -137,6 +137,7 @@ class densProfile{
     void setR_max( double inpR ){         r_max = inpR; }
     void setC    ( double inpC ){ concentration = inpC; }
     void setM_enc( double inpM ){         M_enc = inpM; }
+    void setType ( double inpT ){          type = inpT; }
 
 
     // If when getting an undefined variable, need to spit out a warning
@@ -199,6 +200,89 @@ densProfile::densProfile( double inpA ){
   M_enc         = -1.0;
   type          =    2;
 }
+
+
+
+class einTable {
+
+  public:
+
+    einTable(){
+
+    }
+
+   ~einTable(){
+
+      delete[] val;
+
+    }
+
+
+    void setBins  ( int a, int x ) { x_bins = x ;
+                                     a_bins = a ;
+                                     N_bins =a*x;
+                                  initVals()    ; }
+
+    void setX_min ( double     d ) { minX   = d ; }
+    void setX_max ( double     d ) { maxX   = d ; }
+    void setA_min ( double     d ) { minA   = d ; }
+    void setA_max ( double     d ) { maxA   = d ; }
+
+    void setVal   ( int     aBin ,
+                    int     xBin ,
+                    double value ){
+
+      if ( val != NULL ){
+
+        val[ xBin + aBin * x_bins ] = value;
+
+      }
+
+    }
+
+
+    double getX_min () { return   minX ; }
+    double getX_max () { return   maxX ; }
+    double getA_min () { return   minA ; }
+    double getA_max () { return   maxA ; }
+
+    int    getA_bins() { return a_bins ; }
+    int    getX_bins() { return x_bins ; }
+    int    getN_bins() { return N_bins ; }
+
+    double getVal ( int    aBin ,
+                    int    xBin ){
+      if ( val != NULL ){
+        return val[ xBin + aBin * x_bins ];
+      }
+        return 0;
+    }
+
+  private:
+
+    int    a_bins;
+    int    x_bins;
+    int    N_bins;
+    double minA, minX;
+    double maxA, maxX;
+
+    double *val = NULL;
+
+    void initVals () { val = new double[ N_bins ]; }
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Holds info on user input values
 class userInfo{
@@ -377,7 +461,7 @@ userInfo::userInfo(){
 
   // Good for ball fitting
   maxFitAttempts = 1e2   ;
-   N_chromosomes = 1e3   ;
+   N_chromosomes = 3e3   ;
       consistent = 2e1   ;
        tolerance = 1e-5  ;
 

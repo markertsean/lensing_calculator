@@ -174,3 +174,74 @@ void readInpFile(          userInfo  &inpInfo  ,   // Info needed for the rest o
 
 }
 
+
+
+// Reads the fox H tables, saved in log
+void readFoxH( int fileType ){
+
+  double minX, maxX;
+  double minA, maxA;
+
+  int x_bins, a_bins;
+
+double inp;
+einTable einKappa;
+einTable einKappaAvg;
+
+  std::string myFile = "src/foxH2012.dat";
+
+  if ( fileType == 2 ) myFile = "src/foxH2123.dat";
+
+  FILE *pFile;
+
+  pFile = fopen(myFile.c_str(),"r");
+
+  if (pFile!=NULL){
+
+//    logMessage( std::string( "Reading file: ") + inputFile );
+    fscanf( pFile, "%16lf%16lf%3i",&minX,&maxX,&x_bins);
+    fscanf( pFile, "%16lf%16lf%3i",&minA,&maxA,&a_bins);
+
+    // Allocate the files
+    if ( fileType == 2 ){
+      einKappaAvg.setBins( a_bins, x_bins );
+    } else {
+      einKappa   .setBins( a_bins, x_bins );
+    }
+
+//    logMessage( std::string( "Number of alpha bins: ") + a_bins );
+//    logMessage( std::string( "Number of x     bins: ") + x_bins );
+
+
+    for ( int i = 0; i < a_bins; ++i ){ // Each row is a new alpha
+    for ( int j = 0; j < x_bins; ++j ){ // Each column is a different x
+
+      double inpVal;
+
+      fscanf( pFile, "%16lf", &inpVal); // Goes across rows, then down columns
+
+
+      if ( fileType == 2 ){                      // Storing in either
+        einKappaAvg.setVal( i, j, inpVal );
+      } else {
+        einKappa   .setVal( i, j, inpVal );
+      }
+
+
+    }
+    }
+
+  } else {
+
+//    logMessage( std::string( "Cannot open FoxH file: ") + myFile );
+
+    std::cout << "Couldn't open FoxH file: " << myFile << std:: endl;
+    exit(0);
+
+  }
+
+//    logMessage( std::string( "FoxH Read in complete") );
+
+exit(0);
+
+}

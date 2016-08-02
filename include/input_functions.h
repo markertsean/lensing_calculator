@@ -15,6 +15,6 @@ void readInpFile   (  	      userInfo        &inpInfo ,  // Object we write to, 
                     const std::string     userFileName ); // Name of the file to read
 
 
-
+void readFoxH      ( int fileType );
 
 #endif
