@@ -213,7 +213,7 @@ class einTable {
 
    ~einTable(){
 
-      delete[] val;
+//      delete[] val;
 
     }
 
@@ -271,17 +271,6 @@ class einTable {
     void initVals () { val = new double[ N_bins ]; }
 
 };
-
-
-
-
-
-
-
-
-
-
-
 
 
 // Holds info on user input values

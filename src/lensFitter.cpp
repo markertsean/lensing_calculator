@@ -1268,15 +1268,42 @@ void generateEinRTS(
   //              2 3[(0,2/a)(-1/2,1)(-3/2,1) ]  2pi i U   G(5/2-s) G( s )                       [ k=0 (k+1)! G(1/2-1/a  )        k=1 2(k)!   G(    -a/2 k)       ]
 }
 
-/*
-interpolateEinRTS(  double    x ,
-                    double    a ,){
+
+double interpolateEinRTS(  double        x ,  // r/r_s
+                           double        a ,  // alpha
+                           einTable  table ){ // Table to interpolate on
 
 
+  double x_step = table.getX_bins() / ( table.getX_max() - table.getX_min() );  // Bin / value conversion
+  double a_step = table.getA_bins() / ( table.getA_max() - table.getA_min() );
+
+//printf("%14.4e %14.4e\n",x_step,a_step);
+  double  x_bin = ( x - table.getX_min() ) * x_step ; // Decimal bin positions
+  double  a_bin = ( a - table.getA_min() ) * a_step ;
+//printf("%14.4e %14.4e\n",x_bin,a_bin);
+
+  int    x1_bin = (int) floor( x_bin );               // Bin locations of the points
+  int    a1_bin = (int) floor( a_bin );
+//printf("%3i %3i\n",x1_bin,a1_bin);
 
 
+  int    x2_bin = (int) ceil ( x_bin );
+  int    a2_bin = (int) ceil ( a_bin );
+//printf("%3i %3i\n",x2_bin,a2_bin);
 
+  double x1     = x1_bin / x_step + table.getX_min(); // Actual position in x and a coordinates
+  double x2     = x2_bin / x_step + table.getX_min();
+//printf("%14.4e %14.4e\n",x1,x2);
 
+  double a1     = a1_bin / a_step + table.getA_min();
+  double a2     = a2_bin / a_step + table.getA_min();
+//printf("%14.4e %14.4e\n",a1,a2);
 
+//exit(0);
+  return 1.0 / ( ( x2 - x1 ) * ( a2 - a1 ) ) * (
+               ( ( x2 - x  ) * ( a2 - a  )   * table.getVal( a1_bin, x1_bin ) ) +
+               ( ( x  - x1 ) * ( a2 - a  )   * table.getVal( a1_bin, x2_bin ) ) +
+               ( ( x2 - x  ) * ( a  - a1 )   * table.getVal( a2_bin, x1_bin ) ) +
+               ( ( x  - x1 ) * ( a  - a1 )   * table.getVal( a2_bin, x2_bin ) ) );
 }
 //*/

@@ -177,16 +177,14 @@ void readInpFile(          userInfo  &inpInfo  ,   // Info needed for the rest o
 
 
 // Reads the fox H tables, saved in log
-void readFoxH( int fileType ){
+einTable readFoxH( int fileType ){
 
   double minX, maxX;
   double minA, maxA;
 
   int x_bins, a_bins;
 
-double inp;
-einTable einKappa;
-einTable einKappaAvg;
+  einTable einKappa;
 
   std::string myFile = "src/foxH2012.dat";
 
@@ -203,11 +201,13 @@ einTable einKappaAvg;
     fscanf( pFile, "%16lf%16lf%3i",&minA,&maxA,&a_bins);
 
     // Allocate the files
-    if ( fileType == 2 ){
-      einKappaAvg.setBins( a_bins, x_bins );
-    } else {
-      einKappa   .setBins( a_bins, x_bins );
-    }
+    einKappa.setX_min( minX );
+    einKappa.setX_max( maxX );
+    einKappa.setA_min( minA );
+    einKappa.setA_max( maxA );
+
+    einKappa   .setBins( a_bins, x_bins );
+
 
 //    logMessage( std::string( "Number of alpha bins: ") + a_bins );
 //    logMessage( std::string( "Number of x     bins: ") + x_bins );
@@ -220,13 +220,7 @@ einTable einKappaAvg;
 
       fscanf( pFile, "%16lf", &inpVal); // Goes across rows, then down columns
 
-
-      if ( fileType == 2 ){                      // Storing in either
-        einKappaAvg.setVal( i, j, inpVal );
-      } else {
-        einKappa   .setVal( i, j, inpVal );
-      }
-
+      einKappa.setVal( i, j, inpVal );
 
     }
     }
@@ -242,6 +236,5 @@ einTable einKappaAvg;
 
 //    logMessage( std::string( "FoxH Read in complete") );
 
-exit(0);
-
+  return einKappa;
 }

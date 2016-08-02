@@ -52,7 +52,10 @@ std::string logFileName = "";
 int main(int arg,char **argv){
 
 
-readFoxH( 1 );
+einTable foo;
+foo = readFoxH( 1 );
+std::cout<< interpolateEinRTS( 4, 0.3911, foo )<< std::endl;
+//std::cout<<  interpolateEinRTS( , )  <<std::endl;
 exit(0);
 /*
 // Generate interpolation table

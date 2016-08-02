@@ -86,5 +86,9 @@ double foxH2123(
                 double tolerance = 1e-4); // Tolence level for convergence
 
 
+double interpolateEinRTS(  double        x ,  // r/r_s
+                           double        a ,  // alpha
+                           einTable  table ); // Table to interpolate on
+
 
 #endif
