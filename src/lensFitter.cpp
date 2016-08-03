@@ -1228,8 +1228,8 @@ void generateEinRTS(
 
     double     x = sourceDist[i] / lens.getR_s();
 
-    double kappa    = modKappa_c     ;//* interpolateEinRTS( x, lens.getAlpha(), einKappa    ); // Interpolate table of Kappa    values
-    double kappaAvg = modKappa_c * x ;//* interpolateEinRTS( x, lens.getAlpha(), einKappaAvg ); // Interpolate table of KappaAvg values
+    double kappa    = modKappa_c     * interpolateEinRTS( x, lens.getAlpha(), einKappa    ); // Interpolate table of Kappa    values
+    double kappaAvg = modKappa_c * x * interpolateEinRTS( x, lens.getAlpha(), einKappaAvg ); // Interpolate table of KappaAvg values
 
 
     gArr[i] = ( kappaAvg - kappa ) / ( 1 - kappa );

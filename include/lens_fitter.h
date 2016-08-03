@@ -3,6 +3,9 @@
 
 #include <lensing_classes.h>
 
+// Stores the Einasto tables we interpolate over
+extern einTable einKappa    ;
+extern einTable einKappaAvg ;
 
 void rollBall(        densProfile   &ball ,  // Ball to roll
                       double        &chi2 ,  // Chi2 value

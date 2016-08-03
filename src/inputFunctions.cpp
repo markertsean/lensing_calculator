@@ -131,6 +131,8 @@ void readInpFile(          userInfo  &inpInfo  ,   // Info needed for the rest o
       else if ( inpS=="N_threads"   ){        inpInfo.setNthreads (        atoi(inpC2) );      }
       else if ( inpS=="sourceRadius"){        inpInfo.setSourceRadius(     atof(inpC2) );      }
       else if ( inpS=="cosmo"       ){        inpInfo.setCosmology( std::string(inpC2) );      }
+      else if ( inpS=="fox2012F"    ){        inpInfo.setFoxH2012F( std::string(inpC2) );      }
+      else if ( inpS=="fox2123F"    ){        inpInfo.setFoxH2123F( std::string(inpC2) );      }
       else{
 
           // Abort if unrecognized variables
@@ -170,14 +172,16 @@ void readInpFile(          userInfo  &inpInfo  ,   // Info needed for the rest o
   logMessage( std::string("N_bins    = ") + std::to_string((long long) inpInfo.getNbins()     ) +
               std::string("N_sources = ") + std::to_string((long long) inpInfo.getNsrc()      ) +
               std::string("N_threads = ") + std::to_string((long long) inpInfo.getNthreads()  ) +
-              std::string("cosmo     = ") + std::string   (            inpInfo.getCosmology() ) );
+              std::string("cosmo     = ") + std::string   (            inpInfo.getCosmology() ) +
+              std::string("FoxH2012F = ") + std::string   (            inpInfo.getFoxH2012F() ) +
+              std::string("FoxH2123F = ") + std::string   (            inpInfo.getFoxH2123F() ) );
 
 }
 
 
 
 // Reads the fox H tables, saved in log
-einTable readFoxH( int fileType ){
+einTable readFoxH( userInfo &u, const int fileType ){
 
   double minX, maxX;
   double minA, maxA;
@@ -186,9 +190,9 @@ einTable readFoxH( int fileType ){
 
   einTable einKappa;
 
-  std::string myFile = "src/foxH2012.dat";
+  std::string          myFile = u.getFoxH2012F();//"src/foxH2012.dat";
 
-  if ( fileType == 2 ) myFile = "src/foxH2123.dat";
+  if ( fileType == 2 ) myFile = u.getFoxH2123F();//"src/foxH2123.dat";
 
   FILE *pFile;
 
@@ -196,7 +200,8 @@ einTable readFoxH( int fileType ){
 
   if (pFile!=NULL){
 
-//    logMessage( std::string( "Reading file: ") + inputFile );
+    logMessage( std::string( "Reading file: ") + myFile );
+
     fscanf( pFile, "%16lf%16lf%3i",&minX,&maxX,&x_bins);
     fscanf( pFile, "%16lf%16lf%3i",&minA,&maxA,&a_bins);
 
@@ -209,8 +214,8 @@ einTable readFoxH( int fileType ){
     einKappa   .setBins( a_bins, x_bins );
 
 
-//    logMessage( std::string( "Number of alpha bins: ") + a_bins );
-//    logMessage( std::string( "Number of x     bins: ") + x_bins );
+    logMessage( std::string( "Number of alpha bins: ") + std::to_string( (long long) a_bins ) );
+    logMessage( std::string( "Number of x     bins: ") + std::to_string( (long long) x_bins ) );
 
 
     for ( int i = 0; i < a_bins; ++i ){ // Each row is a new alpha
@@ -227,14 +232,14 @@ einTable readFoxH( int fileType ){
 
   } else {
 
-//    logMessage( std::string( "Cannot open FoxH file: ") + myFile );
+    logMessage( std::string( "Cannot open FoxH file: ") + myFile );
 
     std::cout << "Couldn't open FoxH file: " << myFile << std:: endl;
     exit(0);
 
   }
 
-//    logMessage( std::string( "FoxH Read in complete") );
+  logMessage( std::string( "FoxH Read in complete" ) );
 
   return einKappa;
 }

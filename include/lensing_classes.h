@@ -313,6 +313,8 @@ class userInfo{
     void setAngFOV          ( double inpF ) {   angFOV       = inpF ; }
     void setCatType         ( std::string inpS ) {   catType = inpS ; }
     void setCosmology       ( std::string inpS ) {     cosmo = inpS ; }
+    void setFoxH2012F       ( std::string inpS ) {  fox2012F = inpS ; }
+    void setFoxH2123F       ( std::string inpS ) {  fox2123F = inpS ; }
 
     double getIntegLength     () const { return  integLength   ; }
     int    getNpixH           () const { return  N_pixels_h    ; }
@@ -329,6 +331,8 @@ class userInfo{
     int    getEdgePix         () const { return   N_edgepixels ; }
     std::string getCatType    () const { return  catType       ; }
     std::string getCosmology  () const { return  cosmo         ; }
+    std::string getFoxH2012F  () const { return  fox2012F      ; }
+    std::string getFoxH2123F  () const { return  fox2123F      ; }
     double getAlphaMin        () const { return       alphaMin ; }
     double getAlphaMax        () const { return       alphaMax ; }
     double getConMin          () const { return           cMin ; }
@@ -377,6 +381,8 @@ class userInfo{
 
     double nearestSourceNeighbor; // Gap in distance between sources
 
+  std::string fox2012F;
+  std::string fox2123F;
   std::string readFile;
   std::string catType ;
   std::string cosmo   ;
@@ -417,6 +423,9 @@ userInfo::userInfo(){
   readFile = " ";
   catType  = " ";
   cosmo    = " ";
+
+  fox2012F = "src/foxH2012.dat";
+  fox2123F = "src/foxH2123.dat";
 
       cMin =  2.0;
       cMax =  9.0;

@@ -15,6 +15,7 @@ void readInpFile   (  	      userInfo        &inpInfo ,  // Object we write to, 
                     const std::string     userFileName ); // Name of the file to read
 
 
-einTable readFoxH  ( int fileType );
+einTable readFoxH  (          userInfo        &     u  ,
+                    const     int             fileType );
 
 #endif

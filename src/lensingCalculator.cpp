@@ -48,6 +48,9 @@ Uniform distribution of sources, need alignment relative to halo orientation
 // Name of the code log file
 std::string logFileName = "";
 
+// Tables for Einasto interpolation
+einTable einKappa    ;
+einTable einKappaAvg ;
 
 int main(int arg,char **argv){
 /*
@@ -234,6 +237,15 @@ exit(0);//*/
 
   // Read FITS image, populates halo and user inputs
   readFitsHeader( fitsFileName, myHalo, userInput );
+
+  std::cout << "              Done."  << std::endl << std::endl;
+
+
+
+  std::cout << "Reading foxH tables: "                  << std::endl;
+
+  einKappa    = readFoxH( userInput, 1 );
+  einKappaAvg = readFoxH( userInput, 2 );
 
   std::cout << "              Done."  << std::endl << std::endl;
 
