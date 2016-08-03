@@ -50,14 +50,66 @@ std::string logFileName = "";
 
 
 int main(int arg,char **argv){
-
-
+/*
 einTable foo;
 foo = readFoxH( 1 );
-std::cout<< interpolateEinRTS( 4, 0.3911, foo )<< std::endl;
-//std::cout<<  interpolateEinRTS( , )  <<std::endl;
+
+for ( int j = 1; j < foo.getA_bins()-1; ++j ){
+for ( int i = 0; i < foo.getX_bins()  ; ++i ){
+
+int s1 = (int) (fabs(( foo.getVal( j + 1, i ) - foo.getVal( j     , i ) )) / ( ( foo.getVal( j + 1, i ) - foo.getVal( j     , i ) ) ));
+int s2 = (int) (fabs(( foo.getVal( j    , i ) - foo.getVal( j - 1 , i ) )) / ( ( foo.getVal( j    , i ) - foo.getVal( j - 1 , i ) ) ));
+//printf("%2i %2i, ",s1,s2);
+// NaNs
+//if ( foo.getVal( j, i ) != foo.getVal( j, i ) ) {
+if ( s1 < 0 && s2 > 0 ) {
+
+  double y0 = foo.getVal( j-1, i );
+  double y1 = foo.getVal( j+1, i );
+
+  double x0 = ( j - 1 ) * ( foo.getA_max() - foo.getA_min() ) / foo.getA_bins() + foo.getA_min() ;
+  double x  = ( j     ) * ( foo.getA_max() - foo.getA_min() ) / foo.getA_bins() + foo.getA_min() ;
+  double x1 = ( j + 1 ) * ( foo.getA_max() - foo.getA_min() ) / foo.getA_bins() + foo.getA_min() ;
+
+printf("%4i %4i %16.12f %16.12f %16.12f\n", j, i, foo.getVal(j-1,i), foo.getVal(j,i), foo.getVal(j+1,i));
+
+  foo.setVal( j, i,
+
+                    y0 + ( y1 - y0 ) * ( x - x0 ) / ( x1 - x0 )
+
+  );
+
+printf("%16.12f\n",foo.getVal(j,i));
+
+}
+
+}
+}
 exit(0);
+FILE *pFile;
+
+
+pFile = fopen("foxH2012.dat","w");
+fprintf(pFile ,"%15.10f %15.10f %3i\n",foo.getX_min(),foo.getX_max(),foo.getX_bins());
+fprintf(pFile ,"%15.10f %15.10f %3i\n",foo.getA_min(),foo.getA_max(),foo.getA_bins());
+
+
+for ( int i = 0; i < foo.getA_bins() ; ++i ){
+for ( int j = 0; j < foo.getX_bins() ; ++j ){
+
+fprintf(pFile ,"%15.10f ", foo.getVal( i, j ));
+
+}
+fprintf(pFile ,"\n");
+}
+
+fclose(pFile);
+//std::cout<< interpolateEinRTS( 4, 0.3911, foo )<< std::endl;
+//std::cout<<  interpolateEinRTS( , )  <<std::endl;
+exit(0);//*/
 /*
+mpf_set_default_prec(500);
+
 // Generate interpolation table
 
 FILE *pFile;
@@ -65,8 +117,8 @@ FILE *pFile2;
 pFile = fopen("foxH2012.dat","w");
 pFile2= fopen("foxH2123.dat","w");
 
-int  N_bins = 103;
-int  a_bins = 103;
+int  N_bins = 203;
+int  a_bins = 203;
 
 double minA =1.3e-1;
 double minX =  1e-3;

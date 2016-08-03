@@ -1222,27 +1222,17 @@ void generateEinRTS(
                          tgamma( 1./ lens.getAlpha() ) / sourceSc;
 
 
-  double        xArr[u.getNbins()];
-  double    kappaArr[u.getNbins()];
-  double kappaAvgArr[u.getNbins()];
-
-  // Set x as defined by Retana 2012
-  for ( int i = 0; i < u.getNbins(); ++i )
-    xArr[i] =  sourceDist[i] / lens.getR_s(); //* pow( 2./lens.getAlpha(), 1./lens.getAlpha() );
-
-
-  foxH2012( kappaArr, kappaAvgArr, xArr, u.getNbins(), lens.getAlpha() );
-
+  double modKappa_c = kappa_c / std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() );
 
   for ( int i = 0; i < u.getNbins(); ++i ){
-//printf("%14.4e ",kappaArr[i]);
-       kappaArr[i] = kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) *              kappaArr[i] ;
-    kappaAvgArr[i] = kappa_c * std::sqrt( M_PI ) / tgamma( 1. / lens.getAlpha() ) * xArr[i] * kappaAvgArr[i] ;
 
-    if ( kappaArr[i] < 1e-13 ||
-         kappaArr[i] > 1e1    ) kappaArr[i] = 0; // Just in case go negative can throw off results
+    double     x = sourceDist[i] / lens.getR_s();
 
-    gArr[i] = ( kappaAvgArr[i] - kappaArr[i] ) / ( 1 - kappaArr[i] );
+    double kappa    = modKappa_c     ;//* interpolateEinRTS( x, lens.getAlpha(), einKappa    ); // Interpolate table of Kappa    values
+    double kappaAvg = modKappa_c * x ;//* interpolateEinRTS( x, lens.getAlpha(), einKappaAvg ); // Interpolate table of KappaAvg values
+
+
+    gArr[i] = ( kappaAvg - kappa ) / ( 1 - kappa );
 
 //printf("%14.4e %14.4e\n",kappa_c * std::sqrt(M_PI)/tgamma( 1./ lens.getAlpha() ), kappaArr[i]);
   }
@@ -1277,29 +1267,22 @@ double interpolateEinRTS(  double        x ,  // r/r_s
   double x_step = table.getX_bins() / ( table.getX_max() - table.getX_min() );  // Bin / value conversion
   double a_step = table.getA_bins() / ( table.getA_max() - table.getA_min() );
 
-//printf("%14.4e %14.4e\n",x_step,a_step);
   double  x_bin = ( x - table.getX_min() ) * x_step ; // Decimal bin positions
   double  a_bin = ( a - table.getA_min() ) * a_step ;
-//printf("%14.4e %14.4e\n",x_bin,a_bin);
 
   int    x1_bin = (int) floor( x_bin );               // Bin locations of the points
   int    a1_bin = (int) floor( a_bin );
-//printf("%3i %3i\n",x1_bin,a1_bin);
 
 
   int    x2_bin = (int) ceil ( x_bin );
   int    a2_bin = (int) ceil ( a_bin );
-//printf("%3i %3i\n",x2_bin,a2_bin);
 
   double x1     = x1_bin / x_step + table.getX_min(); // Actual position in x and a coordinates
   double x2     = x2_bin / x_step + table.getX_min();
-//printf("%14.4e %14.4e\n",x1,x2);
 
   double a1     = a1_bin / a_step + table.getA_min();
   double a2     = a2_bin / a_step + table.getA_min();
-//printf("%14.4e %14.4e\n",a1,a2);
 
-//exit(0);
   return 1.0 / ( ( x2 - x1 ) * ( a2 - a1 ) ) * (
                ( ( x2 - x  ) * ( a2 - a  )   * table.getVal( a1_bin, x1_bin ) ) +
                ( ( x  - x1 ) * ( a2 - a  )   * table.getVal( a1_bin, x2_bin ) ) +
