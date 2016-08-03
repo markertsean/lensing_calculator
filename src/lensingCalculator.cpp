@@ -54,8 +54,9 @@ einTable einKappaAvg ;
 
 int main(int arg,char **argv){
 /*
+userInfo u;
 einTable foo;
-foo = readFoxH( 1 );
+foo = readFoxH( u, 2 );
 
 for ( int j = 1; j < foo.getA_bins()-1; ++j ){
 for ( int i = 0; i < foo.getX_bins()  ; ++i ){
@@ -64,8 +65,13 @@ int s1 = (int) (fabs(( foo.getVal( j + 1, i ) - foo.getVal( j     , i ) )) / ( (
 int s2 = (int) (fabs(( foo.getVal( j    , i ) - foo.getVal( j - 1 , i ) )) / ( ( foo.getVal( j    , i ) - foo.getVal( j - 1 , i ) ) ));
 //printf("%2i %2i, ",s1,s2);
 // NaNs
-//if ( foo.getVal( j, i ) != foo.getVal( j, i ) ) {
-if ( s1 < 0 && s2 > 0 ) {
+if ( //foo.getVal( j   , i ) != foo.getVal( j  , i ) //&&
+//     foo.getVal( j-1 , i ) == foo.getVal( j-1, i ) &&
+//     foo.getVal( j+1 , i ) == foo.getVal( j+1, i )
+
+     s1 < 0 &&
+     s2 > 0
+) {
 
   double y0 = foo.getVal( j-1, i );
   double y1 = foo.getVal( j+1, i );
@@ -93,8 +99,8 @@ FILE *pFile;
 
 
 pFile = fopen("foxH2012.dat","w");
-fprintf(pFile ,"%15.10f %15.10f %3i\n",foo.getX_min(),foo.getX_max(),foo.getX_bins());
-fprintf(pFile ,"%15.10f %15.10f %3i\n",foo.getA_min(),foo.getA_max(),foo.getA_bins());
+fprintf(pFile ,"%15.10f %15.10f %4i\n",foo.getX_min(),foo.getX_max(),foo.getX_bins());
+fprintf(pFile ,"%15.10f %15.10f %4i\n",foo.getA_min(),foo.getA_max(),foo.getA_bins());
 
 
 for ( int i = 0; i < foo.getA_bins() ; ++i ){
@@ -120,13 +126,13 @@ FILE *pFile2;
 pFile = fopen("foxH2012.dat","w");
 pFile2= fopen("foxH2123.dat","w");
 
-int  N_bins = 203;
+int  N_bins =1003;
 int  a_bins = 203;
 
-double minA =1.3e-1;
-double minX =  1e-3;
-double maxA =  1   ;
-double maxX = 10   ;
+double minA =  5.1e-2;
+double minX =  1e-2;
+double maxA =  0.7 ;
+double maxX = 50   ;
 double xArr[N_bins];
 double aArr[a_bins];
 double kArr[N_bins];

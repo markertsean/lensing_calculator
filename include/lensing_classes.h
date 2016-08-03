@@ -431,8 +431,8 @@ userInfo::userInfo(){
       cMax =  9.0;
       mMin = 12.0;
       mMax = 16.0;
-  alphaMin =  0.1;
-  alphaMax =  1.0;
+  alphaMin = 5e-2;
+  alphaMax =  0.7;
 
 //5.06
 //1.00e14
