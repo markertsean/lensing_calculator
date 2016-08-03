@@ -53,127 +53,8 @@ einTable einKappa    ;
 einTable einKappaAvg ;
 
 int main(int arg,char **argv){
-/*
-userInfo u;
-einTable foo;
-foo = readFoxH( u, 2 );
-
-for ( int j = 1; j < foo.getA_bins()-1; ++j ){
-for ( int i = 0; i < foo.getX_bins()  ; ++i ){
-
-int s1 = (int) (fabs(( foo.getVal( j + 1, i ) - foo.getVal( j     , i ) )) / ( ( foo.getVal( j + 1, i ) - foo.getVal( j     , i ) ) ));
-int s2 = (int) (fabs(( foo.getVal( j    , i ) - foo.getVal( j - 1 , i ) )) / ( ( foo.getVal( j    , i ) - foo.getVal( j - 1 , i ) ) ));
-//printf("%2i %2i, ",s1,s2);
-// NaNs
-if ( //foo.getVal( j   , i ) != foo.getVal( j  , i ) //&&
-//     foo.getVal( j-1 , i ) == foo.getVal( j-1, i ) &&
-//     foo.getVal( j+1 , i ) == foo.getVal( j+1, i )
-
-     s1 < 0 &&
-     s2 > 0
-) {
-
-  double y0 = foo.getVal( j-1, i );
-  double y1 = foo.getVal( j+1, i );
-
-  double x0 = ( j - 1 ) * ( foo.getA_max() - foo.getA_min() ) / foo.getA_bins() + foo.getA_min() ;
-  double x  = ( j     ) * ( foo.getA_max() - foo.getA_min() ) / foo.getA_bins() + foo.getA_min() ;
-  double x1 = ( j + 1 ) * ( foo.getA_max() - foo.getA_min() ) / foo.getA_bins() + foo.getA_min() ;
-
-printf("%4i %4i %16.12f %16.12f %16.12f\n", j, i, foo.getVal(j-1,i), foo.getVal(j,i), foo.getVal(j+1,i));
-
-  foo.setVal( j, i,
-
-                    y0 + ( y1 - y0 ) * ( x - x0 ) / ( x1 - x0 )
-
-  );
-
-printf("%16.12f\n",foo.getVal(j,i));
-
-}
-
-}
-}
-exit(0);
-FILE *pFile;
 
 
-pFile = fopen("foxH2012.dat","w");
-fprintf(pFile ,"%15.10f %15.10f %4i\n",foo.getX_min(),foo.getX_max(),foo.getX_bins());
-fprintf(pFile ,"%15.10f %15.10f %4i\n",foo.getA_min(),foo.getA_max(),foo.getA_bins());
-
-
-for ( int i = 0; i < foo.getA_bins() ; ++i ){
-for ( int j = 0; j < foo.getX_bins() ; ++j ){
-
-fprintf(pFile ,"%15.10f ", foo.getVal( i, j ));
-
-}
-fprintf(pFile ,"\n");
-}
-
-fclose(pFile);
-//std::cout<< interpolateEinRTS( 4, 0.3911, foo )<< std::endl;
-//std::cout<<  interpolateEinRTS( , )  <<std::endl;
-exit(0);//*/
-/*
-mpf_set_default_prec(500);
-
-// Generate interpolation table
-
-FILE *pFile;
-FILE *pFile2;
-pFile = fopen("foxH2012.dat","w");
-pFile2= fopen("foxH2123.dat","w");
-
-int  N_bins =1003;
-int  a_bins = 203;
-
-double minA =  5.1e-2;
-double minX =  1e-2;
-double maxA =  0.7 ;
-double maxX = 50   ;
-double xArr[N_bins];
-double aArr[a_bins];
-double kArr[N_bins];
-double kAvg[N_bins];
-
-fprintf(pFile ,"%15.10f %15.10f %3i\n",minX,maxX,N_bins);
-fprintf(pFile ,"%15.10f %15.10f %3i\n",minA,maxA,a_bins);
-fprintf(pFile2,"%15.10f %15.10f %3i\n",minX,maxX,N_bins);
-fprintf(pFile2,"%15.10f %15.10f %3i\n",minA,maxA,a_bins);
-
-
-for ( int i = 0; i < N_bins; ++i ){
-  xArr[i] = (maxX-minX) / N_bins * i + minX;
-}
-
-for ( int i = 0; i < a_bins; ++i ){
-  aArr[i] = (maxA-minA) / a_bins * i + minA;
-}
-
-// Generate tables
-
-for ( int i = 0; i < a_bins; ++i ){
-
-
-foxH2012( kArr, kAvg, xArr, N_bins, aArr[i] );
-
-
-for ( int j = 0; j < N_bins; ++j ){
-
-fprintf(pFile ,"%15.10f ",std::log10(kArr[j]));
-fprintf(pFile2,"%15.10f ",std::log10(kAvg[j]));
-
-}
-fprintf(pFile ,"\n");
-fprintf(pFile2,"\n");
-
-}
-fclose( pFile  ) ;
-fclose( pFile2 ) ;
-
-exit(0);//*/
   // Initializes the log file, generates logfiles directory
   //  and a file name based on current time
   initLogFile();
@@ -455,10 +336,10 @@ userInput.setNpix( 9*9);
 
   std::cout << " Sources averaged" << std::endl;;
 
-densProfile myProfile(0.41984538);
+densProfile myProfile(0.4);
 //densProfile myProfile;
 myProfile.setR_max( myHalo.getRmax() );
-myProfile.setC( 5.0 );
+myProfile.setC( 4.0 );
 myProfile.setM_enc( 1e14 );
 //printf("%7.2f %7.2f %14.4e\n",myProfile.getR_max(),myProfile.getC(),myProfile.getM_enc());
 
@@ -485,9 +366,7 @@ for ( int i = 0; i < userInput.getNbins(); ++i ){
 //*/
 printf("\n");
 gErrArr[0] = 0;
-gErrArr[userInput.getNbins() - 1] = 0;
-gErrArr[userInput.getNbins() - 2] = 0;
-exit(0);
+//exit(0);
 
   //////////////////////////////////////////////////////////
   ////////////////////////FIT PROFILE///////////////////////
@@ -496,25 +375,23 @@ exit(0);
   // Attempts to fit the density using the radial averages of distance and RTS
 
 
-  densProfile nfwProfile, einProfile( 0.415843 ); // 0.2 sets profile as Einasto with alpha = 0.2
+  densProfile nfwProfile, einProfile( 0.4 ); // 0.2 sets profile as Einasto with alpha = 0.2
 
   nfwProfile.setR_max( myHalo.getRmax() );
   einProfile.setR_max( myHalo.getRmax() );
 
-double gtanNFW[ userInput.getNbins() ];
 double gtanEIN[ userInput.getNbins() ];
 
-/*
+
   rollingFitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 printf("%7.5f %14.4e\n",nfwProfile.getC(), nfwProfile.getM_enc() );
 //*/
+
   rollingFitDensProfile( einProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
-//  fitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
-printf("%7.5f %14.4e %7.5f\n",einProfile.getC(), einProfile.getM_enc(), einProfile.getAlpha() );
-printf("               %7.5f %14.4e %7.5f\n",myProfile.getC(), myProfile.getM_enc(),myProfile.getAlpha() );
+printf(               "%7.5f %14.4e %7.5f\n",einProfile.getC(), einProfile.getM_enc(), einProfile.getAlpha() );
+printf("               %7.5f %14.4e %7.5f\n", myProfile.getC(),  myProfile.getM_enc(),  myProfile.getAlpha() );
 
-
-
+//exit(0);
 generateEinRTS( gtanEIN, einProfile, userInput, distArr, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ) );
 
 for ( int i = 0; i < userInput.getNbins(); ++i ){

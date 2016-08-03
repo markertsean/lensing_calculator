@@ -60,7 +60,6 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
 
   double boundDist = 1e-1; // Percent distance can be close to edge
 
-
   // Step sizes partially random
   double cStep = ( u.getConMax  () - u.getConMin  () ) / randVal( bigStep, smallStep ) ;
   double mStep = ( u.getMassMax () - u.getMassMin () ) / randVal( bigStep, smallStep ) ;
@@ -81,6 +80,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
   int loopCounter = 0;  // Number of times we have rolled
   int convCounter = 0;  // Number of times we have been in tolerance
 
+
   // Roll the ball
   do{
 
@@ -88,7 +88,6 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       densProfile testProfile;
       testProfile.setR_max( ball.getR_max() );
       double mVals[3], cVals[3], aVals[3];
-
 
       // Sets the parameters for moving along the hill
       for ( int j = -1; j < 2; ++j ){
@@ -146,9 +145,9 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       }
       }
       }
-printf("%10.2e  ",chi2);
-printf("c: %7.2f  M: %10.2e   a: %7.2f  ",ball.getC(),ball.getM_enc(),ball.getAlpha());
-printf("cs: %10.2e  Ms: %10.2e   as: %10.2e\n", cStep, mStep, aStep);
+//printf("%3i %3i %10.2e  ",loopCounter,convCounter,chi2);
+//printf("c: %14.6e M: %14.6e a: %14.6e ",ball.getC(),ball.getM_enc(),ball.getAlpha());
+//printf("cs: %10.2e Ms: %10.2e as: %10.2e\n", cStep, mStep, aStep);
       // Kick ball if stuck on edge
 
       if ( fabs( ball.getC    () - u.getConMax () ) / u.getConMax () < boundDist ||
@@ -172,7 +171,6 @@ printf("cs: %10.2e  Ms: %10.2e   as: %10.2e\n", cStep, mStep, aStep);
         }
       }
 
-
       // If didn't move in one direction, decrease step size
       if ( ball.getType () !=       2  &&
            ball.getC    () == cVals[1] &&
@@ -189,7 +187,6 @@ printf("cs: %10.2e  Ms: %10.2e   as: %10.2e\n", cStep, mStep, aStep);
           aStep *= decrement;
         }
       }
-
 
 
 
@@ -210,7 +207,6 @@ printf("cs: %10.2e  Ms: %10.2e   as: %10.2e\n", cStep, mStep, aStep);
       }
 
 
-
       prevM = ball.getM_enc();
       prevC = ball.getC    ();
 
@@ -221,6 +217,7 @@ printf("cs: %10.2e  Ms: %10.2e   as: %10.2e\n", cStep, mStep, aStep);
 
     } while ( loopCounter < u.getMaxFitNum()   &&
               convCounter < u.getNConsistent() );
+
 }
 
 
@@ -249,7 +246,7 @@ void rollingFitDensProfile(
   }
 
   // Do for each rolling ball
-//  #pragma omp parallel for
+  #pragma omp parallel for
   for ( int i = 0; i < u.getNchrome(); ++i ){
 
     // Set starting parameters, location on hill
@@ -259,13 +256,13 @@ void rollingFitDensProfile(
     ball[i].setC    (          randVal( u.getConMin  (), u.getConMax  () )   );
 
 if ( profile.getType() == 2 )
-ball[i].setAlpha(          randVal( 0.40, 0.42 )   );
-ball[i].setM_enc( pow( 10, randVal( 13.9, 14.1 ) ) );
-ball[i].setC    (          randVal(  4.9,  5.1 )   );
+ball[i].setAlpha(          randVal( 0.35, 0.45 )   );
+ball[i].setM_enc( pow( 10, randVal( 13.5, 14.5 ) ) );
+ball[i].setC    (          randVal(  4.5,  5.5 )   );
 //*/
 
     rollBall( ball[i], chi2[i], gArr, dArr, gErrArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ), u );
-exit(0);
+
   }
 
   int    minIndex =              0; //index of lowest chi2
@@ -1231,15 +1228,8 @@ void generateEinRTS(
     double kappa    = modKappa_c     * pow( 10, interpolateEinRTS( x, lens.getAlpha(), einKappa    ) ); // Interpolate table of Kappa    values
     double kappaAvg = modKappa_c * x * pow( 10, interpolateEinRTS( x, lens.getAlpha(), einKappaAvg ) ); // Interpolate table of KappaAvg values
 
-printf("%16.8f    %10.6f %10.6f   %14.4e %14.4e\n", x,
-              interpolateEinRTS( x, lens.getAlpha(), einKappa    )   ,
-              interpolateEinRTS( x, lens.getAlpha(), einKappaAvg )   ,
-     pow( 10, interpolateEinRTS( x, lens.getAlpha(), einKappa    ) ) ,
-     pow( 10, interpolateEinRTS( x, lens.getAlpha(), einKappaAvg ) ) );
-
     gArr[i] = ( kappaAvg - kappa ) / ( 1 - kappa );
 
-//printf("%14.4e %14.4e\n",kappa_c * std::sqrt(M_PI)/tgamma( 1./ lens.getAlpha() ), kappaArr[i]);
   }
 
 
@@ -1267,7 +1257,6 @@ printf("%16.8f    %10.6f %10.6f   %14.4e %14.4e\n", x,
 double interpolateEinRTS(  double        x ,  // r/r_s
                            double        a ,  // alpha
                            einTable  table ){ // Table to interpolate on
-
 
   double x_step = table.getX_bins() / ( table.getX_max() - table.getX_min() );  // Bin / value conversion
   double a_step = table.getA_bins() / ( table.getA_max() - table.getA_min() );

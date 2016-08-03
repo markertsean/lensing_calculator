@@ -180,6 +180,7 @@ class densProfile{
 
     void   unDefVar( std::string inpS ) const {
       std::cerr<<"WARNING: variable "<<inpS<<" undefined in <lensProfile>"<<std::endl;
+exit(0);
     }
 };
 
@@ -428,10 +429,10 @@ userInfo::userInfo(){
   fox2123F = "src/foxH2123.dat";
 
       cMin =  2.0;
-      cMax =  9.0;
+      cMax =  8.0;
       mMin = 12.0;
-      mMax = 16.0;
-  alphaMin = 5e-2;
+      mMax = 17.0;
+  alphaMin =  5.1e-2;
   alphaMax =  0.7;
 
 //5.06
@@ -458,8 +459,8 @@ userInfo::userInfo(){
 */
 
   // Good for ball fitting
-  maxFitAttempts = 1e2   ;
-   N_chromosomes = 3e3   ;
+  maxFitAttempts = 1e3   ;
+   N_chromosomes = 1e2   ;
       consistent = 2e1   ;
        tolerance = 1e-5  ;
 

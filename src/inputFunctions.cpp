@@ -190,10 +190,8 @@ einTable readFoxH( userInfo &u, const int fileType ){
 
   einTable einKappa;
 
-//  std::string          myFile = u.getFoxH2012F();//"src/foxH2012.dat";
-//  if ( fileType == 2 ) myFile = u.getFoxH2123F();//"src/foxH2123.dat";
-  std::string          myFile = "src/foxH2012.dat";
-  if ( fileType == 2 ) myFile = "src/foxH2123.dat";
+  std::string          myFile = u.getFoxH2012F();//"src/foxH2012.dat";
+  if ( fileType == 2 ) myFile = u.getFoxH2123F();//"src/foxH2123.dat";
 
   FILE *pFile;
 
@@ -201,7 +199,7 @@ einTable readFoxH( userInfo &u, const int fileType ){
 
   if (pFile!=NULL){
 
-//    logMessage( std::string( "Reading file: ") + myFile );
+    logMessage( std::string( "Reading file: ") + myFile );
 
     fscanf( pFile, "%16lf%16lf%4i",&minX,&maxX,&x_bins);
     fscanf( pFile, "%16lf%16lf%4i",&minA,&maxA,&a_bins);
@@ -215,8 +213,8 @@ einTable readFoxH( userInfo &u, const int fileType ){
     einKappa   .setBins( a_bins, x_bins );
 
 
-//    logMessage( std::string( "Number of alpha bins: ") + std::to_string( (long long) a_bins ) );
-//    logMessage( std::string( "Number of x     bins: ") + std::to_string( (long long) x_bins ) );
+    logMessage( std::string( "Number of alpha bins: ") + std::to_string( (long long) a_bins ) );
+    logMessage( std::string( "Number of x     bins: ") + std::to_string( (long long) x_bins ) );
 
 
     for ( int i = 0; i < a_bins; ++i ){ // Each row is a new alpha
@@ -233,14 +231,14 @@ einTable readFoxH( userInfo &u, const int fileType ){
 
   } else {
 
-//    logMessage( std::string( "Cannot open FoxH file: ") + myFile );
+    logMessage( std::string( "Cannot open FoxH file: ") + myFile );
 
     std::cout << "Couldn't open FoxH file: " << myFile << std:: endl;
     exit(0);
 
   }
 
-//  logMessage( std::string( "FoxH Read in complete" ) );
+  logMessage( std::string( "FoxH Read in complete" ) );
 
   return einKappa;
 }
