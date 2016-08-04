@@ -26,16 +26,6 @@ void rollingFitDensProfile(
                     const COSMOLOGY          cosmo ); // Error array in RTS
 
 
-void fitDensProfile(
-                          densProfile   &  profile ,  // Density profile we are outputting
-                    const haloInfo      &     halo ,  // Info about parent halo
-//                    const userInfo               u ,  // Info from the user
-                    const userInfo               u ,  // Info from the user
-                    const double       *      gArr ,  // RTS binned array we "observed"
-                    const double       *      dArr ,  // Distance binned array
-                    const double       *   gErrArr ,  // Error array in RTS
-                    const COSMOLOGY          cosmo );
-
 void generateNFWRTS(
                           double          *gArr ,  // RTS array to output
                     const densProfile     &lens ,  // Input density profile to generate profile for
@@ -59,11 +49,6 @@ double SDAvgNFWFull( const double     r ,  //Distance to evaluate SD of NFW prof
                      const double   r_s ,  //Scale radius of profile
                      const double rho_o ); //Initial density of profile
 
-bool num_den(  int       &p ,  // Finds ratio of p/q, if rational
-               int       &q ,
-               double alpha ,
-               int     maxK );
-
 
 void generateEinRTS(
 		          double           *gArr,  //Radially averaged RTS array function will return
@@ -71,6 +56,28 @@ void generateEinRTS(
         const userInfo             u,  //Info from user
 		    const double     *sourceDist,  //Projected radial distance of sources to lens centers
 		    const double        sourceSc); //Critical surface density of a source
+
+double interpolateEinRTS(  double        x ,  // r/r_s
+                           double        a ,  // alpha
+                           einTable  table ); // Table to interpolate on
+
+/*
+void fitDensProfile(
+                          densProfile   &  profile ,  // Density profile we are outputting
+                    const haloInfo      &     halo ,  // Info about parent halo
+                    const userInfo               u ,  // Info from the user
+                    const double       *      gArr ,  // RTS binned array we "observed"
+                    const double       *      dArr ,  // Distance binned array
+                    const double       *   gErrArr ,  // Error array in RTS
+                    const COSMOLOGY          cosmo );
+
+
+
+bool num_den(  int       &p ,  // Finds ratio of p/q, if rational
+               int       &q ,
+               double alpha ,
+               int     maxK );
+
 
 
 void   foxH2012(
@@ -87,11 +94,7 @@ double foxH2123(
                 double    N_bins       ,  // Number of bins of z
                 double     alpha       ,  // Shape parameter Ein profile
                 double tolerance = 1e-4); // Tolence level for convergence
-
-
-double interpolateEinRTS(  double        x ,  // r/r_s
-                           double        a ,  // alpha
-                           einTable  table ); // Table to interpolate on
+*/
 
 
 #endif

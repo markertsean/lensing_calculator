@@ -78,7 +78,7 @@ int     factorial(
   return product;
 }
 
-
+/*
 // Gamma'(z) / Gamma(z)
 long double diGamma(  long double  z ){
 
@@ -113,3 +113,4 @@ long double diGamma(  long double  z ){
   }
 }
 
+//*/

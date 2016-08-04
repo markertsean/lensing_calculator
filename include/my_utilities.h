@@ -29,7 +29,8 @@ int       randVal(
 int     factorial(
                   int  facVal); //Value to calculate factorial of
 
+/*
 long double diGamma(  long double  z  );
-
+//*/
 
 #endif

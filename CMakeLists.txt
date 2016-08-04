@@ -17,7 +17,7 @@ include_directories(include)
 ####
 
 #set(SOURCES lensingCalculator.cpp myUtilities.cpp inputFunctions.cpp lensFitter.cpp pixelmapFunctions.cpp)
-file(GLOB SOURCES "src/lensingCalculator.cpp" "src/inputFunctions.cpp" "src/pixelmapFunctions.cpp" "src/lensFitter.cpp" "src/myUtilities.cpp" "src/bernoulli.c" "src/preciseMath.cpp")
+file(GLOB SOURCES "src/lensingCalculator.cpp" "src/inputFunctions.cpp" "src/pixelmapFunctions.cpp" "src/lensFitter.cpp" "src/myUtilities.cpp")
 
 ####
 # dependencies
@@ -41,4 +41,4 @@ endif()
 
 add_executable(lensing_calculator ${SOURCES})
 
-target_link_libraries(lensing_calculator ${GLAMER_LIBRARIES} "-lcfitsio" "-lgmpxx" "-lgmp")
+target_link_libraries(lensing_calculator ${GLAMER_LIBRARIES} "-lcfitsio")

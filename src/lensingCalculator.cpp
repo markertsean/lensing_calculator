@@ -40,10 +40,7 @@ Uniform distribution of sources, need alignment relative to halo orientation
 #include "input_functions.h"
 #include "lens_fitter.h"
 #include "pixelmap_functions.h"
-#include "precise_math.h"
 
-#include <gmp.h>
-#include <gmpxx.h>
 
 // Name of the code log file
 std::string logFileName = "";
