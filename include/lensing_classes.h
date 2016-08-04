@@ -433,7 +433,7 @@ userInfo::userInfo(){
       mMin = 12.0;
       mMax = 17.0;
   alphaMin =  5.1e-2;
-  alphaMax =  0.7;
+  alphaMax =  0.65;
 
 //5.06
 //1.00e14
@@ -459,8 +459,8 @@ userInfo::userInfo(){
 */
 
   // Good for ball fitting
-  maxFitAttempts = 1e3   ;
-   N_chromosomes = 1e2   ;
+  maxFitAttempts = 1e2   ;
+   N_chromosomes = 1e4   ;
       consistent = 2e1   ;
        tolerance = 1e-5  ;
 

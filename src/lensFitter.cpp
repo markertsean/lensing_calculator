@@ -53,10 +53,10 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
                const  userInfo          u ){
 
 
-  double smallStep = 200;  // Number of possible steps in a direction
-  double   bigStep = 100;
+  double smallStep = 500;  // Number of possible steps in a direction
+  double   bigStep = 250;
 
-  double decrement = 1/4.; // Amount to decrease step size by
+  double decrement = 1/10.; // Amount to decrease step size by
 
   double boundDist = 1e-1; // Percent distance can be close to edge
 
@@ -86,6 +86,9 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
 
       // Used to check which direction is best
       densProfile testProfile;
+
+      if ( ball.getType() == 2 ) testProfile.setType( 2 );
+
       testProfile.setR_max( ball.getR_max() );
       double mVals[3], cVals[3], aVals[3];
 
@@ -96,6 +99,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
         mVals[j+1] = pow( 10, std::min(std::max( log10( ball.getM_enc() ) + mStep * j, u.getMassMin () ), u.getMassMax () ) );
         cVals[j+1] =          std::min(std::max(        ball.getC    ()   + cStep * j, u.getConMin  () ), u.getConMax  () );
       }
+
 
       double chiChoose(999), compChi(998);
 
@@ -115,7 +119,6 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
 
       for ( int kk = 0; kk < maxK; ++ kk ){
 
-
         // Generate RTS
         if ( ball.getType() == 2 ){
           testProfile.setAlpha( aVals[kk] );
@@ -128,6 +131,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
 
         // Determine goodness of fit
         compChi = chiSquared( gAnalyticArray, gArr, gErrArr, u.getNbins() );
+
 
         // Checks each possible direction for ball to roll
         // Will roll in direction of best fit
@@ -145,9 +149,9 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       }
       }
       }
-//printf("%3i %3i %10.2e  ",loopCounter,convCounter,chi2);
-//printf("c: %14.6e M: %14.6e a: %14.6e ",ball.getC(),ball.getM_enc(),ball.getAlpha());
-//printf("cs: %10.2e Ms: %10.2e as: %10.2e\n", cStep, mStep, aStep);
+
+
+
       // Kick ball if stuck on edge
 
       if ( fabs( ball.getC    () - u.getConMax () ) / u.getConMax () < boundDist ||
@@ -156,8 +160,8 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
            cStep = cStep_0;
       }
 
-      if ( fabs( ball.getM_enc() - u.getMassMax() ) / u.getMassMax() < boundDist ||
-           fabs( ball.getM_enc() - u.getMassMin() ) / u.getMassMin() < boundDist ){
+      if ( fabs( log10(ball.getM_enc()) - u.getMassMax() ) / u.getMassMax() < boundDist ||
+           fabs( log10(ball.getM_enc()) - u.getMassMin() ) / u.getMassMin() < boundDist ){
            ball.setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
            mStep = mStep_0;
       }
@@ -207,11 +211,11 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       }
 
 
+      if ( ball.getType() == 2 )
+      prevA = ball.getAlpha();
       prevM = ball.getM_enc();
       prevC = ball.getC    ();
 
-      if ( ball.getType() == 2 )
-      prevA = ball.getAlpha();
 
       loopCounter +=1;
 
@@ -243,6 +247,7 @@ void rollingFitDensProfile(
     if ( profile.getType() == 2 )
     ball[i].setType (              2 );
     ball[i].setR_max( halo.getRmax() );
+    chi2[i] = 1e4;
   }
 
   // Do for each rolling ball
@@ -255,14 +260,7 @@ void rollingFitDensProfile(
     ball[i].setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
     ball[i].setC    (          randVal( u.getConMin  (), u.getConMax  () )   );
 
-if ( profile.getType() == 2 )
-ball[i].setAlpha(          randVal( 0.35, 0.45 )   );
-ball[i].setM_enc( pow( 10, randVal( 13.5, 14.5 ) ) );
-ball[i].setC    (          randVal(  4.5,  5.5 )   );
-//*/
-
     rollBall( ball[i], chi2[i], gArr, dArr, gErrArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ), u );
-
   }
 
   int    minIndex =              0; //index of lowest chi2
@@ -277,27 +275,29 @@ ball[i].setC    (          randVal(  4.5,  5.5 )   );
     }
 //         avgArr[iBin] += avgVal / n_srcs / ( errors[i]*errors[i] ); // Weighted average sum
 
-    weightedChi += 1/chi2[i] ;
+    if ( chi2[i] == chi2[i] ){
+      weightedChi += 1/chi2[i] ;
 
-    if ( profile.getType() == 2 )
-    aAvg +=             ball[i].getAlpha()   /  chi2[i]  ;
-    cAvg +=             ball[i].getC()       /  chi2[i]  ;
-    mAvg += std::log10( ball[i].getM_enc() ) /  chi2[i]  ;
+      if ( profile.getType() == 2 )
+      aAvg +=             ball[i].getAlpha()   /  chi2[i]  ;
+      cAvg +=             ball[i].getC()       /  chi2[i]  ;
+      mAvg += std::log10( ball[i].getM_enc() ) /  chi2[i]  ;
+    }
   }
 
   weightedChi = 1 / weightedChi;
 
   if ( profile.getType() == 2 )
   aAvg = aAvg * weightedChi ;
-
   cAvg = cAvg * weightedChi ;
   mAvg = mAvg * weightedChi ;
 
-  profile.setC    (  ball[minIndex].getC    ()  );
-  profile.setM_enc(  ball[minIndex].getM_enc()  );
 
   if ( profile.getType() == 2 )
   profile.setAlpha(  ball[minIndex].getAlpha()  );
+  profile.setC    (  ball[minIndex].getC    ()  );
+  profile.setM_enc(  ball[minIndex].getM_enc()  );
+
 
 printf("%14.4e %7.5f %14.4e %7.5f\n", weightedChi, cAvg, pow(10, mAvg ), aAvg );
 printf("%14.4e ", minChi);
@@ -373,6 +373,11 @@ void fitDensProfile(
     // Calc chi2 between theoretical predictions and real values
     chi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.getNbins() );
 
+    if ( chi2[i] != chi2[i]  ||
+         isinf(     chi2[i]) ){
+      chi2[i] = 1e5;
+    }
+
     avgChiThreads[omp_get_thread_num()] += chi2[i];
   }
 
@@ -382,8 +387,11 @@ void fitDensProfile(
     avgChiThreads[i]  = 0;
   }
   avgChi  = avgChi / u.getNchrome();
-
-
+/*
+for ( int i = 0; i < u.getNchrome(); ++i )
+  printf("%14.8e  %10.6f %10.6f  %14.8e\n", parent[i].getM_enc(), parent[i].getC(), parent[i].getAlpha(), chi2[i]);
+exit(0);
+//*/
 
   // Reproduction time
   int loopCounter(0); // Counter of number of iterations, over 1e6 then stop
@@ -1223,7 +1231,7 @@ void generateEinRTS(
 
   for ( int i = 0; i < u.getNbins(); ++i ){
 
-    double     x = sourceDist[i] / lens.getR_s();
+    double        x = sourceDist[i]  /  lens.getR_s();
 
     double kappa    = modKappa_c     * pow( 10, interpolateEinRTS( x, lens.getAlpha(), einKappa    ) ); // Interpolate table of Kappa    values
     double kappaAvg = modKappa_c * x * pow( 10, interpolateEinRTS( x, lens.getAlpha(), einKappaAvg ) ); // Interpolate table of KappaAvg values
@@ -1232,6 +1240,19 @@ void generateEinRTS(
 
   }
 
+/*
+8.90231033e+13   0.282275   0.400000
+          0.003543   -2.622126e-03   4.581063e-03   1.970949e-03
+          3.546187    1.979488e-03   5.893992e-04   2.567721e-03
+          7.088832    7.255270e-04   6.926346e-05   7.947402e-04
+         10.631477    3.572105e-04   1.365531e-05   3.708609e-04
+         14.174121    2.082314e-04   3.531224e-06   2.117619e-04
+         17.716766    1.351769e-04   1.086486e-06   1.362632e-04
+         21.259411    9.445550e-05   3.781663e-07   9.483363e-05
+         24.802056    6.959574e-05   1.444884e-07   6.974022e-05
+         28.344700    5.335943e-05   5.942191e-08   5.341885e-05
+         31.887345    4.219108e-05   2.594775e-08   4.221702e-05
+*/
 
   //Kappas are fox H functions
 
