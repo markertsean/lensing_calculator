@@ -333,17 +333,17 @@ userInput.setNpix( 9*9);
 
   std::cout << " Sources averaged" << std::endl;;
 
-//densProfile myProfile(0.4);
-densProfile myProfile;
+densProfile myProfile(0.3);
+//densProfile myProfile;
 myProfile.setR_max( myHalo.getRmax() );
-myProfile.setC( 4.0 );
-myProfile.setM_enc( 1e14 );
+myProfile.setC( 3.0 );
+myProfile.setM_enc( 1e15 );
 //printf("%7.2f %7.2f %14.4e\n",myProfile.getR_max(),myProfile.getC(),myProfile.getM_enc());
 
 for ( int i = 0; i < userInput.getNbins(); ++i ){
   distArr[i] = i * userInput.getPhysFOV() / 2 / userInput.getNbins() +1e-3;
 
-
+/*
   double    SD =    SDNFW( distArr[i], myProfile ); //At radius
   double avgSD = SDAvgNFW( distArr[i], myProfile ); //Average
   double SigCr = cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() );
@@ -355,7 +355,7 @@ for ( int i = 0; i < userInput.getNbins(); ++i ){
 
 //printf("%7.3f %14.5e %14.5e %14.4e\n",distArr[i], gTanArr[i], gErrArr[i], SigCr);
 }
-/*
+
 generateEinRTS( gTanArr, myProfile, userInput, distArr, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ) );
 for ( int i = 0; i < userInput.getNbins(); ++i ){
   printf("%7.3f %14.5e %14.5e\n",distArr[i], gTanArr[i], gErrArr[i]);
@@ -381,13 +381,13 @@ double gtanEIN [ userInput.getNbins() ];
 
 
   rollingFitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
-printf("%7.5f %14.4e\n",nfwProfile.getC(), nfwProfile.getM_enc() );
+printf("%7.5f %14.4e         %7.5f\n",nfwProfile.getC(), nfwProfile.getM_enc(), nfwProfile.getR_max() );
 //*/
 //exit(0);
   rollingFitDensProfile( einProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 
-printf(               "%7.5f %14.4e %7.5f\n",einProfile.getC(), einProfile.getM_enc(), einProfile.getAlpha() );
-printf("               %7.5f %14.4e %7.5f\n", myProfile.getC(),  myProfile.getM_enc(),  myProfile.getAlpha() );
+printf(               "%7.5f %14.4e %7.5f %7.5f\n",einProfile.getC(), einProfile.getM_enc(), einProfile.getAlpha(), einProfile.getR_max() );
+printf("               %7.5f %14.4e %7.5f %7.5f\n", myProfile.getC(),  myProfile.getM_enc(),  myProfile.getAlpha(),  myProfile.getR_max() );
 
 generateEinRTS( gtanEIN , einProfile, userInput, distArr, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ) );
 

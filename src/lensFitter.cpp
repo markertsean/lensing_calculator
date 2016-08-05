@@ -262,9 +262,12 @@ void rollingFitDensProfile(
     rollBall( ball[i], chi2[i], gArr, dArr, gErrArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ), u );
   }
 
+  // Now take weighted average of the balls, weighted by their chi2
+
+
   int    minIndex =              0; //index of lowest chi2
   double minChi   = chi2[minIndex];
-  double cAvg(0), mAvg(0), aAvg(0), weightedChi(0);
+  double cAvg(0), mAvg(0), aAvg(0), rAvg(0), weightedChi(0);
 
   //Find lowest chi2 index
   for ( int i = 0; i < u.getNchrome(); ++i ){
@@ -279,7 +282,8 @@ void rollingFitDensProfile(
 
       if ( profile.getType() == 2 )
       aAvg +=             ball[i].getAlpha()   /  chi2[i]  ;
-      cAvg +=             ball[i].getC()       /  chi2[i]  ;
+      cAvg +=             ball[i].getC    ()   /  chi2[i]  ;
+      rAvg +=             ball[i].getR_max()   /  chi2[i]  ;
       mAvg += std::log10( ball[i].getM_enc() ) /  chi2[i]  ;
     }
   }
@@ -290,6 +294,7 @@ void rollingFitDensProfile(
   aAvg = aAvg * weightedChi ;
   cAvg = cAvg * weightedChi ;
   mAvg = mAvg * weightedChi ;
+  rAvg = rAvg * weightedChi ;
 
 
   if ( profile.getType() == 2 )
@@ -298,7 +303,7 @@ void rollingFitDensProfile(
   profile.setM_enc(  ball[minIndex].getM_enc()  );
 
 
-printf("%14.4e %7.5f %14.4e %7.5f\n", weightedChi, cAvg, pow(10, mAvg ), aAvg );
+printf("%14.4e %7.5f %14.4e %7.5f %7.5f\n", weightedChi, cAvg, pow(10, mAvg ), aAvg, rAvg );
 printf("%14.4e ", minChi);
 
 
