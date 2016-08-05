@@ -61,7 +61,6 @@ double interpolateEinRTS(  double        x ,  // r/r_s
                            double        a ,  // alpha
                            einTable  table ); // Table to interpolate on
 
-/*
 void fitDensProfile(
                           densProfile   &  profile ,  // Density profile we are outputting
                     const haloInfo      &     halo ,  // Info about parent halo
@@ -70,6 +69,9 @@ void fitDensProfile(
                     const double       *      dArr ,  // Distance binned array
                     const double       *   gErrArr ,  // Error array in RTS
                     const COSMOLOGY          cosmo );
+
+
+/*
 
 
 

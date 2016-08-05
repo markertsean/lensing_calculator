@@ -16,15 +16,14 @@ double chiSquared(
 
 
   for ( int i=0; i<N_elements; ++i ){
-
-    if ( errorArr[i] != 0.0 ){             //If no error, ignore
+    if ( errorArr[i] !=       0.0 &&
+           array1[i] == array1[i] &&
+           array2[i] == array2[i] ){             //If no error, ignore
 
       temp  = ( array1[i] - array2[i] ) / errorArr[i] ;
       chi2 += temp * temp;
     }
-
   }
-
 
   return chi2;
 }

@@ -295,6 +295,8 @@ class userInfo{
     void setNtrack          ( int    inpI ) {  N_chiTrack    = inpI ; }
     void setMassMin         ( double inpF ) {           mMin = inpF ; }
     void setMassMax         ( double inpF ) {           mMax = inpF ; }
+    void setRMinFit         ( double inpF ) {           rMin = inpF ; }
+    void setRMaxFit         ( double inpF ) {           rMax = inpF ; }
     void setNchrome         ( int    inpI ) {  N_chromosomes = inpI ; }
     void setConMin          ( double inpF ) {           cMin = inpF ; }
     void setConMax          ( double inpF ) {           cMax = inpF ; }
@@ -338,6 +340,8 @@ class userInfo{
     double getAlphaMax        () const { return       alphaMax ; }
     double getConMin          () const { return           cMin ; }
     double getConMax          () const { return           cMax ; }
+    double getRMinFit         () const { return           rMin ; }
+    double getRMaxFit         () const { return           rMax ; }
     int    getNchrome         () const { return  N_chromosomes ; }
     double getMassMin         () const { return           mMin ; }
     double getMassMax         () const { return           mMax ; }
@@ -393,8 +397,11 @@ class userInfo{
   double     cMax;
   double     mMin;
   double     mMax;
+  double     rMin;
+  double     rMax;
   double alphaMin;
   double alphaMax;
+
 
   int maxFitAttempts; // Max attempts at fitting before abort
   int  N_chromosomes; // Number of chromosomes in population
@@ -430,10 +437,12 @@ userInfo::userInfo(){
 
       cMin =  2.0;
       cMax =  8.0;
+      rMin =  0.3;
+      rMax =  2.0;
       mMin = 12.0;
       mMax = 17.0;
   alphaMin =  5.1e-2;
-  alphaMax =  0.65;
+  alphaMax =  0.68;
 
 //5.06
 //1.00e14
@@ -459,7 +468,7 @@ userInfo::userInfo(){
 */
 
   // Good for ball fitting
-  maxFitAttempts = 1e2   ;
+  maxFitAttempts = 1e3   ;
    N_chromosomes = 1e4   ;
       consistent = 2e1   ;
        tolerance = 1e-5  ;
@@ -467,7 +476,7 @@ userInfo::userInfo(){
 
       N_chiTrack = 1e1   ;
        mutChance = 1e-2  ;
-      avgTestVal = 0.6   ;
+      avgTestVal = 0.7   ;
 
 }
 

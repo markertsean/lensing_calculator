@@ -60,11 +60,13 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
   double boundDist = 1e-1; // Percent distance can be close to edge
 
   // Step sizes partially random
+  double rStep = ( u.getRMaxFit () - u.getRMinFit () ) / randVal( bigStep, smallStep ) ;
   double cStep = ( u.getConMax  () - u.getConMin  () ) / randVal( bigStep, smallStep ) ;
   double mStep = ( u.getMassMax () - u.getMassMin () ) / randVal( bigStep, smallStep ) ;
   double aStep = ( u.getAlphaMax() - u.getAlphaMin() ) / randVal( bigStep, smallStep ) ;
 
   // For kicking the ball back
+  double rStep_0 = rStep;
   double cStep_0 = cStep;
   double mStep_0 = mStep;
   double aStep_0 = aStep;
@@ -74,6 +76,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
   double prevM = 1;
   double prevC = 1;
   double prevA = 1;
+  double prevR = 1;
 
 
   int loopCounter = 0;  // Number of times we have rolled
@@ -88,15 +91,16 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
 
       if ( ball.getType() == 2 ) testProfile.setType( 2 );
 
-      testProfile.setR_max( ball.getR_max() );
-      double mVals[3], cVals[3], aVals[3];
+//      testProfile.setR_max( ball.getR_max() );
+      double mVals[3], cVals[3], aVals[3], rVals[3];
 
       // Sets the parameters for moving along the hill
       for ( int j = -1; j < 2; ++j ){
         if ( ball.getType() == 2 )
-        aVals[j+1] =          std::min(std::max(        ball.getAlpha()   + aStep * j, u.getAlphaMin() ), u.getAlphaMax() );
+        aVals[j+1] =          std::min(std::max(        ball.getAlpha()   + aStep * j, u.getAlphaMin() ), u.getAlphaMax()   );
+        rVals[j+1] =          std::min(std::max(        ball.getR_max()   + rStep * j, u.getRMaxFit () ), u.getRMinFit ()   );
+        cVals[j+1] =          std::min(std::max(        ball.getC    ()   + cStep * j, u.getConMin  () ), u.getConMax  ()   );
         mVals[j+1] = pow( 10, std::min(std::max( log10( ball.getM_enc() ) + mStep * j, u.getMassMin () ), u.getMassMax () ) );
-        cVals[j+1] =          std::min(std::max(        ball.getC    ()   + cStep * j, u.getConMin  () ), u.getConMax  () );
       }
 
 
@@ -107,6 +111,10 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       int maxK = 1;
       if ( ball.getType() == 2 )
         maxK = 3;
+
+      for ( int rr = 0; rr < 3; ++rr ){
+
+        testProfile.setR_max( rVals[rr] );
 
       for ( int ii = 0; ii < 3; ++ii ){
 
@@ -140,6 +148,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
           ball.setAlpha( aVals[kk] );
           ball.setC    ( cVals[ii] );
           ball.setM_enc( mVals[jj] );
+          ball.setR_max( rVals[rr] );
 
 
           chi2 = compChi;
@@ -148,10 +157,17 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       }
       }
       }
-
+      }
 
 
       // Kick ball if stuck on edge
+
+      if ( fabs( ball.getR_max() - u.getRMaxFit() ) / u.getRMaxFit() < boundDist ||
+           fabs( ball.getR_max() - u.getRMinFit() ) / u.getRMinFit() < boundDist ){
+           ball.setR_max( randVal( u.getRMinFit()   , u.getRMaxFit() ) );
+           rStep = rStep_0;
+      }
+
 
       if ( fabs( ball.getC    () - u.getConMax () ) / u.getConMax () < boundDist ||
            fabs( ball.getC    () - u.getConMin () ) / u.getConMin () < boundDist ){
@@ -177,17 +193,21 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       // If didn't move in one direction, decrease step size
       if ( ball.getType () !=       2  &&
            ball.getC    () == cVals[1] &&
-           ball.getM_enc() == mVals[1] ){
+           ball.getM_enc() == mVals[1] &&
+           ball.getR_max() == rVals[1] ){
         cStep *= decrement;
         mStep *= decrement;
+        rStep *= decrement;
       }else
       if (   ball.getType () ==       2  &&
              ball.getC    () == cVals[1] &&
-             ball.getM_enc() == mVals[1] ){
+             ball.getM_enc() == mVals[1] &&
+             ball.getR_max() == rVals[1] ){
         if ( ball.getAlpha() == aVals[1] ){
           cStep *= decrement;
           mStep *= decrement;
           aStep *= decrement;
+          rStep *= decrement;
         }
       }
 
@@ -197,6 +217,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       //  a count of how many times average has been
       //  consistently below tolerance. Tests for convergence
       if (  fabs( ball.getM_enc() - prevM ) / prevM  < u.getTolerance() &&
+            fabs( ball.getR_max() - prevR ) / prevR  < u.getTolerance() &&
             fabs( ball.getC    () - prevC ) / prevC  < u.getTolerance() ){
 
         if ( ball.getType() != 2 ){
@@ -213,6 +234,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       if ( ball.getType() == 2 )
       prevA = ball.getAlpha();
       prevM = ball.getM_enc();
+      prevR = ball.getR_max();
       prevC = ball.getC    ();
 
 
@@ -245,7 +267,6 @@ void rollingFitDensProfile(
   for (int i = 0; i  <  u.getNchrome() ; ++i){
     if ( profile.getType() == 2 )
     ball[i].setType (              2 );
-    ball[i].setR_max( halo.getRmax() );
     chi2[i] = 1e4;
   }
 
@@ -256,8 +277,10 @@ void rollingFitDensProfile(
     // Set starting parameters, location on hill
     if ( profile.getType() == 2 )
     ball[i].setAlpha(          randVal( u.getAlphaMin(), u.getAlphaMax() )   );
-    ball[i].setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
+    ball[i].setR_max(          randVal( u.getRMinFit (), u.getRMaxFit () )   );
     ball[i].setC    (          randVal( u.getConMin  (), u.getConMax  () )   );
+    ball[i].setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
+
 
     rollBall( ball[i], chi2[i], gArr, dArr, gErrArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ), u );
   }
@@ -308,6 +331,396 @@ printf("%14.4e ", minChi);
 
 
 }
+
+
+
+
+
+
+
+
+//
+//  Takes input sources, and fits density profile to the rts values.
+//  Can do NFW, needs modifications for Einasto
+//  Potential to fit NFW to < 1%
+//
+void fitDensProfile(
+                          densProfile   &  profile ,  // Density profile we are outputting
+                    const haloInfo      &     halo ,  // Info about parent halo
+                    userInfo               u ,  // Info from the user
+                    const double       *      gArr ,  // RTS binned array we "observed"
+                    const double       *      dArr ,  // Distance binned array
+                    const double       *   gErrArr ,
+                    const COSMOLOGY          cosmo ){ // Error array in RTS
+
+  // Percent closeness to edge we can be
+  double edgeTolerance = 1e-2;
+
+
+  // Values used for comparing goodness of fits
+  double  avgChi(0), oldAvg(0), testVal(0);
+
+
+  // The genetic algorithm part, and chi2 fitting stuffs
+  densProfile parent[ u.getNchrome() ], child[ u.getNchrome() ];
+  double        chi2[ u.getNchrome() ];
+
+
+
+  // Initialize average arrays for diff threads
+  double avgChiThreads[ u.getNthreads() ];
+  for (int i = 0; i  <  u.getNthreads()  ; ++i)
+    avgChiThreads[i]=0;
+
+
+  // Set all parent R_maxes to the lens
+  for (int i = 0; i  <  u.getNchrome() ; ++i){
+
+    if ( profile.getType() == 2 ){
+
+      parent[i].setType ( 2 );
+       child[i].setType ( 2 );
+
+
+    }
+
+//    parent[i].setR_max( halo.getRmax() );
+//     child[i].setR_max( halo.getRmax() );
+  }
+
+  double sigmaC = cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() );
+
+  // Generate first parent values
+//  #pragma omp parallel for
+  for ( int i=0; i<u.getNchrome(); ++i ){
+
+    double gAnalyticArray[ u.getNbins()   ];
+
+    // Generate initial parent values, if Ein profile need alpha parameter
+    if ( profile.getType() == 2 )
+    parent[i].setAlpha(          randVal( u.getAlphaMin(), u.getAlphaMax() )   );
+    parent[i].setC    (          randVal( u.getConMin  (), u.getConMax  () )   );
+    parent[i].setR_max(          randVal( u.getRMinFit (), u.getRMaxFit () )   );
+    parent[i].setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
+
+
+
+    // Gives analytic value for RTS, for source locations, radially averaged
+    if ( profile.getType() == 1 ){
+      generateNFWRTS( gAnalyticArray, parent[i], u.getNbins(), dArr, sigmaC ); // Note this distance is physical seperation
+    } else{
+      generateEinRTS( gAnalyticArray, parent[i], u           , dArr, sigmaC );
+    }
+
+    // Calc chi2 between theoretical predictions and real values
+    chi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.getNbins() );
+
+    if ( chi2[i] != chi2[i]  ||
+         isinf(     chi2[i]) ){
+      chi2[i] = 1e5;
+    }
+//printf("%14.4e    %10.6f %14.4e %10.6f \n",chi2[i],parent[i].getC(),parent[i].getM_enc(), parent[i].getR_max());
+
+    avgChiThreads[omp_get_thread_num()] += std::log10(chi2[i]);
+  }
+
+
+
+  // Avg used for reproduction, randomly sample halos based on goodness / 1.5avg
+  for (int i  = 0; i < u.getNthreads(); ++i){
+    avgChi           += avgChiThreads[i];
+    avgChiThreads[i]  = 0;
+  }
+  avgChi  = pow( 10, avgChi / u.getNchrome());
+
+  // Reproduction time
+  int loopCounter(0); // Counter of number of iterations, over 1e6 then stop
+  int     counter(0); // Counter used to count number of times within tolerance
+  double   totAvg(0); // Keeps running average, stop when converges
+
+  double convChiArray[ u.getNtrack() ];
+
+
+  // Reset chi^2 values
+  // Tot average is a running average over recent runs, eventually should converge
+  //  to a fairly constant value
+  // Old average saves the previous tot, to measure how much it is changing
+
+  do {
+
+    oldAvg  =   totAvg;
+    totAvg  =  0;
+
+    // If tracking array not full, need to only loop over number we have
+    //  Otherwise, we only keep track of N_chiTrack
+    int N_cT= std::min( u.getNtrack(), loopCounter );
+    int N_invalid(0);
+
+    for (int i=0; i < N_cT; ++i)         // Determines current totAvg over recent generations
+    totAvg += convChiArray[i];
+
+    totAvg  = totAvg / N_cT;
+
+
+    testVal =   avgChi * u.getTestVal(); // Some value of goodness over chi, like 1.5*chi
+    avgChi  =        0;                  // Chi over a generation
+
+
+    // Stores the child's chi2, before transfers to their children
+    double newChi2[ u.getNchrome() ];
+
+    // Generate new children
+    #pragma omp parallel for
+    for ( int i=0; i < u.getNchrome(); ++i ){
+
+
+
+      double gAnalyticArray[ u.getNbins()   ];
+
+
+      int parentIndex[2];
+
+      int selectCounter(0);
+
+      // Select mates from parent pool
+      for ( int j=0; j < 2; ++j ){
+        do{
+                       parentIndex[j] = round( randVal( 0, u.getNchrome()-1) ); // Randomly select an index
+
+          if ( ++selectCounter > u.getNchrome() ) {                     // If having trouble finding good values, increase range
+            avgChi = avgChi * 1.1;
+            break;
+          }
+
+        } while ( chi2[parentIndex[j]] >       randVal( 0, testVal ) ); // If parent fit good enough (small) select w/ uniform distribution
+      }
+
+
+
+      int aIndex, cIndex, mIndex, rIndex;
+
+      // Get indexes to use from parents, since parents are random doesn't
+      //   matter which we select from, but if Einasto need to decide
+      //   whether alpha coming from parent 1 or 2
+      cIndex = parentIndex[0];
+      mIndex = parentIndex[1];
+      rIndex = parentIndex[ (int) round( randVal( 0, 1) )  ];
+
+      // If Einasto, another parameter needed
+      if ( profile.getType() == 2 ){
+      aIndex = parentIndex[ (int) round( randVal( 0, 1) )  ];
+
+      child[i].setAlpha( parent[aIndex].getAlpha() );
+      }
+
+      // Set child values from parents
+      child[i].setC    ( parent[cIndex].getC()     );
+      child[i].setR_max( parent[rIndex].getR_max() );
+      child[i].setM_enc( parent[mIndex].getM_enc() );
+
+
+
+
+      // Mutate values, with random chance. Don't exceed possible max or min
+      // Needed to keep genes fresh
+
+      double upperRand = 1.05;
+      double lowerRand = 0.95;
+
+      if ( u.getMutChance() > randVal(0.0,1.0) )
+        child[i].setC    ( std::max( std::min( child[i].getC    () * randVal( lowerRand, upperRand ) , u.getConMax()   * (1-edgeTolerance) ) ,
+                                                                                                       u.getConMin()   * (1+edgeTolerance) ) );
+
+
+      if ( u.getMutChance() > randVal(0.0,1.0) )
+        child[i].setR_max( std::max( std::min( child[i].getR_max() * randVal( lowerRand, upperRand ) , u.getRMaxFit()  * (1-edgeTolerance) ) ,
+                                                                                                       u.getRMinFit()  * (1+edgeTolerance) ) );
+
+
+      if ( u.getMutChance() > randVal(0.0,1.0) && profile.getType() == 2 )
+        child[i].setAlpha( std::max( std::min( child[i].getAlpha() * randVal( lowerRand, upperRand ) , u.getAlphaMax() * (1-edgeTolerance) ) ,
+                                                                                                       u.getAlphaMin() * (1+edgeTolerance) ) );
+
+
+      if ( u.getMutChance() > randVal(0.0,1.0) )
+        child[i].setM_enc( std::max( std::min( child[i].getM_enc() * randVal( lowerRand, upperRand ) , pow(10,u.getMassMax() * (1-edgeTolerance) )) ,
+                                                                                                       pow(10,u.getMassMin() * (1-edgeTolerance) )) );
+
+
+      // Generate analytic RTS for child
+      if ( profile.getType() != 2 ){
+        generateNFWRTS( gAnalyticArray, child[i], u.getNbins(), dArr, sigmaC ); // Note this distance is physical seperation
+      } else{
+        generateEinRTS( gAnalyticArray, child[i], u           , dArr, sigmaC ); // Note this distance is physical seperation
+      }
+
+      newChi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.getNbins() );
+
+      // Avoid counting NaNs
+      if ( newChi2[i] == newChi2[i] ){
+        avgChiThreads[ omp_get_thread_num() ] += newChi2[i];
+      } else {
+        ++N_invalid;
+      }
+
+    }
+
+// Make one for outside function
+    // Find the best fits
+    double minChis[ u.getNtrack() ];
+
+    for ( int i = 0; i < u.getNtrack(); ++i )
+      minChis[i] = 1e9 * (i+1);
+
+
+
+    // Find the top fits
+    for ( int i = 0; i < u.getNchrome(); ++i ){         // Check each child
+      if ( chi2[i] < minChis[ u.getNtrack()-1 ] ){      // If child better than at least the worst we track
+
+        int startIndex = u.getNtrack()-1;               // Know it's at least as good as last index
+        for ( int j = u.getNtrack()-2; j > -1 ; --j ){  // Once we find better chi, know it's place
+          if ( chi2[i] > minChis[j] ){                  // If we check against worse, use previous index
+            break;
+          }
+            startIndex = j;
+        }
+
+        // Replace the values
+        double  replaceVal = chi2[i];
+        double replacedVal;
+
+        for ( int j = startIndex; j < u.getNtrack(); ++j ){
+
+          replacedVal = minChis[j];
+          minChis[j]  = replaceVal;
+          replaceVal  = replacedVal;
+
+        }
+      }
+    }
+
+
+    // Avg used for reproduction, randomly sample halos based on goodness / avg
+    for (int i  = 0; i < u.getNthreads(); ++i){
+
+      avgChi           += avgChiThreads[i];
+      avgChiThreads[i]  = 0;
+
+    }
+    avgChi  =  avgChi / u.getNthreads() ;
+
+
+    // Tracks the most recent N_ChiTrack generation's chi, to test
+    //  whether converged to constant value
+    convChiArray[ loopCounter % u.getNtrack() ] = avgChi;
+
+    // Children replace parents
+    for ( int i=0; i<u.getNchrome(); ++i ){
+      parent[i] =   child[i];
+        chi2[i] = newChi2[i];
+    }
+
+    // Need counter to be greater than u.consistent,
+    //  a count of how many times average has been
+    //  consistently below tolerance. Tests for convergence
+    if ( fabs(totAvg-oldAvg)/oldAvg < u.getTolerance() ){
+      counter += 1;
+    }
+    else{
+      counter  = 0;
+    }
+if ( loopCounter % 10 == 0 )
+printf("%7i    %14.4e %14.4e %14.4e   %3i\n",loopCounter, totAvg, oldAvg, fabs(totAvg-oldAvg)/oldAvg, counter);
+
+/*
+
+    oldAvg  =   totAvg;
+    totAvg  =  0;
+
+    // If tracking array not full, need to only loop over number we have
+    //  Otherwise, we only keep track of N_chiTrack
+    int N_cT= std::min( u.getNtrack(), loopCounter );
+    int N_invalid(0);
+
+    for (int i=0; i < N_cT; ++i)         // Determines current totAvg over recent generations
+    totAvg += convChiArray[i];
+
+    totAvg  = totAvg / N_cT;
+
+
+    testVal =   avgChi * u.getTestVal(); // Some value of goodness over chi, like 1.5*chi
+    avgChi  =        0;                  // Chi over a generation
+
+//*/
+
+
+
+    ++loopCounter;
+
+  } while ( u.getNConsistent() > counter && loopCounter < u.getMaxFitNum() ) ;
+
+
+  // Once converged, just find best child
+
+  int    minIndex =              0; //index of lowest chi2
+  double minChi   = chi2[minIndex];
+  double cAvg(0), mAvg(0), aAvg(0), rAvg(0), weightedChi(0);
+
+  //Find lowest chi2 index
+  for ( int i = 0; i < u.getNchrome(); ++i ){
+    if ( chi2[i] == chi2[i] &&
+         chi2[i]  >      0  ){
+    if ( minChi > chi2[i] ){
+      minIndex = i;
+      minChi   = chi2[i];
+    }
+//         avgArr[iBin] += avgVal / n_srcs / ( errors[i]*errors[i] ); // Weighted average sum
+
+    weightedChi += 1/chi2[i] ;
+
+    if ( profile.getType() == 2 )
+    aAvg +=             child[i].getAlpha()   /  chi2[i]  ;
+
+    cAvg +=             child[i].getC()       /  chi2[i]  ;
+    rAvg +=             child[i].getR_max()   /  chi2[i]  ;
+    mAvg += std::log10( child[i].getM_enc() ) /  chi2[i]  ;
+    }
+  }
+
+  weightedChi =    1 / weightedChi ;
+  if ( profile.getType() == 2 )
+  aAvg        = aAvg * weightedChi ;
+  rAvg        = rAvg * weightedChi ;
+  cAvg        = cAvg * weightedChi ;
+  mAvg        = mAvg * weightedChi ;
+
+printf("\n");
+printf("%14.4e %7.5f %14.4e ", weightedChi, cAvg, pow(10, mAvg ) );
+if ( profile.getType() == 2 ){
+printf("%7.5f ", aAvg);}
+else{
+  printf("        ");}
+printf("%7.5f\n", rAvg );
+printf("%14.4e ", minChi);
+
+
+
+
+  profile = child[minIndex];
+
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -570,272 +983,6 @@ double interpolateEinRTS(  double        x ,  // r/r_s
 
 
 /*
-
-
-
-//
-//  Takes input sources, and fits density profile to the rts values.
-//  Can do NFW, needs modifications for Einasto
-//  Potential to fit NFW to < 1%
-//
-void fitDensProfile(
-                          densProfile   &  profile ,  // Density profile we are outputting
-                    const haloInfo      &     halo ,  // Info about parent halo
-                    userInfo               u ,  // Info from the user
-                    const double       *      gArr ,  // RTS binned array we "observed"
-                    const double       *      dArr ,  // Distance binned array
-                    const double       *   gErrArr ,
-                    const COSMOLOGY          cosmo ){ // Error array in RTS
-
-  // Values used for comparing goodness of fits
-  double  avgChi(0), oldAvg(0), testVal(0);
-
-  int numGenes = 2;                  //2 variables for NFW
-  if ( profile.getType() == 2.0)
-      numGenes = 3;                  //3 variables for Einasto
-
-
-  // The genetic algorithm part, and chi2 fitting stuffs
-  densProfile parent[ u.getNchrome() ], child[ u.getNchrome() ];
-  double        chi2[ u.getNchrome() ];
-
-
-
-  // Initialize average arrays for diff threads
-  double avgChiThreads[ u.getNthreads() ];
-  for (int i = 0; i  <  u.getNthreads()  ; ++i)
-    avgChiThreads[i]=0;
-
-
-  // Set all parent R_maxes to the lens
-  for (int i = 0; i  <  u.getNchrome() ; ++i){
-    parent[i].setR_max( halo.getRmax() );
-     child[i].setR_max( halo.getRmax() );
-  }
-
-  double sigmaC = cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() );
-
-  // Generate first parent values
-  #pragma omp parallel for
-  for ( int i=0; i<u.getNchrome(); ++i ){
-
-    double gAnalyticArray[ u.getNbins()   ];
-
-    // Generate initial parent values, if Ein profile need alpha parameter
-    if ( profile.getType() == 2 )
-    parent[i].setAlpha(          randVal( u.getAlphaMin(), u.getAlphaMax() )   );
-    parent[i].setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
-    parent[i].setC    (          randVal( u.getConMin  (), u.getConMax  () )   );
-
-
-
-    // Gives analytic value for RTS, for source locations, radially averaged
-    if ( profile.getType() == 1 ){
-      generateNFWRTS( gAnalyticArray, parent[i], u.getNbins(), dArr, sigmaC ); // Note this distance is physical seperation
-    } else{
-      generateEinRTS( gAnalyticArray, parent[i], u           , dArr, sigmaC );
-    }
-
-    // Calc chi2 between theoretical predictions and real values
-    chi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.getNbins() );
-
-    if ( chi2[i] != chi2[i]  ||
-         isinf(     chi2[i]) ){
-      chi2[i] = 1e5;
-    }
-
-    avgChiThreads[omp_get_thread_num()] += chi2[i];
-  }
-
-  // Avg used for reproduction, randomly sample halos based on goodness / 1.5avg
-  for (int i  = 0; i < u.getNthreads(); ++i){
-    avgChi           += avgChiThreads[i];
-    avgChiThreads[i]  = 0;
-  }
-  avgChi  = avgChi / u.getNchrome();
-
-  // Reproduction time
-  int loopCounter(0); // Counter of number of iterations, over 1e6 then stop
-  int     counter(0); // Counter used to count number of times within tolerance
-  double   totAvg(0); // Keeps running average, stop when converges
-
-  double convChiArray[ u.getNtrack() ];
-
-
-  // Reset chi^2 values
-  // Tot average is a running average over recent runs, eventually should converge
-  //  to a fairly constant value
-  // Old average saves the previous tot, to measure how much it is changing
-
-  do {
-    oldAvg  =   totAvg;
-    totAvg  =  0;
-
-    // If tracking array not full, need to only loop over number we have
-    //  Otherwise, we only keep track of N_chiTrack
-    int N_cT= std::min( u.getNtrack(), loopCounter );
-
-    for (int i=0; i < N_cT; ++i)         // Determines current totAvg over recent generations
-    totAvg += convChiArray[i];
-
-    totAvg  = totAvg / N_cT;
-
-
-    testVal =   avgChi * u.getTestVal(); // Some value of goodness over chi, like 1.5*chi
-    avgChi  =        0;                  // Chi over a generation
-
-    // Stores the child's chi2, before transfers to their children
-    double newChi2[ u.getNchrome() ];
-
-    // Generate new children
-    #pragma omp parallel for
-    for ( int i=0; i < u.getNchrome(); ++i ){
-
-      double gAnalyticArray[ u.getNbins()   ];
-
-      int parentIndex[2];
-
-      // Select mates from parent pool
-      for ( int j=0; j < 2; ++j ){
-        do{
-          parentIndex[j] = round( randVal( 0, u.getNchrome()-1) ); // Randomly select an index
-
-        } while ( chi2[parentIndex[j]] > randVal( 0, testVal) );   // If parent fit good enough (small) select w/ uniform distribution
-      }
-
-
-
-      int aIndex, cIndex, mIndex;
-
-      // Get indexes to use from parents, since parents are random doesn't
-      //   matter which we select from, but if Einasto need to decide
-      //   whether alpha coming from parent 1 or 2
-      cIndex = parentIndex[0];
-      mIndex = parentIndex[1];
-
-      // If Einasto, another parameter needed
-      if ( profile.getType() == 2 ){
-      aIndex = parentIndex[ (int) round( randVal( 0, 1) )  ];
-
-
-      child[i].setAlpha( parent[aIndex].getAlpha() );
-      }
-
-      // Set child values from parents
-      child[i].setC    ( parent[cIndex].getC()     );
-      child[i].setM_enc( parent[mIndex].getM_enc() );
-
-      // Mutate values, with random chance. Don't exceed possible max or min
-      // Needed to keep genes fresh
-
-      double upperRand = 1.1;
-      double lowerRand = 0.9;
-
-      if ( u.getMutChance() > randVal(0,1) )
-        child[i].setC    ( std::max( std::min( child[i].getC    () * randVal( lowerRand, upperRand ) ,        u.getConMax()   ) ,        u.getConMin()   ) );
-
-      if ( u.getMutChance() > randVal(0,1) )
-        child[i].setM_enc( std::max( std::min( child[i].getM_enc() * randVal( lowerRand, upperRand ) , pow(10,u.getMassMax()) ) , pow(10,u.getMassMin() )) );
-
-      if ( u.getMutChance() > randVal(0,1) && profile.getType() == 2 )
-        child[i].setAlpha( std::max( std::min( child[i].getAlpha() * randVal( lowerRand, upperRand ) ,        u.getAlphaMax() ) ,        u.getAlphaMin() ) );
-
-
-      // Generate analytic RTS for child
-      if ( profile.getType() == 1 ){
-        generateNFWRTS( gAnalyticArray, child[i], u.getNbins(), dArr, sigmaC ); // Note this distance is physical seperation
-
-      } else{
-        generateEinRTS( gAnalyticArray, child[i], u           , dArr, sigmaC ); // Note this distance is physical seperation
-      }
-
-
-      // chi2 for the children
-      newChi2[i] = chiSquared( gAnalyticArray, gArr, gErrArr, u.getNbins() );
-
-
-      avgChiThreads[ omp_get_thread_num() ] += chi2[i];
-    }
-
-    // Avg used for reproduction, randomly sample halos based on goodness / avg
-    for (int i  = 0; i < u.getNthreads(); ++i){
-
-      avgChi           += avgChiThreads[i];
-      avgChiThreads[i]  = 0;
-
-    }
-    avgChi  =  avgChi / u.getNchrome();
-
-
-    // Tracks the most recent N_ChiTrack generation's chi, to test
-    //  whether converged to constant value
-    convChiArray[ loopCounter % u.getNtrack() ] = avgChi;
-
-    // Children replace parents
-    for ( int i=0; i<u.getNchrome(); ++i ){
-      parent[i] =   child[i];
-        chi2[i] = newChi2[i];
-    }
-
-    // Need counter to be greater than u.consistent,
-    //  a count of how many times average has been
-    //  consistently below tolerance. Tests for convergence
-    if ( fabs(totAvg-oldAvg)/oldAvg < u.getTolerance() ){
-      counter += 1;
-    }
-    else{
-      counter  = 0;
-    }
-if ( loopCounter % 10 == 0 )
-printf("%7i    %14.4e %14.4e %14.4e   %3i\n",loopCounter, totAvg, oldAvg, fabs(totAvg-oldAvg)/oldAvg, counter);
-    ++loopCounter;
-  } while ( u.getNConsistent() > counter && loopCounter < u.getMaxFitNum() ) ;
-
-printf("468\n");
-  // Once converged, just find best child
-
-  int    minIndex =              0; //index of lowest chi2
-  double minChi   = chi2[minIndex];
-  double cAvg(0), mAvg(0), weightedChi(0);
-
-  //Find lowest chi2 index
-  for ( int i = 0; i < u.getNchrome(); ++i ){
-    if ( minChi > chi2[i] ){
-      minIndex = i;
-      minChi   = chi2[i];
-    }
-//         avgArr[iBin] += avgVal / n_srcs / ( errors[i]*errors[i] ); // Weighted average sum
-
-    weightedChi += 1/chi2[i] ;
-
-    cAvg +=             child[i].getC()       /  chi2[i]  ;
-    mAvg += std::log10( child[i].getM_enc() ) /  chi2[i]  ;
-  }
-
-  weightedChi = 1 / weightedChi;
-  cAvg = cAvg * weightedChi ;
-  mAvg = mAvg * weightedChi ;
-
-printf("\n");
-printf("%14.4e %7.5f %14.4e\n", weightedChi, cAvg, pow(10, mAvg ) );
-printf("%14.4e ", minChi);
-
-
-
-
-  profile = child[minIndex];
-
-}
-
-
-
-
-
-
-
-
-
-
 
 
 
