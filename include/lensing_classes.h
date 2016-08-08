@@ -18,60 +18,19 @@ extern std::string logFileName;
 
 
 // Generates log files, printing text to file
-inline void logMessage( const std::string &text ){
-
-    std::ofstream log_file(  logFileName, std::ios_base::out | std::ios_base::app );
-    log_file << text << std::endl;
-
-}
+void logMessage( const std::string &text );
 
 // Initializes log file, making directory and file name
-inline void initLogFile(){
-
-  // Sets up the times
-  int execution_start = clock();
-  time_t      nowTime =      time(        0 );
-  tm       *startTime = localtime( &nowTime );
-
-  // Logfile name & directory
-  char logFileNameC[100];
-  struct stat sb;
-  char str[] = "mkdir logfiles";
-
-  // Create logfiles directory, if one does not exist
-  if ( stat( "logfiles/", &sb) != 0 ){
-    system( str );
-  }
-
-  // Log file name is mostly the date
-  sprintf( logFileNameC, "logfiles/lensCalc.%4i.%02i.%02i.%02i.%02i.%02i.log",
-    (*startTime).tm_year+1900,
-    (*startTime).tm_mon ,
-    (*startTime).tm_mday,
-    (*startTime).tm_hour,
-    (*startTime).tm_min ,
-    (*startTime).tm_sec );
-
-  logFileName= std::string(logFileNameC) ;
-
-  // First line of the log file is the time
-  logMessage( (std::string(                "Code initialized at ")+
-               std::to_string( (long long) (*startTime).tm_hour  )+
-               std::string(                ":"                   )+
-               std::to_string( (long long) (*startTime).tm_min   )+
-               std::string(                ":"                   )+
-               std::to_string( (long long) (*startTime).tm_sec   )));
-
-
-}
+void initLogFile();
 
 
 
-//Holds info on lens, source, any halo for easy access
+// Holds info on lens, source, any halo for easy access
 class haloInfo{
   public:
 
-    inline haloInfo();
+//    inline haloInfo();
+    haloInfo();
 
     void setZ     ( double inpZ ){ z     = inpZ; }
     void setM     ( double inpM ){ m     = inpM; }
@@ -111,174 +70,13 @@ class haloInfo{
     }
 };
 
-haloInfo::haloInfo(){
-
-       z=-1.0;
-       m=-1.0;
-       c=-1.0;
-    rmax=-1.0;
-      ba=-1.0;
-      ca=-1.0;
-     phi=-1.0;
-   theta=-1.0;
-      id=-1  ;
-}
-
-
-// Holds info on density profile, concentration, mass, shape param, etc
-class densProfile{
-  public:
-
-    inline densProfile();
-    inline densProfile( double inpA );
-
-    // Modifiers, as parameters are modified need to adjust dependant values
-    void setAlpha( double inpA ){         alpha = inpA; }
-    void setR_max( double inpR ){         r_max = inpR; }
-    void setC    ( double inpC ){ concentration = inpC; }
-    void setM_enc( double inpM ){         M_enc = inpM; }
-    void setType ( double inpT ){          type = inpT; }
-
-
-    // If when getting an undefined variable, need to spit out a warning
-    double getR_s  () const {  if ( concentration==-1.0 ) unDefVar("\"concentration\"");
-                               if (         r_max==-1.0 ) unDefVar("\"R_max  \""      );   return r_max / concentration;  }
-    double getC    () const {  if ( concentration==-1.0 ) unDefVar("\"concentration\"");   return         concentration;  }
-    double getR_max() const {  if (         r_max==-1.0 ) unDefVar("\"R_max\""        );   return                 r_max;  }
-    double getM_enc() const {  if (         M_enc==-1.0 ) unDefVar("\"M_enc\""        );   return                 M_enc;  }
-    double getAlpha() const {  if (         alpha==-1.0 ) unDefVar("\"alpha\""        );   return                 alpha;  }
-    double getType () const {                                                              return                  type;  }
-    double getRho_o() const {
-
-                               if ( M_enc > 0 && r_max > 0 && concentration > 0){ //All needed parameters def
-
-                                  if ( type == 1 ){ // NFW
-                                                      return  M_enc / (4. * M_PI * r_max*r_max*r_max )  *
-                                                             concentration*concentration*concentration /
-                                                            ( log( 1 + concentration ) - concentration / ( 1 + concentration) );
-                                                  }
-
-                                  else { // Einasto
-                                         double rs = r_max / concentration;
-
-                                         return  M_enc * alpha / (   4. * M_PI    *    rs * rs * rs   *
-                                                    exp(             2. / alpha ) *
-                                                    pow( alpha / 2., 3. / alpha ) *
-                                                    tgamma(          3. / alpha ) );
-                                  }
-                                }
-
-                                return -1;
-                              }
-
-  private:
-    double concentration;
-    double alpha        ;
-    double r_max        ;
-    double M_enc        ;
-    int    type         ; //1 NFW, 2 Einasto
-
-    void   unDefVar( std::string inpS ) const {
-      std::cerr<<"WARNING: variable "<<inpS<<" undefined in <lensProfile>"<<std::endl;
-exit(0);
-    }
-};
-
-
-densProfile::densProfile(){
-  concentration = -1.0;
-  alpha         = -1.0;
-  r_max         = -1.0;
-  M_enc         = -1.0;
-  type          =    1;
-}
-
-
-densProfile::densProfile( double inpA ){
-  concentration = -1.0;
-  alpha         = inpA;
-  r_max         = -1.0;
-  M_enc         = -1.0;
-  type          =    2;
-}
-
-
-
-class einTable {
-
-  public:
-
-    einTable(){
-
-    }
-
-   ~einTable(){
-
-//      delete[] val;
-
-    }
-
-
-    void setBins  ( int a, int x ) { x_bins = x ;
-                                     a_bins = a ;
-                                     N_bins =a*x;
-                                  initVals()    ; }
-
-    void setX_min ( double     d ) { minX   = d ; }
-    void setX_max ( double     d ) { maxX   = d ; }
-    void setA_min ( double     d ) { minA   = d ; }
-    void setA_max ( double     d ) { maxA   = d ; }
-
-    void setVal   ( int     aBin ,
-                    int     xBin ,
-                    double value ){
-
-      if ( val != NULL ){
-
-        val[ xBin + aBin * x_bins ] = value;
-
-      }
-
-    }
-
-
-    double getX_min () { return   minX ; }
-    double getX_max () { return   maxX ; }
-    double getA_min () { return   minA ; }
-    double getA_max () { return   maxA ; }
-
-    int    getA_bins() { return a_bins ; }
-    int    getX_bins() { return x_bins ; }
-    int    getN_bins() { return N_bins ; }
-
-    double getVal ( int    aBin ,
-                    int    xBin ){
-      if ( val != NULL ){
-        return val[ xBin + aBin * x_bins ];
-      }
-        return 0;
-    }
-
-  private:
-
-    int    a_bins;
-    int    x_bins;
-    int    N_bins;
-    double minA, minX;
-    double maxA, maxX;
-
-    double *val = NULL;
-
-    void initVals () { val = new double[ N_bins ]; }
-
-};
 
 
 // Holds info on user input values
 class userInfo{
   public:
 
-    inline userInfo();
+    userInfo();
 
     void setFOV             ( double inpF ) {   angFOV       = inpF ; }
     void setNpix            ( int    inpI ) {   N_pixels     = inpI ; }
@@ -412,72 +210,116 @@ class userInfo{
   double  avgTestVal; // chiAvg*this is random range
 };
 
-userInfo::userInfo(){
-        angFOV = -1.;
-       physFOV = -1.;
-         R_max = -1.;
-   sourceR     = 1.0;
-   sourceZ     = -1.;
-   N_pixels    = -1;
-   N_pixels_h  = -1;
-   N_pixels_v  = -1;
-   N_bins      = -1;
-   N_sources   = -1;
-   N_particles = -1;
-   num_threads =  1;
-  N_edgepixels =  3;
-
-  nearestSourceNeighbor = 1.5;
-  readFile = " ";
-  catType  = " ";
-  cosmo    = " ";
-
-  fox2012F = "src/foxH2012.dat";
-  fox2123F = "src/foxH2123.dat";
-
-      cMin =  2.0;
-      cMax =  8.0;
-      rMin =  0.3;
-      rMax =  2.0;
-      mMin = 12.0;
-      mMax = 17.0;
-  alphaMin =  5.1e-2;
-  alphaMax =  0.68;
-
-//5.06
-//1.00e14
-//10%
-/*
-  maxFitAttempts = 1e4   ;
-   N_chromosomes = 1e4   ;
-      N_chiTrack = 1e2   ;
-      consistent = 2e2   ;
-       tolerance = 1e-3  ;
-       mutChance = 1e-2  ;
-      avgTestVal = 0.5   ;
-*/
-
-/*
-  maxFitAttempts = 1e3   ;
-   N_chromosomes = 1e1   ;
-      N_chiTrack = 4e0   ;
-      consistent = 1e1   ;
-       tolerance = 1e-1  ;
-       mutChance = 1e-2  ;
-      avgTestVal = 0.6   ;
-*/
-
-  // Good for ball fitting
-  maxFitAttempts = 1e3   ;
-   N_chromosomes = 1e4   ;
-      consistent = 2e1   ;
-       tolerance = 1e-5  ;
 
 
-      N_chiTrack = 1e1   ;
-       mutChance = 1e-2  ;
-      avgTestVal = 0.7   ;
+// Stores values of FoxH functions used for generating
+//  convergence of Einasto RTS
+class einTable {
 
-}
+  public:
+
+    einTable(){
+
+    }
+
+
+    void setBins  ( int a, int x ) { x_bins = x ;
+                                     a_bins = a ;
+                                     N_bins =a*x;
+                                  initVals()    ; }
+
+    void setX_min ( double     d ) { minX   = d ; }  // Boundaries of the table
+    void setX_max ( double     d ) { maxX   = d ; }
+    void setA_min ( double     d ) { minA   = d ; }
+    void setA_max ( double     d ) { maxA   = d ; }
+
+
+    double getX_min () { return   minX ; }
+    double getX_max () { return   maxX ; }
+    double getA_min () { return   minA ; }
+    double getA_max () { return   maxA ; }
+
+    int    getA_bins() { return a_bins ; }
+    int    getX_bins() { return x_bins ; }
+    int    getN_bins() { return N_bins ; }
+
+
+
+    // Populate the array
+    void setVal   ( int     aBin ,
+                    int     xBin ,
+                    double value ){
+
+      if ( val != NULL ){
+
+        val[ xBin + aBin * x_bins ] = value;
+
+      }
+    }
+
+
+    double getVal ( int    aBin ,
+                    int    xBin ){
+      if ( val != NULL ){
+        return val[ xBin + aBin * x_bins ];
+      }
+        return 0;
+    }
+
+
+  private:
+
+    int    a_bins;
+    int    x_bins;
+    int    N_bins;
+    double minA, minX;
+    double maxA, maxX;
+
+    double *val = NULL;
+
+    void initVals () { val = new double[ N_bins ]; }
+
+};
+
+
+// Holds info on density profile, concentration, mass, shape param, etc
+class densProfile{
+  public:
+
+    densProfile();
+    densProfile( double inpA );
+
+    // Modifiers, as parameters are modified need to adjust dependant values
+    void setAlpha( double inpA ){         alpha = inpA; }
+    void setR_max( double inpR ){         r_max = inpR; }
+    void setC    ( double inpC ){ concentration = inpC; }
+    void setM_enc( double inpM ){         M_enc = inpM; }
+    void setType ( double inpT ){          type = inpT; }
+
+
+    // If when getting an undefined variable, need to spit out a warning
+    double getR_s  () const {  if ( concentration==-1.0 ) unDefVar("\"concentration\"");
+                               if (         r_max==-1.0 ) unDefVar("\"R_max  \""      );   return r_max / concentration;  }
+    double getC    () const {  if ( concentration==-1.0 ) unDefVar("\"concentration\"");   return         concentration;  }
+    double getR_max() const {  if (         r_max==-1.0 ) unDefVar("\"R_max\""        );   return                 r_max;  }
+    double getM_enc() const {  if (         M_enc==-1.0 ) unDefVar("\"M_enc\""        );   return                 M_enc;  }
+    double getAlpha() const {  if (         alpha==-1.0 ) unDefVar("\"alpha\""        );   return                 alpha;  }
+    double getType () const {                                                              return                  type;  }
+
+    double getRho_o() const ;
+
+  private:
+    double concentration;
+    double alpha        ;
+    double r_max        ;
+    double M_enc        ;
+    int    type         ; //1 NFW, 2 Einasto
+
+    void   unDefVar( std::string inpS ) const {
+      std::cerr<<"WARNING: variable "<<inpS<<" undefined in <lensProfile>"<<std::endl;
+      exit(0);
+    }
+};
+
 
 #endif
