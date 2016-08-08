@@ -83,6 +83,7 @@ class userInfo{
     void setNpart           ( int    inpI ) {   N_particles  = inpI ; }
 
     void setSourceZ         ( double inpF ) {        sourceZ = inpF ; }
+    void setSourceDens      ( double inpF ) {     sourceDens = inpF ; }
     void setChiMin          ( double inpF ) {           cMin = inpF ; }
     void setChiMax          ( double inpF ) {           cMax = inpF ; }
     void setMaxFitNum       ( int    inpI ) { maxFitAttempts = inpI ; }
@@ -96,6 +97,7 @@ class userInfo{
     void setRMinFit         ( double inpF ) {           rMin = inpF ; }
     void setRMaxFit         ( double inpF ) {           rMax = inpF ; }
     void setNchrome         ( int    inpI ) {  N_chromosomes = inpI ; }
+    void setShapeNoise      ( double inpF ) {     shapeNoise = inpF ; }
     void setConMin          ( double inpF ) {           cMin = inpF ; }
     void setConMax          ( double inpF ) {           cMax = inpF ; }
     void setAlphaMin        ( double inpF ) {       alphaMin = inpF ; }
@@ -123,8 +125,9 @@ class userInfo{
     double getPhysFOV         () const { return  physFOV       ; }
     double getAngFOV          () const { return  angFOV        ; }
     double getSourceRadius    () const { return  sourceR       ; }
+    double getSourceDensity   () const { return  sourceDens    ; }
+    double getShapeNoise      () const { return  shapeNoise    ; }
     int    getNpix            () const { return   N_pixels     ; }
-    int    getNsrc            () const { return   N_sources    ; }
     int    getNbins           () const { return   N_bins       ; }
     int    getNthreads        () const { return    num_threads ; }
     int    getNgridPoints     () const { return   N_gridPoints ; }
@@ -153,6 +156,13 @@ class userInfo{
     double getChiMax          () const { return           cMax ; }
     double getSourceZ         () const { return       sourceZ  ; }
 
+    int    getNsrc            () const { if (    N_sources != -1 ) // If users provided a number, use that
+                                          return N_sources     ;
+                                          return (int) (           // Otherwise use source density and size
+                                                 sourceDens *      //   of our FOV
+                                                 physFOV    *
+                                                 physFOV    )  ; }
+
 
 
 
@@ -170,6 +180,9 @@ class userInfo{
 
     double    sourceR ;  // Radius of sources in pixels
     double    sourceZ ;
+
+    double    sourceDens ; // Source Number Density, in gal/arcmin^2
+    double shapeNoise ;
 
     int    N_pixels   ;  // Number of pixels on grid
     int    N_pixels_h ;  // Number of pixels on x-axis

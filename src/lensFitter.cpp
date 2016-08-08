@@ -60,13 +60,13 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
   double boundDist = 1e-1; // Percent distance can be close to edge
 
   // Step sizes partially random
-  double rStep = ( u.getRMaxFit () - u.getRMinFit () ) / randVal( bigStep, smallStep ) ;
+//  double rStep = ( u.getRMaxFit () - u.getRMinFit () ) / randVal( bigStep, smallStep ) ;
   double cStep = ( u.getConMax  () - u.getConMin  () ) / randVal( bigStep, smallStep ) ;
   double mStep = ( u.getMassMax () - u.getMassMin () ) / randVal( bigStep, smallStep ) ;
   double aStep = ( u.getAlphaMax() - u.getAlphaMin() ) / randVal( bigStep, smallStep ) ;
 
   // For kicking the ball back
-  double rStep_0 = rStep;
+//  double rStep_0 = rStep;
   double cStep_0 = cStep;
   double mStep_0 = mStep;
   double aStep_0 = aStep;
@@ -76,7 +76,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
   double prevM = 1;
   double prevC = 1;
   double prevA = 1;
-  double prevR = 1;
+//  double prevR = 1;
 
 
   int loopCounter = 0;  // Number of times we have rolled
@@ -91,14 +91,15 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
 
       if ( ball.getType() == 2 ) testProfile.setType( 2 );
 
-//      testProfile.setR_max( ball.getR_max() );
-      double mVals[3], cVals[3], aVals[3], rVals[3];
+
+      double mVals[3], cVals[3], aVals[3];
+//, rVals[3];
 
       // Sets the parameters for moving along the hill
       for ( int j = -1; j < 2; ++j ){
         if ( ball.getType() == 2 )
         aVals[j+1] =          std::min(std::max(        ball.getAlpha()   + aStep * j, u.getAlphaMin() ), u.getAlphaMax()   );
-        rVals[j+1] =          std::min(std::max(        ball.getR_max()   + rStep * j, u.getRMaxFit () ), u.getRMinFit ()   );
+//        rVals[j+1] =          std::min(std::max(        ball.getR_max()   + rStep * j, u.getRMinFit () ), u.getRMaxFit ()   );
         cVals[j+1] =          std::min(std::max(        ball.getC    ()   + cStep * j, u.getConMin  () ), u.getConMax  ()   );
         mVals[j+1] = pow( 10, std::min(std::max( log10( ball.getM_enc() ) + mStep * j, u.getMassMin () ), u.getMassMax () ) );
       }
@@ -112,19 +113,16 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       if ( ball.getType() == 2 )
         maxK = 3;
 
-      for ( int rr = 0; rr < 3; ++rr ){
+      testProfile.setR_max( ball.getR_max() );
 
-        testProfile.setR_max( rVals[rr] );
+//      for ( int rr = 0; rr <    3; ++rr ){
+//                                          testProfile.setR_max( rVals[rr] );
+      for ( int ii = 0; ii <    3; ++ii ){
+                                          testProfile.setC    ( cVals[ii] );
+      for ( int jj = 0; jj <    3; ++jj ){
+                                          testProfile.setM_enc( mVals[jj] );
+      for ( int kk = 0; kk < maxK; ++kk ){
 
-      for ( int ii = 0; ii < 3; ++ii ){
-
-        testProfile.setC(     cVals[ii] );
-
-      for ( int jj = 0; jj < 3; ++jj ){
-
-        testProfile.setM_enc( mVals[jj] );
-
-      for ( int kk = 0; kk < maxK; ++ kk ){
 
         // Generate RTS
         if ( ball.getType() == 2 ){
@@ -148,7 +146,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
           ball.setAlpha( aVals[kk] );
           ball.setC    ( cVals[ii] );
           ball.setM_enc( mVals[jj] );
-          ball.setR_max( rVals[rr] );
+//          ball.setR_max( rVals[rr] );
 
 
           chi2 = compChi;
@@ -157,17 +155,17 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       }
       }
       }
-      }
+//      }
 
 
       // Kick ball if stuck on edge
-
+/*
       if ( fabs( ball.getR_max() - u.getRMaxFit() ) / u.getRMaxFit() < boundDist ||
            fabs( ball.getR_max() - u.getRMinFit() ) / u.getRMinFit() < boundDist ){
            ball.setR_max( randVal( u.getRMinFit()   , u.getRMaxFit() ) );
            rStep = rStep_0;
       }
-
+//*/
 
       if ( fabs( ball.getC    () - u.getConMax () ) / u.getConMax () < boundDist ||
            fabs( ball.getC    () - u.getConMin () ) / u.getConMin () < boundDist ){
@@ -175,8 +173,8 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
            cStep = cStep_0;
       }
 
-      if ( fabs( log10(ball.getM_enc()) - u.getMassMax() ) / u.getMassMax() < boundDist ||
-           fabs( log10(ball.getM_enc()) - u.getMassMin() ) / u.getMassMin() < boundDist ){
+      if ( fabs( log10(ball.getM_enc()) - u.getMassMax() ) / u.getMassMax() < boundDist*boundDist ||
+           fabs( log10(ball.getM_enc()) - u.getMassMin() ) / u.getMassMin() < boundDist*boundDist ){
            ball.setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
            mStep = mStep_0;
       }
@@ -193,21 +191,23 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       // If didn't move in one direction, decrease step size
       if ( ball.getType () !=       2  &&
            ball.getC    () == cVals[1] &&
-           ball.getM_enc() == mVals[1] &&
-           ball.getR_max() == rVals[1] ){
+           ball.getM_enc() == mVals[1] ){
+//&&
+//           ball.getR_max() == rVals[1] ){
         cStep *= decrement;
         mStep *= decrement;
-        rStep *= decrement;
+//        rStep *= decrement;
       }else
       if (   ball.getType () ==       2  &&
              ball.getC    () == cVals[1] &&
-             ball.getM_enc() == mVals[1] &&
-             ball.getR_max() == rVals[1] ){
+             ball.getM_enc() == mVals[1] ){
+//&&
+//             ball.getR_max() == rVals[1] ){
         if ( ball.getAlpha() == aVals[1] ){
           cStep *= decrement;
           mStep *= decrement;
           aStep *= decrement;
-          rStep *= decrement;
+//          rStep *= decrement;
         }
       }
 
@@ -217,7 +217,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       //  a count of how many times average has been
       //  consistently below tolerance. Tests for convergence
       if (  fabs( ball.getM_enc() - prevM ) / prevM  < u.getTolerance() &&
-            fabs( ball.getR_max() - prevR ) / prevR  < u.getTolerance() &&
+//            fabs( ball.getR_max() - prevR ) / prevR  < u.getTolerance() &&
             fabs( ball.getC    () - prevC ) / prevC  < u.getTolerance() ){
 
         if ( ball.getType() != 2 ){
@@ -234,7 +234,7 @@ void rollBall(        densProfile   &ball ,  // Ball to roll
       if ( ball.getType() == 2 )
       prevA = ball.getAlpha();
       prevM = ball.getM_enc();
-      prevR = ball.getR_max();
+//      prevR = ball.getR_max();
       prevC = ball.getC    ();
 
 
@@ -266,7 +266,8 @@ void rollingFitDensProfile(
 
   for (int i = 0; i  <  u.getNchrome() ; ++i){
     if ( profile.getType() == 2 )
-    ball[i].setType (              2 );
+    ball[i].setType (                  2 );
+    ball[i].setR_max( profile.getR_max() );
     chi2[i] = 1e4;
   }
 
@@ -274,12 +275,27 @@ void rollingFitDensProfile(
   #pragma omp parallel for
   for ( int i = 0; i < u.getNchrome(); ++i ){
 
+
     // Set starting parameters, location on hill
     if ( profile.getType() == 2 )
-    ball[i].setAlpha(          randVal( u.getAlphaMin(), u.getAlphaMax() )   );
-    ball[i].setR_max(          randVal( u.getRMinFit (), u.getRMaxFit () )   );
-    ball[i].setC    (          randVal( u.getConMin  (), u.getConMax  () )   );
-    ball[i].setM_enc( pow( 10, randVal( u.getMassMin (), u.getMassMax () ) ) );
+    ball[i].setAlpha(          randVal( u.getAlphaMin() , u.getAlphaMax() )   );
+    ball[i].setC    (          randVal( u.getConMin  () , u.getConMax  () )   );
+    ball[i].setM_enc( pow( 10, randVal( u.getMassMin () , u.getMassMax () ) ) );
+//    ball[i].setR_max(          randVal( u.getRMinFit () , u.getRMaxFit () )   );
+
+
+    // Troubles fitting Rmax, if above a certain mass start at higher Rs, etc.
+
+    double rMinVal =   u.getRMinFit() ;
+    double rMaxVal = ( u.getRMinFit() + u.getRMaxFit() ) / 2.0 ;
+
+    if ( log10( ball[i].getM_enc()) > ( u.getMassMin () + u.getMassMax () ) / 2.2 ){
+      rMinVal =      rMaxVal;
+      rMaxVal = u.getRMaxFit();
+    }
+
+
+//    ball[i].setR_max(          randVal( rMinVal        , rMaxVal         )   );
 
 
     rollBall( ball[i], chi2[i], gArr, dArr, gErrArr, cosmo.SigmaCrit( halo.getZ(), u.getSourceZ() ), u );
@@ -324,6 +340,7 @@ void rollingFitDensProfile(
   profile.setAlpha(  ball[minIndex].getAlpha()  );
   profile.setC    (  ball[minIndex].getC    ()  );
   profile.setM_enc(  ball[minIndex].getM_enc()  );
+  profile.setR_max(  ball[minIndex].getR_max()  );
 
 
 printf("%14.4e %7.5f %14.4e %7.5f %7.5f\n", weightedChi, cAvg, pow(10, mAvg ), aAvg, rAvg );
@@ -979,7 +996,6 @@ double interpolateEinRTS(  double        x ,  // r/r_s
                ( ( x2 - x  ) * ( a  - a1 )   * table.getVal( a2_bin, x1_bin ) ) +
                ( ( x  - x1 ) * ( a  - a1 )   * table.getVal( a2_bin, x2_bin ) ) );
 }
-
 
 
 /*

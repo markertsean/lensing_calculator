@@ -70,7 +70,6 @@ void fitDensProfile(
                     const double       *   gErrArr ,  // Error array in RTS
                     const COSMOLOGY          cosmo );
 
-
 /*
 
 

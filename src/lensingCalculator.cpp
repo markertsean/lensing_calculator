@@ -280,15 +280,13 @@ userInput.setNpix( 9*9);
   std::cout << "Generating sources..." << std::endl;
 
   double  srcErrArr[ userInput.getNsrc() ]; // Error
-  double  srcSCRArr[ userInput.getNsrc() ]; // Sigma Crit
   double  srcDArr  [ userInput.getNsrc() ]; // Redshift
 
   logMessage( std::string("Allocated src arrays of size: ") + std::to_string((long long) userInput.getNsrc()) );
 
 // Need read error, Z distibution
   for (int i = 0; i < userInput.getNsrc(); ++i ){
-    srcErrArr[i] = 0.3;                           // Errors all a temporary 0.3
-    srcSCRArr[i] = 1.0;//cosmo.SigmaCrit( myHalo.getZ(), sourceInfo.getZ() ); // Sigma Crit, depends on source Z
+    srcErrArr[i] = userInput.getShapeNoise();                           // Errors all a temporary 0.3
   }
 
 
@@ -335,12 +333,14 @@ userInput.setNpix( 9*9);
 
 //densProfile myProfile(0.3);
 densProfile myProfile;
-myProfile.setR_max( 1.5 );
-myProfile.setC( 4.0 );
-myProfile.setM_enc( 1e14 );
+myProfile.setR_max( 1.3  );
+myProfile.setC    ( 6.0  );
+myProfile.setM_enc( 1e13 );
 //printf("%7.2f %7.2f %14.4e\n",myProfile.getR_max(),myProfile.getC(),myProfile.getM_enc());
 
 for ( int i = 0; i < userInput.getNbins(); ++i ){
+printf("%10.6f %14.6e %10.6f\n", distArr[i], gTanArr[i], gErrArr[i]);
+
   distArr[i] = i * userInput.getPhysFOV() / 2 / userInput.getNbins() +1e-3;
 
 
@@ -355,6 +355,7 @@ for ( int i = 0; i < userInput.getNbins(); ++i ){
 
 //printf("%7.3f %14.5e %14.5e %14.4e\n",distArr[i], gTanArr[i], gErrArr[i], SigCr);
 }
+exit(0);
 /*
 generateEinRTS( gTanArr, myProfile, userInput, distArr, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ) );
 for ( int i = 0; i < userInput.getNbins(); ++i ){
@@ -379,20 +380,18 @@ gErrArr[0] = 0;
 
 double gtanEIN [ userInput.getNbins() ];
 
-  fitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
-//  rollingFitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
+  rollingFitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 printf("%7.5f %14.4e         %7.5f\n",nfwProfile.getC(), nfwProfile.getM_enc(), nfwProfile.getR_max() );
-//*/
-printf("               %7.5f %14.4e         %7.5f\n", myProfile.getC(),  myProfile.getM_enc(),  myProfile.getR_max() );
-//exit(0);
-//  rollingFitDensProfile( einProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 
-  fitDensProfile( einProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
+
+  rollingFitDensProfile( einProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 
 printf(               "%7.5f %14.4e %7.5f %7.5f\n",einProfile.getC(), einProfile.getM_enc(), einProfile.getAlpha(), einProfile.getR_max() );
+printf("               %7.5f %14.4e         %7.5f\n", myProfile.getC(),  myProfile.getM_enc(),  myProfile.getR_max() );
 //printf("               %7.5f %14.4e %7.5f %7.5f\n", myProfile.getC(),  myProfile.getM_enc(),  myProfile.getAlpha(),  myProfile.getR_max() );
 //exit(0);
 //*/
+
 generateEinRTS( gtanEIN , einProfile, userInput, distArr, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ) );
 
 
@@ -402,7 +401,6 @@ for ( int i = 0; i < userInput.getNbins(); ++i ){
   double avgSD = SDAvgNFW( distArr[i], nfwProfile ); //Average
   double SigCr = cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() );
 
-//printf("%14.4e %14.4e %14.4e\n",gtanEIN4[i], gTanArr[i], gtanEIN[i]);
 printf("%14.4e %14.4e %14.4e\n",( avgSD - SD ) / ( SigCr - SD ), gTanArr[i], gtanEIN[i]);
 }
 //printf("%12.3e %5.3lf\n",nfwProfile.getM_enc(),nfwProfile.getC());

@@ -80,12 +80,13 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
 
     if (N_countsArr[i]==0){ // If nothing in bin, mark as -1
       avgArr[i] = -1.0;
+      errArr[i] =  0.0;
     }
 
     else{
 
       errArr[i] = sqrt( 1   /   errArr[i]             );
-      avgArr[i] = avgArr[i] * ( errArr[i] * errArr[i] );
+      avgArr[i] = avgArr[i] * ( errArr[i] * errArr[i] ) * gaussErr( u, N_countsArr[i] );
 
     }
   }
@@ -333,4 +334,27 @@ void printPixelMap( PixelMap   &inpMap   ,  //input pixel map
   }
     std::cout<<std::endl;
   }
+}
+
+
+
+
+// Bon-Muller transformation to provide gaussian distribution
+double gaussErr( userInfo   u ,
+                 int     Ngal ){
+
+  float x1, x2, w;
+
+  do {
+
+    x1 = 2.0 * randVal( 0.0, 1.0 ) - 1.0;
+    x2 = 2.0 * randVal( 0.0, 1.0 ) - 1.0;
+
+    w  = x1 * x1 + x2 * x2;
+
+  } while ( w >= 1.0 );
+
+  w = std::sqrt( ( -2.0 * std::log( w ) ) / w );
+
+  return x1 * w * u.getShapeNoise() / std::sqrt( Ngal );
 }

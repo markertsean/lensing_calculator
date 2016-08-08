@@ -18,19 +18,21 @@ haloInfo::haloInfo(){
 
 
 userInfo::userInfo(){
-        angFOV = -1.; //  Angular size of image
-       physFOV = -1.; // Physical size of image
-         R_max = -1.; // ?
-   sourceR     = 1.0; // Radius of source in pixels
-   sourceZ     = -1.; // Redshift of sources
-   N_pixels    = -1 ; // Number of pixels on the grid
-   N_pixels_h  = -1 ; // Number of pixels on x-axis
-   N_pixels_v  = -1 ; // Number of pixels on y-axis
-   N_bins      = -1 ; // Number of bins for radial averaging
-   N_sources   = -1 ; // Number of sources to generate
-   N_particles = -1 ; // Number of particles in simulation
-   num_threads =  1 ; // Number of threads for parallel processing
-  N_edgepixels =  3 ; // Number of pixels to leave on an edge
+        angFOV = -1.  ; //  Angular size of image
+       physFOV = -1.  ; // Physical size of image
+         R_max = -1.  ; // ?
+   sourceR     =  1.0 ; // Radius of source in pixels
+   sourceZ     = -1.  ; // Redshift of sources
+   sourceDens  = 10.0 ; // Surface density of background sources, gal/arcmin^2
+   shapeNoise  =  0.3 ; // Intrinsic shape noise in the sources
+   N_pixels    = -1   ; // Number of pixels on the grid
+   N_pixels_h  = -1   ; // Number of pixels on x-axis
+   N_pixels_v  = -1   ; // Number of pixels on y-axis
+   N_bins      = -1   ; // Number of bins for radial averaging
+   N_sources   = -1   ; // Number of sources to generate
+   N_particles = -1   ; // Number of particles in simulation
+   num_threads =  1   ; // Number of threads for parallel processing
+  N_edgepixels =  3   ; // Number of pixels to leave on an edge
 
   nearestSourceNeighbor = 1.5;   // Minimum distance between sources
   readFile     = " ";            // Fits file to read
@@ -40,13 +42,13 @@ userInfo::userInfo(){
   fox2012F = "src/foxH2012.dat"; // FoxH files to read
   fox2123F = "src/foxH2123.dat";
 
-      cMin =  2.0;     // Range of concentration values to fit
-      cMax =  8.0;
-      rMin =  0.3;     // Range of R_max values to fit
+      cMin =  2.5;     // Range of concentration values to fit
+      cMax =  7.5;
+      rMin =  0.3;     // Range of R_max values to fit, Mpc
       rMax =  2.0;
-      mMin = 12.0;     // Range of mass values to fit
-      mMax = 17.0;
-  alphaMin =  5.1e-2;  // Range of alpha values to fit
+      mMin = 12.5;     // Range of mass values to fit
+      mMax = 16.5;
+  alphaMin =  9e-2;  // Range of alpha values to fit
   alphaMax =  0.68;
 
 //5.06
@@ -73,7 +75,7 @@ userInfo::userInfo(){
 */
 
   maxFitAttempts = 1e3   ; // Maximum number of steps to roll ball, or times to reproduce
-   N_chromosomes = 1e4   ; // Number of chromosomes or balls
+   N_chromosomes = 1e3   ; // Number of chromosomes or balls
       consistent = 2e1   ; // Number of steps to converge before accepting
        tolerance = 1e-5  ; // If difference between steps less than this, converged
 
