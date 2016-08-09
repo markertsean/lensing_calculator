@@ -285,7 +285,7 @@ void rollingFitDensProfile(
 
 
     // Troubles fitting Rmax, if above a certain mass start at higher Rs, etc.
-
+/*
     double rMinVal =   u.getRMinFit() ;
     double rMaxVal = ( u.getRMinFit() + u.getRMaxFit() ) / 2.0 ;
 
@@ -293,7 +293,7 @@ void rollingFitDensProfile(
       rMinVal =      rMaxVal;
       rMaxVal = u.getRMaxFit();
     }
-
+//*/
 
 //    ball[i].setR_max(          randVal( rMinVal        , rMaxVal         )   );
 
@@ -306,7 +306,7 @@ void rollingFitDensProfile(
 
   int    minIndex =              0; //index of lowest chi2
   double minChi   = chi2[minIndex];
-  double cAvg(0), mAvg(0), aAvg(0), rAvg(0), weightedChi(0);
+//  double cAvg(0), mAvg(0), aAvg(0), rAvg(0), weightedChi(0);
 
   //Find lowest chi2 index
   for ( int i = 0; i < u.getNchrome(); ++i ){
@@ -315,7 +315,7 @@ void rollingFitDensProfile(
       minChi   = chi2[i];
     }
 //         avgArr[iBin] += avgVal / n_srcs / ( errors[i]*errors[i] ); // Weighted average sum
-
+/*
     if ( chi2[i] == chi2[i] ){
       weightedChi += 1/chi2[i] ;
 
@@ -325,8 +325,9 @@ void rollingFitDensProfile(
       rAvg +=             ball[i].getR_max()   /  chi2[i]  ;
       mAvg += std::log10( ball[i].getM_enc() ) /  chi2[i]  ;
     }
+*/
   }
-
+/*
   weightedChi = 1 / weightedChi;
 
   if ( profile.getType() == 2 )
@@ -334,7 +335,7 @@ void rollingFitDensProfile(
   cAvg = cAvg * weightedChi ;
   mAvg = mAvg * weightedChi ;
   rAvg = rAvg * weightedChi ;
-
+*/
 
   if ( profile.getType() == 2 )
   profile.setAlpha(  ball[minIndex].getAlpha()  );
@@ -343,8 +344,8 @@ void rollingFitDensProfile(
   profile.setR_max(  ball[minIndex].getR_max()  );
 
 
-printf("%14.4e %7.5f %14.4e %7.5f %7.5f\n", weightedChi, cAvg, pow(10, mAvg ), aAvg, rAvg );
-printf("%14.4e ", minChi);
+//printf("%14.4e %7.5f %14.4e %7.5f %7.5f\n", weightedChi, cAvg, pow(10, mAvg ), aAvg, rAvg );
+//printf("%14.4e ", minChi);
 
 
 }

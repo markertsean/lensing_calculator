@@ -51,9 +51,6 @@ userInfo::userInfo(){
   alphaMin =  9e-2;  // Range of alpha values to fit
   alphaMax =  0.68;
 
-//5.06
-//1.00e14
-//10%
 /*
   maxFitAttempts = 1e4   ;
    N_chromosomes = 1e4   ;
@@ -64,18 +61,12 @@ userInfo::userInfo(){
       avgTestVal = 0.5   ;
 */
 
-/*
-  maxFitAttempts = 1e3   ;
-   N_chromosomes = 1e1   ;
-      N_chiTrack = 4e0   ;
-      consistent = 1e1   ;
-       tolerance = 1e-1  ;
-       mutChance = 1e-2  ;
-      avgTestVal = 0.6   ;
-*/
 
-  maxFitAttempts = 1e3   ; // Maximum number of steps to roll ball, or times to reproduce
-   N_chromosomes = 1e3   ; // Number of chromosomes or balls
+  maxFitAttempts = 1e2   ;
+   N_chromosomes = 5     ;
+
+//  maxFitAttempts = 1e3   ; // Maximum number of steps to roll ball, or times to reproduce
+//   N_chromosomes = 1e3   ; // Number of chromosomes or balls
       consistent = 2e1   ; // Number of steps to converge before accepting
        tolerance = 1e-5  ; // If difference between steps less than this, converged
 

@@ -51,7 +51,30 @@ einTable einKappaAvg ;
 
 int main(int arg,char **argv){
 
+int N_t = 5;
+densProfile tP[ N_t ];
 
+tP[0].setR_max( 1.0 );
+tP[1].setR_max( 1.0 );
+tP[2].setR_max( 1.0 );
+tP[3].setR_max( 1.0 );
+tP[4].setR_max( 1.0 );
+
+tP[0].setM_enc( 1e15 );
+tP[1].setM_enc( 1e14 );
+tP[2].setM_enc( 1e14 );
+tP[3].setM_enc( 1e16 );
+tP[4].setM_enc( 1e16 );
+
+tP[0].setC    (  5.   );
+tP[1].setC    (  4.1   );
+tP[2].setC    (  6   );
+tP[3].setC    (  4.   );
+tP[4].setC    (  6   );
+
+jacknife( tP, N_t-1 );
+
+exit(0);
   // Initializes the log file, generates logfiles directory
   //  and a file name based on current time
   initLogFile();
@@ -310,44 +333,93 @@ userInput.setNpix( 9*9);
   std::cout << "Done." << std::endl << std::endl;
 
 
+
   ////////////////////////////////////////////////////////////
-  ///////////////////Determine radial average/////////////////
-  ///////////////////Bin different source vals////////////////
+  ///////////////////To calculate errors//////////////////////
+  //////////////Loop over and jacknife sample/////////////////
   ////////////////////////////////////////////////////////////
 
 
-  // Array to bin distances, RTS, and their errors
-  double    distArr[ userInput.getNbins() ],
-            gTanArr[ userInput.getNbins() ],
-            gErrArr[ userInput.getNbins() ];
-
-  radialDistAverage( distArr, srcDArr, userInput, center );
-
-  logMessage( std::string("Source distances averaged") );
-
-  radialShearAverage( gTanArr, gErrArr, indexes, g_tanMap, srcErrArr, srcDArr, userInput, center );
-
-  logMessage( std::string("Shear values averaged") );
-
-  std::cout << " Sources averaged" << std::endl;;
+  densProfile nfwFits[ userInput.getNsrc() + 1 ];
+  densProfile einFits[ userInput.getNsrc() + 1 ];
 
 
-  //////////////////////////////////////////////////////////
-  ////////////////////////FIT PROFILE///////////////////////
-  //////////////////////////////////////////////////////////
+  for ( int  omitIndex = -1; omitIndex < userInput.getNsrc(); ++ omitIndex ) {
 
-  // Attempts to fit the density using the radial averages of distance and RTS
-
-
-  densProfile nfwProfile, einProfile( 0.4 ); // 0.2 sets profile as Einasto with alpha = 0.2
-
-  nfwProfile.setR_max( myHalo.getRmax() );
-  einProfile.setR_max( myHalo.getRmax() );
+//    nfwFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
+//    einFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
+//    einFits[ omitIndex + 1 ].setType( 2 );
 
 
-  rollingFitDensProfile( nfwProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
+    ////////////////////////////////////////////////////////////
+    ///////////////////Determine radial average/////////////////
+    ///////////////////Bin different source vals////////////////
+    ////////////////////////////////////////////////////////////
 
-  rollingFitDensProfile( einProfile, myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
+
+// Here loop over sources, indicating which index to omit (start at -1)
+// Pass to dist and shear calculators, to indicate ommited index
+
+    // Array to bin distances, RTS, and their errors
+    double    distArr[ userInput.getNbins() ],
+              gTanArr[ userInput.getNbins() ],
+              gErrArr[ userInput.getNbins() ];
+/*
+    radialDistAverage( distArr, srcDArr, userInput, center );
+
+    logMessage( std::string("Source distances averaged") );
+
+    radialShearAverage( gTanArr, gErrArr, indexes, g_tanMap, srcErrArr, srcDArr, userInput, center );
+
+    logMessage( std::string("Shear values averaged") );
+
+    std::cout << " Sources averaged" << std::endl;
+*/
+densProfile testProfile;
+testProfile.setM_enc( 1.0e14 );
+testProfile.setR_max( 5.0    );
+testProfile.setC    ( 5.0    );
+
+nfwFits[ omitIndex + 1 ].setR_max( testProfile.getR_max() );
+
+for ( int i = 0; i < userInput.getNbins(); ++i ){
+
+  distArr[i] = 1e-3 + i * userInput.getPhysFOV() / userInput.getNbins() / 2.0;
+  gErrArr[i] = 0.3;
+
+}
+gErrArr[0] = 0;
+generateNFWRTS( gTanArr, testProfile, userInput.getNbins(), distArr, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ) );
+
+
+    //////////////////////////////////////////////////////////
+    ////////////////////////FIT PROFILE///////////////////////
+    //////////////////////////////////////////////////////////
+
+    // Attempts to fit the density using the radial averages of distance and RTS
+
+//                std::cout <<"Calculating NFW fit..." << std::endl;
+//    logMessage( std::string("Calculating NFW fit...") );
+
+    rollingFitDensProfile( nfwFits[ omitIndex + 1], myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
+
+
+//                std::cout <<"Calculating EIN fit..." << std::endl;
+//    logMessage( std::string("Calculating EIN fit...") );
+
+
+//    rollingFitDensProfile( einFits[ omitIndex + 1], myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
+printf("%14.6e %14.6e %10.6f %10.6f %10.6f %10.6f\n", nfwFits[omitIndex+1].getM_enc(),
+                                                         testProfile.getM_enc(),
+                                                nfwFits[omitIndex+1].getC    (),
+                                                         testProfile.getC    (),
+                                                nfwFits[omitIndex+1].getR_max(),
+                                                         testProfile.getR_max());
+
+  }
+
+printf("           %10.6f %14.6e\n", nfwFits[0].getC(), nfwFits[0].getM_enc());
+jacknife( nfwFits, userInput.getNsrc() );
 
 
   exit(0);

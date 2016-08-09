@@ -18,7 +18,8 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
                          double      *errors ,  // Errors to use in weighting
                          double        *dist ,  // Distances of the halos in Mpc
                          userInfo          u ,
-                         double    center[2] ){
+                         double    center[2] ,
+                         int     ignoreIndex ){
 
   int    iBin;
   int posArr[2]={0,0};
@@ -37,41 +38,45 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
   //  shear value to use
   for(int i = 0; i < u.getNsrc(); ++i ){
 
-    // 1 is y, or row
-    // 0 is x, or columns
-    // Pixel numbers, from top corner
-    posArr[0] = indexes[i] % u.getNpixH();
-    posArr[1] = indexes[i] / u.getNpixH();
+    // Ignore for error analysis
+    if ( i != ignoreIndex ){
+
+      // 1 is y, or row
+      // 0 is x, or columns
+      // Pixel numbers, from top corner
+      posArr[0] = indexes[i] % u.getNpixH();
+      posArr[1] = indexes[i] / u.getNpixH();
 
 
-    // Locate indexes for source averaging
-    int startXIndex = std::max( (int) ( posArr[0] - u.getSourceRadius() ),            0 );
-    int   endXIndex = std::min( (int) ( posArr[0] + u.getSourceRadius() ), u.getNpixH() );
+      // Locate indexes for source averaging
+      int startXIndex = std::max( (int) ( posArr[0] - u.getSourceRadius() ),            0 );
+      int   endXIndex = std::min( (int) ( posArr[0] + u.getSourceRadius() ), u.getNpixH() );
 
-    int startYIndex = std::max( (int) ( posArr[1] - u.getSourceRadius() ), 0 );
-    int   endYIndex = std::min( (int) ( posArr[1] + u.getSourceRadius() ), u.getNpixV() );
+      int startYIndex = std::max( (int) ( posArr[1] - u.getSourceRadius() ), 0 );
+      int   endYIndex = std::min( (int) ( posArr[1] + u.getSourceRadius() ), u.getNpixV() );
 
-    double avgVal = 0;
-    int    n_srcs = 0;
+      double avgVal = 0;
+      int    n_srcs = 0;
 
-    // Average over the nearby pixels for a given source
-    for ( int j = startXIndex; j <= endXIndex; ++j ){
-    for ( int k = startYIndex; k <= endYIndex; ++k ){
+      // Average over the nearby pixels for a given source
+      for ( int j = startXIndex; j <= endXIndex; ++j ){
+      for ( int k = startYIndex; k <= endYIndex; ++k ){
 
-      avgVal += inpMap.getValue( k * u.getNpixH() + j );
-      n_srcs += 1;
+        avgVal += inpMap.getValue( k * u.getNpixH() + j );
+        n_srcs += 1;
 
+      }
+      }
+
+
+      // Distance of radians from center, converted to "bin" units
+      iBin = round( dist[i] / u.getPhysFOV() * 2 * u.getNbins() );
+
+
+           avgArr[iBin] += avgVal / n_srcs / ( errors[i]*errors[i] ); // Weighted average sum
+           errArr[iBin] += 1               / ( errors[i]*errors[i] ); // inverse of the sum of variance
+      N_countsArr[iBin] += 1;
     }
-    }
-
-
-    // Distance of radians from center, converted to "bin" units
-    iBin = round( dist[i] / u.getPhysFOV() * 2 * u.getNbins() );
-
-
-         avgArr[iBin] += avgVal / n_srcs / ( errors[i]*errors[i] ); // Weighted average sum
-         errArr[iBin] += 1               / ( errors[i]*errors[i] ); // inverse of the sum of variance
-    N_countsArr[iBin] += 1;
   }
 
 
@@ -86,7 +91,7 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
     else{
 
       errArr[i] = sqrt( 1   /   errArr[i]             );
-      avgArr[i] = avgArr[i] * ( errArr[i] * errArr[i] ) * gaussErr( u, N_countsArr[i] );
+      avgArr[i] = avgArr[i] * ( errArr[i] * errArr[i] ) ;//* gaussErr( u, N_countsArr[i] );
 
     }
   }
@@ -101,7 +106,8 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
 void radialDistAverage( double       *avgArr ,  // Array to overwrite
                         double    *distances ,  // Distance array of sources
                         userInfo           u ,
-                        double     center[2] ){
+                        double     center[2] ,
+                        int      ignoreIndex ){
 
   int    iBin;
   double dist;
@@ -118,11 +124,14 @@ void radialDistAverage( double       *avgArr ,  // Array to overwrite
   // For each source, find which bin it's in
   for(int i = 0; i < u.getNsrc(); ++i ){
 
-    // Distance of pixels from center, converted to "bin" units
-    iBin = round( distances[i] / u.getPhysFOV() * 2 * u.getNbins() );
+    // For errors
+    if ( i != ignoreIndex ) {
+      // Distance of pixels from center, converted to "bin" units
+      iBin = round( distances[i] / u.getPhysFOV() * 2 * u.getNbins() );
 
-         avgArr[iBin] += distances[i];
-    N_countsArr[iBin] += 1;
+           avgArr[iBin] += distances[i];
+      N_countsArr[iBin] += 1;
+    }
   }
 
   // Perform the averaging
@@ -357,4 +366,161 @@ double gaussErr( userInfo   u ,
   w = std::sqrt( ( -2.0 * std::log( w ) ) / w );
 
   return x1 * w * u.getShapeNoise() / std::sqrt( Ngal );
+}
+
+
+
+
+
+void jacknife( densProfile  *profile ,
+               int         N_samples ){
+
+  // Variances
+
+  double M_var(0);
+  double C_var(0);
+  double A_var(0);
+
+
+  double Mbar_o(0);
+  double Cbar_o(0);
+  double Abar_o(0);
+
+
+  double Mbar_i[ N_samples ];
+  double Cbar_i[ N_samples ];
+  double Abar_i[ N_samples ];
+
+
+  // Generate xbar_i
+  for ( int i = 0; i < N_samples; ++i ){
+      Abar_i[ i ]  = 0;
+      Mbar_i[ i ]  = 0;
+      Cbar_i[ i ]  = 0;
+  for ( int j = 0; j < N_samples; ++j ){
+
+    if ( j != i ){
+      if ( profile[j+1].getType() == 2 )
+      Abar_i[ i ] +=             profile[j+1].getAlpha()  ;
+      Mbar_i[ i ] += std::log10( profile[j+1].getM_enc() );
+      Cbar_i[ i ] +=             profile[j+1].getC    ()  ;
+    }
+
+  }
+      Abar_i[ i ]  = Abar_i[ i ] / ( N_samples - 1 );
+      Cbar_i[ i ]  = Cbar_i[ i ] / ( N_samples - 1 );
+      Mbar_i[ i ]  = Mbar_i[ i ] / ( N_samples - 1 );
+
+  }
+
+
+  // Generate xbar_o
+  for ( int i = 0; i < N_samples; ++i ){
+    Abar_o += Abar_i[ i ] / N_samples;
+    Cbar_o += Cbar_i[ i ] / N_samples;
+    Mbar_o += Mbar_i[ i ] / N_samples;
+  }
+
+  double coeff = ( N_samples - 1.0 ) / N_samples;
+
+  // Generate variance
+  for ( int i = 0; i < N_samples; ++i ){
+    A_var += ( Abar_i[i] - Abar_o ) * ( Abar_i[i] - Abar_o ) ;
+    C_var += ( Cbar_i[i] - Cbar_o ) * ( Cbar_i[i] - Cbar_o ) ;
+    M_var += ( Mbar_i[i] - Mbar_o ) * ( Mbar_i[i] - Mbar_o ) ;
+  }
+
+  A_var = A_var * ( N_samples - 1.0 ) / N_samples ;
+  C_var = C_var * ( N_samples - 1.0 ) / N_samples ;
+  M_var = M_var * ( N_samples - 1.0 ) / N_samples ;
+
+
+  // Biases
+
+
+  double Aavg  = 0 ;
+  double Mavg  = 0 ;
+  double Cavg  = 0 ;
+
+  for ( int i = 0; i < N_samples; ++i ){
+    if ( profile[i+1].getType() == 2 )
+    Aavg +=             profile[i+1].getAlpha()   / N_samples ;
+    Mavg += std::log10( profile[i+1].getM_enc() ) / N_samples ;
+    Cavg +=             profile[i+1].getC    ()   / N_samples ;
+  }
+
+
+  double theta_A = 0 ;
+  double theta_M = 0 ;
+  double theta_C = 0 ;
+
+  for ( int i = 0; i < N_samples; ++i ){
+    if ( profile[0].getType() == 2 )
+    theta_A += pow( (             profile[i+1].getAlpha()   - Aavg ), 2 ) / N_samples ;
+    theta_M += pow( ( std::log10( profile[i+1].getM_enc() ) - Mavg ), 2 ) / N_samples ;
+    theta_C += pow( (             profile[i+1].getC    ()   - Cavg ), 2 ) / N_samples ;
+  }
+
+  // With i removed
+  double thetaHat_A[N_samples] ;
+  double thetaHat_M[N_samples] ;
+  double thetaHat_C[N_samples] ;
+
+  double thetaBar_A(0);
+  double thetaBar_M(0);
+  double thetaBar_C(0);
+
+
+  for ( int i = 0; i < N_samples; ++i ){
+    thetaHat_A[i] = 0;
+    thetaHat_M[i] = 0;
+    thetaHat_C[i] = 0;
+/*
+    double tempAavg=0;
+    double tempMavg=0;
+    double tempCavg=0;
+
+  for ( int j = 0; j < N_samples; ++j ){
+    if ( i!=j ){
+      if ( profile[0].getType() == 2 )
+      tempAavg +=             profile[j+1].getAlpha()   / (N_samples-1) ;
+      tempMavg += std::log10( profile[j+1].getM_enc() ) / (N_samples-1) ;
+      tempCavg +=             profile[j+1].getC    ()   / (N_samples-1) ;
+    }
+  }
+//*/
+  for ( int j = 0; j < N_samples; ++j ){
+    if ( i!=j ){
+      if ( profile[0].getType() == 2 )
+      thetaHat_A[i] += pow( (             profile[j+1].getAlpha()   - Aavg ), 2 ) / (N_samples-1) ;
+      thetaHat_M[i] += pow( ( std::log10( profile[j+1].getM_enc() ) - Mavg ), 2 ) / (N_samples-1) ;
+      thetaHat_C[i] += pow( (             profile[j+1].getC    ()   - Cavg ), 2 ) / (N_samples-1) ;
+
+    }
+  }
+
+    thetaBar_A += thetaHat_A[i] / N_samples;
+    thetaBar_M += thetaHat_M[i] / N_samples;
+    thetaBar_C += thetaHat_C[i] / N_samples;
+
+  }
+
+
+  double Abias ;
+  if ( profile[0].getType() == 2 )
+         Abias = ( N_samples - 1) * ( thetaBar_A - theta_A );//            profile[0].getAlpha()   ) ;
+  double Mbias = ( N_samples - 1) * ( thetaBar_M - theta_M );//std::log10( profile[0].getM_enc() ) ) ;
+  double Cbias = ( N_samples - 1) * ( thetaBar_C - theta_C );//            profile[0].getC    ()   ) ;
+
+
+printf("Averages : %10.6f %10.6f %14.4e\n", Aavg  , Cavg  ,          Mavg    );
+printf("Variance : %10.6f %10.6f %14.4e\n", A_var , C_var ,          M_var   );
+printf("X_o      : %10.6f %10.6f %14.4e\n", Abar_o, Cbar_o, pow( 10, Mbar_o) );
+printf("Biases   : %10.6f %10.6f %14.4e\n", Abias , Cbias ,          Mbias   );
+printf("Theta    : %10.6f %10.6f %14.4e\n",theta_A,theta_C,         theta_M  );
+printf("Theta_Bar: %10.6f %10.6f %14.4e\n",thetaBar_A,thetaBar_C,         thetaBar_M  );
+printf("Corrected: %10.6f %10.6f %14.4e\n", Abias, N_samples*theta_C-(N_samples-1)*thetaBar_C ,
+                                          pow( 10, N_samples*theta_M-(N_samples-1)*thetaBar_M ) );
+
+
 }

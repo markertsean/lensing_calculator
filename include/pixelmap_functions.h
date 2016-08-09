@@ -10,7 +10,8 @@
 void radialDistAverage( double       *avgArr , // Array to overwrite
                         double    *distances , // Array of source distances
                         userInfo           u , // User parameters
-                        double     center[2] );
+                        double     center[2] ,
+                        int ignoreIndex = -1 );// Index to ignore, for errors
 
 void radialShearAverage( double      *avgArr ,  // Array to overwrite
                          double      *errArr ,  // Error array to overwrite
@@ -19,7 +20,8 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
                          double      *errors ,  // Errors to use in weighting
                          double        *dist ,  // Distances of the halos
                          userInfo          u ,
-                         double    center[2] );
+                         double    center[2] ,
+                         int ignoreIndex = 1 ); // Index to ignore, for errors
 
 
 void distArrCalc( double *sourceDistArr ,  // Array to overwrite
@@ -67,6 +69,9 @@ void getRandomSourcesIndexes( int      *indexes ,  //Array of pixelmap indexes
 double gaussErr( userInfo     u ,
                  int       Ngal ); // Number of galaxies
 
+
+void jacknife( densProfile  *profile ,
+               int         N_samples );
 
 
 #endif
