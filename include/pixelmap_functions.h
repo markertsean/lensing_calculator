@@ -71,7 +71,8 @@ double gaussErr( userInfo     u ,
 
 
 void jacknife( densProfile  *profile ,
-               int         N_samples );
+               int         N_samples ,
+               double       * errArr );
 
 
 #endif

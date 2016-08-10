@@ -373,7 +373,8 @@ double gaussErr( userInfo   u ,
 
 
 void jacknife( densProfile  *profile ,
-               int         N_samples ){
+               int         N_samples ,
+               double       * errArr ){
 
   // Variances
 
@@ -381,11 +382,13 @@ void jacknife( densProfile  *profile ,
   double C_var(0);
   double A_var(0);
 
+  double Mbias(0);
+  double Cbias(0);
+  double Abias(0);
 
-  double Mbar_o(0);
-  double Cbar_o(0);
-  double Abar_o(0);
-
+  double Mavg(0);
+  double Cavg(0);
+  double Aavg(0);
 
   double Mbar_i[ N_samples ];
   double Cbar_i[ N_samples ];
@@ -411,116 +414,29 @@ void jacknife( densProfile  *profile ,
       Cbar_i[ i ]  = Cbar_i[ i ] / ( N_samples - 1 );
       Mbar_i[ i ]  = Mbar_i[ i ] / ( N_samples - 1 );
 
+      if ( profile[i+1].getType() == 2 )
+      Aavg        +=             profile[i+1].getAlpha()   / N_samples ;
+      Mavg        += std::log10( profile[i+1].getM_enc() ) / N_samples ;
+      Cavg        +=             profile[i+1].getC    ()   / N_samples ;
+
   }
 
-
-  // Generate xbar_o
-  for ( int i = 0; i < N_samples; ++i ){
-    Abar_o += Abar_i[ i ] / N_samples;
-    Cbar_o += Cbar_i[ i ] / N_samples;
-    Mbar_o += Mbar_i[ i ] / N_samples;
-  }
 
   double coeff = ( N_samples - 1.0 ) / N_samples;
 
   // Generate variance
   for ( int i = 0; i < N_samples; ++i ){
-    A_var += ( Abar_i[i] - Abar_o ) * ( Abar_i[i] - Abar_o ) ;
-    C_var += ( Cbar_i[i] - Cbar_o ) * ( Cbar_i[i] - Cbar_o ) ;
-    M_var += ( Mbar_i[i] - Mbar_o ) * ( Mbar_i[i] - Mbar_o ) ;
+    A_var += ( Abar_i[i] - Aavg ) * ( Abar_i[i] - Aavg ) ;
+    C_var += ( Cbar_i[i] - Cavg ) * ( Cbar_i[i] - Cavg ) ;
+    M_var += ( Mbar_i[i] - Mavg ) * ( Mbar_i[i] - Mavg ) ;
   }
 
   A_var = A_var * ( N_samples - 1.0 ) / N_samples ;
   C_var = C_var * ( N_samples - 1.0 ) / N_samples ;
   M_var = M_var * ( N_samples - 1.0 ) / N_samples ;
 
-
-  // Biases
-
-
-  double Aavg  = 0 ;
-  double Mavg  = 0 ;
-  double Cavg  = 0 ;
-
-  for ( int i = 0; i < N_samples; ++i ){
-    if ( profile[i+1].getType() == 2 )
-    Aavg +=             profile[i+1].getAlpha()   / N_samples ;
-    Mavg += std::log10( profile[i+1].getM_enc() ) / N_samples ;
-    Cavg +=             profile[i+1].getC    ()   / N_samples ;
-  }
-
-
-  double theta_A = 0 ;
-  double theta_M = 0 ;
-  double theta_C = 0 ;
-
-  for ( int i = 0; i < N_samples; ++i ){
-    if ( profile[0].getType() == 2 )
-    theta_A += pow( (             profile[i+1].getAlpha()   - Aavg ), 2 ) / N_samples ;
-    theta_M += pow( ( std::log10( profile[i+1].getM_enc() ) - Mavg ), 2 ) / N_samples ;
-    theta_C += pow( (             profile[i+1].getC    ()   - Cavg ), 2 ) / N_samples ;
-  }
-
-  // With i removed
-  double thetaHat_A[N_samples] ;
-  double thetaHat_M[N_samples] ;
-  double thetaHat_C[N_samples] ;
-
-  double thetaBar_A(0);
-  double thetaBar_M(0);
-  double thetaBar_C(0);
-
-
-  for ( int i = 0; i < N_samples; ++i ){
-    thetaHat_A[i] = 0;
-    thetaHat_M[i] = 0;
-    thetaHat_C[i] = 0;
-/*
-    double tempAavg=0;
-    double tempMavg=0;
-    double tempCavg=0;
-
-  for ( int j = 0; j < N_samples; ++j ){
-    if ( i!=j ){
-      if ( profile[0].getType() == 2 )
-      tempAavg +=             profile[j+1].getAlpha()   / (N_samples-1) ;
-      tempMavg += std::log10( profile[j+1].getM_enc() ) / (N_samples-1) ;
-      tempCavg +=             profile[j+1].getC    ()   / (N_samples-1) ;
-    }
-  }
-//*/
-  for ( int j = 0; j < N_samples; ++j ){
-    if ( i!=j ){
-      if ( profile[0].getType() == 2 )
-      thetaHat_A[i] += pow( (             profile[j+1].getAlpha()   - Aavg ), 2 ) / (N_samples-1) ;
-      thetaHat_M[i] += pow( ( std::log10( profile[j+1].getM_enc() ) - Mavg ), 2 ) / (N_samples-1) ;
-      thetaHat_C[i] += pow( (             profile[j+1].getC    ()   - Cavg ), 2 ) / (N_samples-1) ;
-
-    }
-  }
-
-    thetaBar_A += thetaHat_A[i] / N_samples;
-    thetaBar_M += thetaHat_M[i] / N_samples;
-    thetaBar_C += thetaHat_C[i] / N_samples;
-
-  }
-
-
-  double Abias ;
-  if ( profile[0].getType() == 2 )
-         Abias = ( N_samples - 1) * ( thetaBar_A - theta_A );//            profile[0].getAlpha()   ) ;
-  double Mbias = ( N_samples - 1) * ( thetaBar_M - theta_M );//std::log10( profile[0].getM_enc() ) ) ;
-  double Cbias = ( N_samples - 1) * ( thetaBar_C - theta_C );//            profile[0].getC    ()   ) ;
-
-
-printf("Averages : %10.6f %10.6f %14.4e\n", Aavg  , Cavg  ,          Mavg    );
-printf("Variance : %10.6f %10.6f %14.4e\n", A_var , C_var ,          M_var   );
-printf("X_o      : %10.6f %10.6f %14.4e\n", Abar_o, Cbar_o, pow( 10, Mbar_o) );
-printf("Biases   : %10.6f %10.6f %14.4e\n", Abias , Cbias ,          Mbias   );
-printf("Theta    : %10.6f %10.6f %14.4e\n",theta_A,theta_C,         theta_M  );
-printf("Theta_Bar: %10.6f %10.6f %14.4e\n",thetaBar_A,thetaBar_C,         thetaBar_M  );
-printf("Corrected: %10.6f %10.6f %14.4e\n", Abias, N_samples*theta_C-(N_samples-1)*thetaBar_C ,
-                                          pow( 10, N_samples*theta_M-(N_samples-1)*thetaBar_M ) );
-
+  errArr[0] = C_var;
+  errArr[1] = M_var;
+  errArr[2] = A_var;
 
 }

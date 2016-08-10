@@ -51,30 +51,7 @@ einTable einKappaAvg ;
 
 int main(int arg,char **argv){
 
-int N_t = 5;
-densProfile tP[ N_t ];
 
-tP[0].setR_max( 1.0 );
-tP[1].setR_max( 1.0 );
-tP[2].setR_max( 1.0 );
-tP[3].setR_max( 1.0 );
-tP[4].setR_max( 1.0 );
-
-tP[0].setM_enc( 1e15 );
-tP[1].setM_enc( 1e14 );
-tP[2].setM_enc( 1e14 );
-tP[3].setM_enc( 1e16 );
-tP[4].setM_enc( 1e16 );
-
-tP[0].setC    (  5.   );
-tP[1].setC    (  4.1   );
-tP[2].setC    (  6   );
-tP[3].setC    (  4.   );
-tP[4].setC    (  6   );
-
-jacknife( tP, N_t-1 );
-
-exit(0);
   // Initializes the log file, generates logfiles directory
   //  and a file name based on current time
   initLogFile();
@@ -344,6 +321,10 @@ userInput.setNpix( 9*9);
   densProfile einFits[ userInput.getNsrc() + 1 ];
 
 
+              std::cout <<"Generating fits... "  << std::endl;
+  logMessage( std::string("Generating fits... ") );
+
+
   for ( int  omitIndex = -1; omitIndex < userInput.getNsrc(); ++ omitIndex ) {
 
 //    nfwFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
@@ -359,28 +340,35 @@ userInput.setNpix( 9*9);
 
 // Here loop over sources, indicating which index to omit (start at -1)
 // Pass to dist and shear calculators, to indicate ommited index
+    if ( omitIndex > -1 ){
+                std::cout <<"  Omitting source " << omitIndex << std::endl;
+    logMessage( std::string("  Omitting source ") +
+                std::to_string( (long long) omitIndex ) );
+    }
 
     // Array to bin distances, RTS, and their errors
     double    distArr[ userInput.getNbins() ],
               gTanArr[ userInput.getNbins() ],
               gErrArr[ userInput.getNbins() ];
-/*
+
     radialDistAverage( distArr, srcDArr, userInput, center );
 
-    logMessage( std::string("Source distances averaged") );
+    logMessage( std::string("  Source distances averaged") );
 
     radialShearAverage( gTanArr, gErrArr, indexes, g_tanMap, srcErrArr, srcDArr, userInput, center );
 
-    logMessage( std::string("Shear values averaged") );
+    logMessage( std::string("  Shear values averaged") );
 
-    std::cout << " Sources averaged" << std::endl;
-*/
+    std::cout << "  Sources averaged" << std::endl;
+
 densProfile testProfile;
 testProfile.setM_enc( 1.0e14 );
 testProfile.setR_max( 5.0    );
 testProfile.setC    ( 5.0    );
 
 nfwFits[ omitIndex + 1 ].setR_max( testProfile.getR_max() );
+einFits[ omitIndex + 1 ].setR_max( testProfile.getR_max() );
+einFits[ omitIndex + 1 ].setType( 2 );
 
 for ( int i = 0; i < userInput.getNbins(); ++i ){
 
@@ -398,28 +386,40 @@ generateNFWRTS( gTanArr, testProfile, userInput.getNbins(), distArr, cosmo.Sigma
 
     // Attempts to fit the density using the radial averages of distance and RTS
 
-//                std::cout <<"Calculating NFW fit..." << std::endl;
-//    logMessage( std::string("Calculating NFW fit...") );
+                std::cout <<"  Calculating NFW fit..." << std::endl;
+    logMessage( std::string("  Calculating NFW fit...") );
 
     rollingFitDensProfile( nfwFits[ omitIndex + 1], myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 
 
-//                std::cout <<"Calculating EIN fit..." << std::endl;
-//    logMessage( std::string("Calculating EIN fit...") );
+                std::cout <<"  Calculating EIN fit..." << std::endl;
+    logMessage( std::string("  Calculating EIN fit...") );
 
 
-//    rollingFitDensProfile( einFits[ omitIndex + 1], myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
-printf("%14.6e %14.6e %10.6f %10.6f %10.6f %10.6f\n", nfwFits[omitIndex+1].getM_enc(),
-                                                         testProfile.getM_enc(),
-                                                nfwFits[omitIndex+1].getC    (),
-                                                         testProfile.getC    (),
-                                                nfwFits[omitIndex+1].getR_max(),
-                                                         testProfile.getR_max());
+    rollingFitDensProfile( einFits[ omitIndex + 1], myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
+
+    std::cout << std::endl ;
 
   }
 
-printf("           %10.6f %14.6e\n", nfwFits[0].getC(), nfwFits[0].getM_enc());
-jacknife( nfwFits, userInput.getNsrc() );
+  // Calculate the jacknife errors
+
+  double nfwErr[3];
+  double einErr[3];
+
+  jacknife( nfwFits, userInput.getNsrc(), nfwErr );
+  jacknife( einFits, userInput.getNsrc(), einErr );
+
+printf("           %10.6f %10.6f\n", nfwFits[0].getC(), std::log10(nfwFits[0].getM_enc()));
+printf("           %10.6f %10.6f\n", nfwErr[0], nfwErr[1]);
+
+printf("           %10.6f %10.6f %10.6f\n", einFits[0].getC(), std::log10(einFits[0].getM_enc()), einFits[0].getAlpha());
+printf("           %10.6f %10.6f %10.6f\n", einErr[0], einErr[1],einErr[2]);
+
+              std::cout <<"Done.              " << std::endl;
+  logMessage( std::string("Fitting complete"   ));
+
+
 
 
   exit(0);
