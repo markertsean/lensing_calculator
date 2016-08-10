@@ -419,7 +419,46 @@ printf("           %10.6f %10.6f %10.6f\n", einErr[0], einErr[1],einErr[2]);
               std::cout <<"Done.              " << std::endl;
   logMessage( std::string("Fitting complete"   ));
 
+/*
+Stuff to output:
 
+halo id
+z
+ba
+ca
+phi
+theta
+
+physfov
+NpixV/H
+
+zsource
+n_sources
+shape noise
+
+for each image
+
+halo/box/integ
+total mass in image
+
+for each profile:
+  real profile values
+  M, C, A
+  uncertainties
+
+//*/
+
+/*
+
+for each image
+
+halo/box/integ
+phi/theta
+
+radial / angular bin
+average rts values over bins, output table
+
+//*/
 
 
   exit(0);
