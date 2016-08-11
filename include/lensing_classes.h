@@ -105,6 +105,8 @@ class userInfo{
     void setEdgePix         ( int    inpI ) {   N_edgepixels = inpI ; }
     void setMinNeighborDist ( int    inpI ) { nearestSourceNeighbor = inpI; }
     void setNbins           ( int    inpI ) {   N_bins       = inpI ; }
+    void setNbins_R2D       ( int    inpI ) {   N_bins_R2D   = inpI ; }
+    void setNbins_A2D       ( int    inpI ) {   N_bins_A2D   = inpI ; }
     void setNsrc            ( int    inpI ) {   N_sources    = inpI ; }
     void setNthreads        ( int    inpI ) {   num_threads  = inpI ; }
     void setNpixH           ( int    inpI ) {   N_pixels_h   = inpI ; }
@@ -118,6 +120,7 @@ class userInfo{
     void setCosmology       ( std::string inpS ) {     cosmo = inpS ; }
     void setFoxH2012F       ( std::string inpS ) {  fox2012F = inpS ; }
     void setFoxH2123F       ( std::string inpS ) {  fox2123F = inpS ; }
+    void setOutputPath      ( std::string inpS ) {outputPath = inpS ; }
 
     double getIntegLength     () const { return  integLength   ; }
     int    getNpixH           () const { return  N_pixels_h    ; }
@@ -129,10 +132,13 @@ class userInfo{
     double getShapeNoise      () const { return  shapeNoise    ; }
     int    getNpix            () const { return   N_pixels     ; }
     int    getNbins           () const { return   N_bins       ; }
+    int    getNbins_R2D       () const { return   N_bins_R2D   ; }
+    int    getNbins_A2D       () const { return   N_bins_A2D   ; }
     int    getNthreads        () const { return    num_threads ; }
     int    getNgridPoints     () const { return   N_gridPoints ; }
     double getMinNeighborDist () const { return nearestSourceNeighbor ; }
     int    getEdgePix         () const { return   N_edgepixels ; }
+    std::string getOutputPath () const { return  outputPath    ; }
     std::string getCatType    () const { return  catType       ; }
     std::string getCosmology  () const { return  cosmo         ; }
     std::string getFoxH2012F  () const { return  fox2012F      ; }
@@ -195,6 +201,9 @@ class userInfo{
     int    num_threads;  // Number of threads for parallel processing
     int   N_edgepixels;  // Number of pixels to leave on an edge
 
+    int     N_bins_R2D;  // Number of bins in each direction for 2D g output
+    int     N_bins_A2D;
+
     double nearestSourceNeighbor; // Gap in distance between sources
 
   std::string fox2012F;
@@ -202,6 +211,9 @@ class userInfo{
   std::string readFile;
   std::string catType ;
   std::string cosmo   ;
+
+  std::string outputPath;
+
 
   // Chi2 & genetic algorithm fitting values
   double     cMin;

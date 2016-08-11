@@ -29,6 +29,8 @@ userInfo::userInfo(){
    N_pixels_h  = -1   ; // Number of pixels on x-axis
    N_pixels_v  = -1   ; // Number of pixels on y-axis
    N_bins      = -1   ; // Number of bins for radial averaging
+N_bins_R2D  = 10  ; // Number of bins for radial averaging
+N_bins_A2D  = 10   ; // Number of bins for radial averaging
    N_sources   = -1   ; // Number of sources to generate
    N_particles = -1   ; // Number of particles in simulation
    num_threads =  1   ; // Number of threads for parallel processing
@@ -41,6 +43,8 @@ userInfo::userInfo(){
 
   fox2012F = "src/foxH2012.dat"; // FoxH files to read
   fox2123F = "src/foxH2123.dat";
+
+  outputPath = "data/";
 
       cMin =  2.5;     // Range of concentration values to fit
       cMax =  7.5;

@@ -40,6 +40,7 @@ Uniform distribution of sources, need alignment relative to halo orientation
 #include "input_functions.h"
 #include "lens_fitter.h"
 #include "pixelmap_functions.h"
+#include "output_functions.h"
 
 
 // Name of the code log file
@@ -185,9 +186,9 @@ int main(int arg,char **argv){
 
 
 
-userInput.setNpixH( 9 );
-userInput.setNpixV( 9 );
-userInput.setNpix( 9*9);
+userInput.setNpixH( 99 );
+userInput.setNpixV( 99 );
+userInput.setNpix( 99*99);
   std::cout << "Constructing PixelMaps..." << std::endl;
 
   // PixelMaps we need to keep
@@ -265,8 +266,8 @@ userInput.setNpix( 9*9);
   logMessage( std::string("Lens, Grid deallocated") );
 
   std::cout << "PixelMaps generated" << std::endl << std::endl;
-
-
+writeAngRTS( myHalo, userInput , g_tanMap, g_secMap, distMap );
+exit(0);
 //This section needs work
   ////////////////////////////////////////////////////////////
   ///////////////////Generate sources/////////////////////////
@@ -460,6 +461,9 @@ average rts values over bins, output table
 
 //*/
 
+/*
+Need to check tan/azi uses in the program
+//*/
 
   exit(0);
   return 0;
