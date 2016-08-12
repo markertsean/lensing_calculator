@@ -15,5 +15,9 @@ int  writeAngRTS( haloInfo     h ,
                   PixelMap  dMap );
 
 
+void generateParamfile( std::string haloName );
+
+std::string getHaloFile( int index );
+
 
 #endif // OUTPUT_FUNCTIONS

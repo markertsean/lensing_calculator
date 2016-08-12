@@ -64,7 +64,29 @@ int main(int arg,char **argv){
 
   srand(seed); // Sets random seed
 
+  int halo_index = 0;
 
+  std::string halo_file_name = "";
+  std::string paramFileStart = "pixelmaps_input_file    ";
+
+  do{
+
+  // Write our paramfile
+  halo_file_name = getHaloFile( halo_index );  // Get the halo fits file, and write it to paramfile
+
+  if ( halo_file_name == ""  ||
+       halo_file_name == " " )  break;
+
+  ++halo_index;
+
+  generateParamfile( paramFileStart + halo_file_name ); // Generates the paramfile for GLAMER from our halo list
+
+} while ( true );
+
+std::cout << "Done." << std::endl;
+
+//generateParamfile();
+exit(0);
   //////////////////////////////////
   ////////////READ IN///////////////
   //////////////////////////////////
@@ -457,18 +479,6 @@ for each profile:
   real profile values
   M, C, A
   uncertainties
-
-//*/
-
-/*
-
-for each image
-
-halo/box/integ
-phi/theta
-
-radial / angular bin
-average rts values over bins, output table
 
 //*/
 

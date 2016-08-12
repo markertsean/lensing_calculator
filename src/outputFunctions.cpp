@@ -26,6 +26,65 @@ bool checkFile( char dirName[] ){
 }
 
 
+// Reads the halo fits file from a file, to generate file for GLAMER
+// If done with file, returns ""
+std::string getHaloFile ( int index ){
+
+  std::string   inputLine;
+  std::ifstream halo_file("haloList.dat" );
+
+  int counter = 0;
+
+  if ( halo_file.is_open() ){
+    while( getline( halo_file, inputLine ) ){
+      if ( counter == index ) break;
+      if ( halo_file.eof()  ) break;
+      ++counter;
+    }
+  } else{
+    std::cout << "Code requires files \"haloList.dat\" in executing directory" << std::endl;
+    logMessage("Couldn't open haloList");
+    exit(1);
+  }
+
+  halo_file.close();
+
+  if ( counter != index ) inputLine = "";
+
+  return inputLine;
+}
+
+
+// Generates paramfile for GLAMER from param_build and haloList.dat
+// param_build contains bulk of file, copied directly
+// haloList.dat contains list of halo fits files to use
+void generateParamfile( std::string haloName ){
+
+  std::string   inputLine;
+  std::ifstream param_build("param_build" );
+  std::ofstream param_file ("paramfile");
+
+  if ( param_build.is_open() && param_file.is_open() ){
+
+    while( getline( param_build, inputLine ) ){
+      param_file << inputLine << std::endl;
+    }
+
+  } else{
+    std::cout << "Code requires files \"param_build\" in executing directory" << std::endl;
+    logMessage("Couldn't open param_build");
+    exit(1);
+  }
+
+      param_file << haloName << std::endl;
+
+  param_build.close();
+  param_file.close();
+
+}
+
+
+
 int  writeAngRTS( haloInfo     h ,
                   userInfo     u ,
                   PixelMap  gTan ,
