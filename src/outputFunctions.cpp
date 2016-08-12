@@ -17,9 +17,16 @@ void checkDir( std::string dirName ){
     }
 }
 
+bool checkFile( char dirName[] ){
+    struct stat sb;
+    if ( stat( dirName, &sb ) !=0 ){
+      return false;
+    }
+      return true;
+}
 
 
-void writeAngRTS( haloInfo     h ,
+int  writeAngRTS( haloInfo     h ,
                   userInfo     u ,
                   PixelMap  gTan ,
                   PixelMap  gSec ,
@@ -29,22 +36,33 @@ void writeAngRTS( haloInfo     h ,
   // If output directory does not exist, create one
   checkDir( u.getOutputPath() );
 
-//h.setTheta(0.5*M_PI);
-printf("Theta: %10.6f   cos: %10.6f   sin: %10.6f\n",h.getTheta()/M_PI, cos(h.getTheta()), sin(h.getTheta()) );
-//h.setPhi  (0.0*M_PI);
-printf("Phi  : %10.6f   tan: %10.6f   sin: %10.6f\n",h.getPhi  ()/M_PI, tan(h.getPhi  ()), sin(h.getPhi  ()));
+
+  double integ = u.getIntegLength(); // Need for file name
+
+  if ( integ == -1 ){                // If sphere, just mark as 0 integ length
+    integ = 0.0;
+  }
+
+  char     fileName[100];
+  sprintf( fileName, "%sHalo_%010li_%06.1f_AngDistMap.dat", u.getOutputPath().c_str(), h.getID(), integ);
+
 
   double x_0 = sin( h.getTheta() ) * sin( h.getPhi() );
   double y_0 = cos( h.getPhi  () ) ;
 
-// Open files, write info on halo and image
-// gTan table, gSec table, g table
   double zInc    = acos( cos( h.getTheta() ) *  // Inclination out of the page, 0 directly out
                          sin( h.getPhi  () ) );
 
-  double alpha_0 = atan2( x_0, y_0 );
+  double alpha_0 = atan2( x_0, y_0 );           // Orientation of halo on xy plane, 0 directly up
 
   if ( alpha_0 < 0 ) alpha_0 += 2*M_PI;
+
+  h.setAlpha( alpha_0 );                        // Store orientation as halo info
+  h.setGamma( zInc    );
+
+  if ( checkFile( fileName ) )                  // If file exists, don't bother writing a new one
+    return 2;
+
 
   double gTan_binned[ u.getNbins_A2D() ][ u.getNbins_R2D() ]; // Our bins
   double gSec_binned[ u.getNbins_A2D() ][ u.getNbins_R2D() ];
@@ -71,16 +89,13 @@ printf("Phi  : %10.6f   tan: %10.6f   sin: %10.6f\n",h.getPhi  ()/M_PI, tan(h.ge
 
   double dScale = u.getPhysFOV() / u.getAngFOV() * 180 / M_PI;
 
-printf("Z_inc = %10.6f\n",zInc/M_PI);
-printf("alpha = %10.6f\n",alpha_0/M_PI);
-
   // Bin the data
   for ( int i = 0; i < u.getNpix(); ++i ){
 
-    double x =    i % u.getNpixH()   + 0.5 - u.getNpixH() / 2.0;
+    double x =    i % u.getNpixH()   + 0.5 - u.getNpixH() / 2.0; // Positions of the pixels
     double y = -( i / u.getNpixH() ) - 0.5 + u.getNpixV() / 2.0;
 
-    double alpha = atan2( x, y ) - alpha_0;
+    double alpha = atan2( x, y ) - alpha_0;                      // Angle relative to halo orientation
 
     while ( alpha < 0 ){
       alpha += 2*M_PI;
@@ -116,38 +131,63 @@ printf("alpha = %10.6f\n",alpha_0/M_PI);
   }
   }
 
-  for ( int i = u.getNbins_R2D()-1; i > -1; -- i ){ // Take the average
+
+  sprintf( fileName, "%sHalo_%010li_%06.1f_AngDistMap.dat", u.getOutputPath().c_str(), h.getID(), integ);
+
+  FILE *pFile;
+
+  pFile = fopen( fileName, "w" );
+
+  fprintf( pFile, "M       %14.6e\n", h.getM    () );
+  fprintf( pFile, "C       %14.6e\n", h.getPhi  () );
+  fprintf( pFile, "R_max   %14.6e\n", h.getPhi  () );
+
+
+  fprintf( pFile, "phi     %14.6e\n", h.getPhi  () );
+  fprintf( pFile, "theta   %14.6e\n", h.getTheta() );
+
+  fprintf( pFile, "alpha_0  %14.6e\n", alpha_0     );
+  fprintf( pFile, "z_inc    %14.6e\n", zInc        );
+
+  fprintf( pFile, "a %10.6f %10.6f %4i\n", aMin, aMax, u.getNbins_A2D() );
+  fprintf( pFile, "r %10.6f %10.6f %4i\n", rMin, rMax, u.getNbins_R2D() );
+
+  for ( int i = 0; i < u.getNbins_R2D(); ++ i ){ // Prints total shear to file
   for ( int j = 0; j < u.getNbins_A2D(); ++ j ){
-    gTot_binned[j][i] /= NTot_binned[j][i];
-printf("%10.6f",log10(gTot_binned[j][i]));
+    fprintf( pFile, "%14.6e",gTot_binned[j][i]);
   }
-printf("\n");
+    fprintf( pFile, "\n");
+  }
+    fprintf( pFile, "\n");
+
+
+  for ( int i = 0; i < u.getNbins_R2D(); ++ i ){ // Prints tangential shear to file
+  for ( int j = 0; j < u.getNbins_A2D(); ++ j ){
+    fprintf( pFile, "%14.6e",gTan_binned[j][i]);
+  }
+    fprintf( pFile, "\n");
+  }
+    fprintf( pFile, "\n");
+
+
+  for ( int i = 0; i < u.getNbins_R2D(); ++ i ){ // Prints secantial shear to file
+  for ( int j = 0; j < u.getNbins_A2D(); ++ j ){
+    fprintf( pFile, "%14.6e",gSec_binned[j][i]);
+  }
+    fprintf( pFile, "\n");
   }
 
+    fprintf( pFile, "\n");
+
+  fclose( pFile );
+
+  std::cout << "Wrote 2D map file: " << fileName << std::endl << std::endl;
+  logMessage(  "Wrote 2D map file" );
+
+  return 1;
 
 }
 
-
-
-/*
-  double posArr[2]= { 0, 0 }; // Pixel position
-  double phi      =   0;      // Position angle
-
-
-  for (int i=0;i<N_pixels_v;++i){
-    posArr[1] = (-i - 0.5 + N_pixels_v/2.0)-center[1];
-
-  for (int j=0;j<N_pixels_h;++j){
-    posArr[0] = ( j + 0.5 - N_pixels_h/2.0)-center[0];
-
-    int k = j+i*N_pixels_h;
-    phi = atan2(posArr[1],posArr[0]);
-    //gamma1  <0 |   >0 -
-    //gamma2  <0 \   >0 /
-    //g_tan = -g1*cos - g2*sin
-    //g_sec =  g1*sin - g2*cos
-
-//*/
 
 
 

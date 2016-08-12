@@ -266,8 +266,19 @@ userInput.setNpix( 99*99);
   logMessage( std::string("Lens, Grid deallocated") );
 
   std::cout << "PixelMaps generated" << std::endl << std::endl;
-writeAngRTS( myHalo, userInput , g_tanMap, g_secMap, distMap );
-exit(0);
+
+  if ( myHalo.getPhi() != -1 ){
+
+    if ( writeAngRTS( myHalo, userInput , g_tanMap, g_secMap, distMap ) == 2){
+    std::cout << "2D maps found" << std::endl << std::endl;
+    logMessage(  "2D maps found" );
+    }
+
+  } else {
+    std::cout << "Halo orientation uknown, ignoring 2D map" << std::endl << std::endl;
+    logMessage(  "Halo orientation uknown, ignoring 2D map" );
+  }
+
 //This section needs work
   ////////////////////////////////////////////////////////////
   ///////////////////Generate sources/////////////////////////

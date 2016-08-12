@@ -40,6 +40,8 @@ class haloInfo{
     void setCA    ( double inpF ){ ca    = inpF; }
     void setPhi   ( double inpF ){ phi   = inpF; }
     void setTheta ( double inpF ){ theta = inpF; }
+    void setAlpha ( double inpF ){ alpha = inpF; }
+    void setGamma ( double inpF ){ gamma = inpF; }
     void setID    ( long   inpI ){ id    = inpI; }
 
     double      getZ     () const { return z     ; }
@@ -50,6 +52,8 @@ class haloInfo{
     double      getCA    () const { return ca    ; }
     double      getPhi   () const { return phi   ; }
     double      getTheta () const { return theta ; }
+    double      getAlpha () const { return alpha ; }
+    double      getGamma () const { return gamma ; }
     long        getID    () const { return id    ; }
 
 
@@ -62,6 +66,10 @@ class haloInfo{
     double      ca;             // c/a axis ratio
     double     phi;             // y/z orientation angle
     double   theta;             // x/z orientation angle
+
+    double   alpha;             // Orientation on xy plane, +y 0
+    double   gamma;             // Orientation along z, +z 0
+
     long        id;             // id number of halo
 
 

@@ -12,6 +12,8 @@ haloInfo::haloInfo(){
       ca=-1.0;        // c/a axis ratio
      phi=-1.0;        // Orientation (out of the page?)
    theta=-1.0;        // Orientation (on the page?)
+   alpha=-1.0;        // Orientation xy plane
+   gamma=-1.0;        // Orientation along z
       id=-1  ;        // Halo ID number
 }
 

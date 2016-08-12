@@ -8,7 +8,7 @@
 
 
 
-void writeAngRTS( haloInfo     h ,
+int  writeAngRTS( haloInfo     h ,
                   userInfo     u ,
                   PixelMap  gTan ,
                   PixelMap  gSec ,
