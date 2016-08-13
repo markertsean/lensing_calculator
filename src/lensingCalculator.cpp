@@ -64,69 +64,16 @@ int main(int arg,char **argv){
 
   srand(seed); // Sets random seed
 
-  int halo_index = 0;
 
-  std::string halo_file_name = "";
-  std::string paramFileStart = "pixelmaps_input_file    ";
-
-  do{
-
-  // Write our paramfile
-  halo_file_name = getHaloFile( halo_index );  // Get the halo fits file, and write it to paramfile
-
-  if ( halo_file_name == ""  ||
-       halo_file_name == " " )  break;
-
-  ++halo_index;
-
-  generateParamfile( paramFileStart + halo_file_name ); // Generates the paramfile for GLAMER from our halo list
-
-} while ( true );
-
-std::cout << "Done." << std::endl;
-
-//generateParamfile();
-exit(0);
   //////////////////////////////////
-  ////////////READ IN///////////////
+  ///////READ IN USERINFO///////////
   //////////////////////////////////
 
 
-  haloInfo    myHalo;  // Contains all the info on our halo
-  userInfo userInput;  // Contains all the info from the user
 
-
+  // User input, most info constant over halos so read in once
+  userInfo userInput;                             // Contains all the info from the user
   std::string   userFile = "lensUserParams.dat" ; // User specified input
-  std::string  paramFile = "paramfile"          ; // Glamer input
-
-
-  // File for glamer read in, contains information used by the library
-  // Must contain variables:
-  //    deflection_off          0
-  //    field_off               1
-  //    lensing_off             0
-  //    main_halo_on            0
-  //    pixelmaps_input_file    ???.FITS
-  //    pixelmaps_on            1
-  //    z_source                #
-
-  std::cout << "Reading file: "              << std::endl;
-  std::cout << "              " << paramFile << std::endl;
-
-  InputParams      params     ( paramFile   );
-  logMessage( std::string("Read paramfile: ") + paramFile );
-
-  std::cout << "              Done."  << std::endl << std::endl;
-
-
-
-  // Determine our FITS file name, will read the header for parameters
-  std::string                                    fitsFileName  ;
-  params.get(          "pixelmaps_input_file"  , fitsFileName );
-  logMessage( std::string("Using FITS file: ") + fitsFileName );
-
-
-
 
 
   std::cout << "Reading file: "              << std::endl;
@@ -138,28 +85,6 @@ exit(0);
   std::cout << "              Done."  << std::endl << std::endl;
 
 
-
-  std::cout << "Reading file: "                  << std::endl;
-  std::cout << "              " << fitsFileName  << std::endl;
-
-  // Read FITS image, populates halo and user inputs
-  readFitsHeader( fitsFileName, myHalo, userInput );
-
-  std::cout << "              Done."  << std::endl << std::endl;
-
-
-
-  std::cout << "Reading foxH tables: "                  << std::endl;
-
-  einKappa    = readFoxH( userInput, 1 );
-  einKappaAvg = readFoxH( userInput, 2 );
-
-  std::cout << "              Done."  << std::endl << std::endl;
-
-
-  ///////////////////////////////////////////////////
-  /////////////INITIALIZE NEEDED PARAMETERS//////////
-  ///////////////////////////////////////////////////
 
 
   COSMOLOGY cosmo;
@@ -185,6 +110,95 @@ exit(0);
     exit(1);
   }
 
+  omp_set_num_threads ( userInput.getNthreads()             );  // For parallelization, default 1
+  double center[]   = { 0, 0 };                                 // Center of grid, 0,0 aligns grid right
+
+
+  logMessage( std::string("omp_num_threads = " ) + std::to_string((long double)  userInput.getNthreads()));
+  logMessage( std::string("counter         = " ) + std::to_string((long double) center[0]    )
+                                                 + std::to_string((long double) center[1]    ));
+  std::cout << "Reading foxH tables: "                  << std::endl;
+
+  einKappa    = readFoxH( userInput, 1 );
+  einKappaAvg = readFoxH( userInput, 2 );
+
+  std::cout << "              Done."  << std::endl << std::endl;
+
+
+
+  // Stuff for setting halo for paramfile
+  int halo_index = 0;
+
+  std::string halo_file_name = "";
+  std::string paramFileStart = "pixelmaps_input_file    ";
+
+
+  // Loop over haloList.dat
+  do{
+
+  //////////////////////////////////////
+  /////////Generate PARAMFILE///////////
+  //////////////////////////////////////
+
+  // Write our paramfile
+  halo_file_name = getHaloFile( halo_index );  // Get the halo fits file, and write it to paramfile
+
+  if ( halo_file_name == ""  ||
+       halo_file_name == " " )  break;
+
+  ++halo_index;
+
+  generateParamfile( paramFileStart + halo_file_name ); // Generates the paramfile for GLAMER from our halo list
+
+
+  // File for glamer read in, contains information used by the library
+  // Must contain variables:
+  //    deflection_off          0
+  //    field_off               1
+  //    lensing_off             0
+  //    main_halo_on            0
+  //    pixelmaps_input_file    ???.FITS
+  //    pixelmaps_on            1
+  //    z_source                #
+
+  std::string  paramFile = "paramfile"          ; // Glamer input
+
+  std::cout << "Reading file: "              << std::endl;
+  std::cout << "              " << paramFile << std::endl;
+
+  InputParams      params     ( paramFile   );
+  logMessage( std::string("Read paramfile: ") + paramFile );
+
+  std::cout << "              Done."  << std::endl << std::endl;
+
+
+
+  // Determine our FITS file name, will read the header for parameters
+
+  std::string                                    fitsFileName  ;
+  params.get(          "pixelmaps_input_file"  , fitsFileName );
+  logMessage( std::string("Using FITS file: ") + fitsFileName );
+
+
+
+  haloInfo    myHalo;                             // Contains all the info on our halo, changes via FITS file
+
+  std::cout << "Reading file: "                  << std::endl;
+  std::cout << "              " << fitsFileName  << std::endl;
+
+  // Read FITS image, populates halo and user inputs
+  readFitsHeader( fitsFileName, myHalo, userInput );
+
+  std::cout << "              Done."  << std::endl << std::endl;
+
+  double   angRange =   userInput.getAngFOV  ()  * M_PI/180  ;  // Angular field of view, in degrees
+  double  realWidth =   userInput.getPhysFOV ()              ;  // Field of view in Mpc
+  logMessage( std::string("angRange        = " ) + std::to_string((long double)  angRange    ));
+  logMessage( std::string("realWidth       = " ) + std::to_string((long double)  realWidth   ));
+
+  userInput.setNgridPoints( userInput.getNpixH() * 2       );   // Number of gridpoints, in reality want it more refined
+
+
   // Source redshift moves from glamer parameters to userInfo class
   {
     double srcZ;
@@ -192,19 +206,11 @@ exit(0);
     userInput.setSourceZ(srcZ);
   }
 
-  double   angRange =   userInput.getAngFOV  ()  * M_PI/180  ;  // Angular field of view, in degrees
-  double  realWidth =   userInput.getPhysFOV ()              ;  // Field of view in Mpc
-  omp_set_num_threads ( userInput.getNthreads()             );  // For parallelization, default 1
-  double center[]   = { 0, 0 };                                 // Center of grid, 0,0 aligns grid right
 
-  userInput.setNgridPoints( userInput.getNpixH() * 2       );   // Number of gridpoints, in reality want it more refined
+  ///////////////////////////////////////////////////
+  /////////////INITIALIZE NEEDED MAPS////////////////
+  ///////////////////////////////////////////////////
 
-
-  logMessage( std::string("angRange        = " ) + std::to_string((long double)  angRange    ));
-  logMessage( std::string("realWidth       = " ) + std::to_string((long double)  realWidth   ));
-  logMessage( std::string("omp_num_threads = " ) + std::to_string((long double)  userInput.getNthreads()));
-  logMessage( std::string("counter         = " ) + std::to_string((long double) center[0]    )
-                                                 + std::to_string((long double) center[1]    ));
 
 
 
@@ -229,7 +235,6 @@ userInput.setNpix( 99*99);
   std::cout << "               Done." << std::endl;
 
   logMessage( std::string("PixelMaps allocated") );
-
 
 
   ///////////////////////////////////////////////////////////
@@ -343,7 +348,7 @@ userInput.setNpix( 99*99);
 
   std::cout << "Done." << std::endl << std::endl;
 
-
+exit(0);
 
   ////////////////////////////////////////////////////////////
   ///////////////////To calculate errors//////////////////////
@@ -453,6 +458,8 @@ printf("           %10.6f %10.6f %10.6f\n", einErr[0], einErr[1],einErr[2]);
               std::cout <<"Done.              " << std::endl;
   logMessage( std::string("Fitting complete"   ));
 
+
+  } while ( true );
 /*
 Stuff to output:
 
