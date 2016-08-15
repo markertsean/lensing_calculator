@@ -72,43 +72,44 @@ int main(int arg,char **argv){
 
 
   // User input, most info constant over halos so read in once
-  userInfo userInput;                             // Contains all the info from the user
-  std::string   userFile = "lensUserParams.dat" ; // User specified input
+
+  userInfo userInput;                                                 // Contains all the info from the user
+  std::string   userFile = "lensUserParams.dat" ;                     // User specified input
 
 
   std::cout << "Reading file: "              << std::endl;
   std::cout << "              " << userFile  << std::endl;
 
-  // Reads info from user file
-  readInpFile( userInput, userFile );
+  readInpFile( userInput, userFile );                                 // Reads info from user file
 
   std::cout << "              Done."  << std::endl << std::endl;
 
 
 
 
+  // Read in from lensUserParams, sets the cosmology for glamer
+
   COSMOLOGY cosmo;
 
-  // Read in from lensUserParams, sets the cosmology for glamer
   if ( userInput.getCosmology() == "PLANCK" ) {
-
     cosmo = Planck1yr;
     logMessage( std::string( "Using Planck cosmology") );
                 std::cout << "Using Planck cosmology"   << std::endl << std::endl;
-
   } else
   if ( userInput.getCosmology() == "WMAP"   ) {
-
     cosmo = WMAP5yr;
     logMessage( std::string( "Using WMAP 5yr cosmology") );
                 std::cout << "Using WMAP 5yr cosmology" << std::endl << std::endl;
-
   } else {
                 std::cout << "Unrecognized cosmology: " << userInput.getCosmology() << std::endl;
     logMessage( std::string( "Unrecognized cosmology: ") + userInput.getCosmology() );
     logMessage( "Aborting." );
     exit(1);
   }
+
+
+
+  // Sets constant parameters from user input file
 
   omp_set_num_threads ( userInput.getNthreads()             );  // For parallelization, default 1
   double center[]   = { 0, 0 };                                 // Center of grid, 0,0 aligns grid right
@@ -117,6 +118,11 @@ int main(int arg,char **argv){
   logMessage( std::string("omp_num_threads = " ) + std::to_string((long double)  userInput.getNthreads()));
   logMessage( std::string("counter         = " ) + std::to_string((long double) center[0]    )
                                                  + std::to_string((long double) center[1]    ));
+
+
+
+  // Generates Fox H tables for interpolating over the Einasto profiles
+
   std::cout << "Reading foxH tables: "                  << std::endl;
 
   einKappa    = readFoxH( userInput, 1 );
@@ -126,90 +132,110 @@ int main(int arg,char **argv){
 
 
 
+
+
   // Stuff for setting halo for paramfile
+  // Loops over FITS files for GLAMER read in
+
   int halo_index = 0;
 
   std::string halo_file_name = "";
   std::string paramFileStart = "pixelmaps_input_file    ";
 
 
-  // Loop over haloList.dat
+
+
+  //////////////////////////////////////
+  //////Loop over haloList.dat//////////
+  //////////////////////////////////////
+
+
+
   do{
 
-  //////////////////////////////////////
-  /////////Generate PARAMFILE///////////
-  //////////////////////////////////////
-
-  // Write our paramfile
-  halo_file_name = getHaloFile( halo_index );  // Get the halo fits file, and write it to paramfile
-
-  if ( halo_file_name == ""  ||
-       halo_file_name == " " )  break;
-
-  ++halo_index;
-
-  generateParamfile( paramFileStart + halo_file_name ); // Generates the paramfile for GLAMER from our halo list
 
 
-  // File for glamer read in, contains information used by the library
-  // Must contain variables:
-  //    deflection_off          0
-  //    field_off               1
-  //    lensing_off             0
-  //    main_halo_on            0
-  //    pixelmaps_input_file    ???.FITS
-  //    pixelmaps_on            1
-  //    z_source                #
+    //////////////////////////////////////
+    /////////Generate PARAMFILE///////////
+    //////////////////////////////////////
 
-  std::string  paramFile = "paramfile"          ; // Glamer input
 
-  std::cout << "Reading file: "              << std::endl;
-  std::cout << "              " << paramFile << std::endl;
+    halo_file_name = getHaloFile( halo_index );           // Get the halo fits file, and write it to paramfile
 
-  InputParams      params     ( paramFile   );
-  logMessage( std::string("Read paramfile: ") + paramFile );
+    if ( halo_file_name == ""  ||
+         halo_file_name == " " )  break;                  // Will leave the loop upon EOF
 
-  std::cout << "              Done."  << std::endl << std::endl;
+    ++halo_index;
+
+    generateParamfile( paramFileStart + halo_file_name ); // Generates the paramfile for GLAMER from our halo list
 
 
 
-  // Determine our FITS file name, will read the header for parameters
-
-  std::string                                    fitsFileName  ;
-  params.get(          "pixelmaps_input_file"  , fitsFileName );
-  logMessage( std::string("Using FITS file: ") + fitsFileName );
 
 
-
-  haloInfo    myHalo;                             // Contains all the info on our halo, changes via FITS file
-
-  std::cout << "Reading file: "                  << std::endl;
-  std::cout << "              " << fitsFileName  << std::endl;
-
-  // Read FITS image, populates halo and user inputs
-  readFitsHeader( fitsFileName, myHalo, userInput );
-
-  std::cout << "              Done."  << std::endl << std::endl;
-
-  double   angRange =   userInput.getAngFOV  ()  * M_PI/180  ;  // Angular field of view, in degrees
-  double  realWidth =   userInput.getPhysFOV ()              ;  // Field of view in Mpc
-  logMessage( std::string("angRange        = " ) + std::to_string((long double)  angRange    ));
-  logMessage( std::string("realWidth       = " ) + std::to_string((long double)  realWidth   ));
-
-  userInput.setNgridPoints( userInput.getNpixH() * 2       );   // Number of gridpoints, in reality want it more refined
+    //////////////////////////////////////
+    /////////Reads    PARAMFILE///////////
+    //////////////////////////////////////
 
 
-  // Source redshift moves from glamer parameters to userInfo class
-  {
-    double srcZ;
-    params.get("z_source",srcZ);
-    userInput.setSourceZ(srcZ);
-  }
+    std::string  paramFile = "paramfile"          ;           // Glamer input
+
+    std::cout << "Reading file: "              << std::endl;
+    std::cout << "              " << paramFile << std::endl;
+
+    InputParams      params     ( paramFile   );
+    logMessage( std::string("Read paramfile: ") + paramFile );
+
+    std::cout << "              Done."  << std::endl << std::endl;
 
 
-  ///////////////////////////////////////////////////
-  /////////////INITIALIZE NEEDED MAPS////////////////
-  ///////////////////////////////////////////////////
+
+    // Determine our FITS file name, will read the header for parameters
+
+    std::string                                    fitsFileName  ;
+    params.get(          "pixelmaps_input_file"  , fitsFileName );
+    logMessage( std::string("Using FITS file: ") + fitsFileName );
+
+
+
+
+    // Read the header of the FITS to determine halo info
+
+    haloInfo    myHalo;
+
+    std::cout << "Reading file: "                  << std::endl;
+    std::cout << "              " << fitsFileName  << std::endl;
+
+    // Read FITS image, populates halo and user inputs
+    readFitsHeader( fitsFileName, myHalo, userInput );
+
+    std::cout << "              Done."  << std::endl << std::endl;
+
+
+
+
+    // Set parameters based on FITS image
+
+    double   angRange =   userInput.getAngFOV  ()  * M_PI/180  ;  // Angular field of view, in degrees
+    double  realWidth =   userInput.getPhysFOV ()              ;  // Field of view in Mpc
+
+    logMessage( std::string("angRange        = " ) + std::to_string((long double)  angRange    ));
+    logMessage( std::string("realWidth       = " ) + std::to_string((long double)  realWidth   ));
+
+    userInput.setNgridPoints( userInput.getNpixH() * 2       );   // Number of gridpoints, in reality want it more refined
+
+
+    // Source redshift moves from glamer parameters to userInfo class
+    {
+      double srcZ;
+      params.get("z_source",srcZ);
+      userInput.setSourceZ(srcZ);
+    }
+
+
+    ///////////////////////////////////////////////////
+    /////////////INITIALIZE NEEDED MAPS////////////////
+    ///////////////////////////////////////////////////
 
 
 
@@ -217,189 +243,204 @@ int main(int arg,char **argv){
 userInput.setNpixH( 99 );
 userInput.setNpixV( 99 );
 userInput.setNpix( 99*99);
-  std::cout << "Constructing PixelMaps..." << std::endl;
+    std::cout << "Constructing PixelMaps..." << std::endl;
 
-  // PixelMaps we need to keep
-  PixelMap  g_tanMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
-  PixelMap  g_secMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
-  PixelMap   distMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+    // PixelMaps we need to keep
 
-  {
+    PixelMap  g_tanMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+    PixelMap  g_secMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+    PixelMap   distMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
 
-  // PixelMaps we don't need to keep
-  PixelMap  kappaMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
-  PixelMap gamma1Map( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
-  PixelMap gamma2Map( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
-  PixelMap invMagMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+    {
 
-  std::cout << "               Done." << std::endl;
+      // PixelMaps we don't need to keep
+      PixelMap  kappaMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+      PixelMap gamma1Map( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+      PixelMap gamma2Map( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+      PixelMap invMagMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
 
-  logMessage( std::string("PixelMaps allocated") );
+      std::cout << "               Done." << std::endl;
 
-
-  ///////////////////////////////////////////////////////////
-  ///////////////////////CONSTRUCT LENS//////////////////////
-  ///////////////////////////////////////////////////////////
+      logMessage( std::string("PixelMaps allocated") );
 
 
-  std::cout <<                           std::endl << std::endl;
-  std::cout << "Constructing lens..." << std::endl << std::endl;
-
-  // Generates lens from paramfile, glamer side
-  Lens myLens( params, &seed, cosmo );
-
-  std::cout <<                                        std::endl;
-  std::cout << "Lens constructed."    << std::endl << std::endl;
-
-  logMessage( std::string("Lens constructed") );
+      ///////////////////////////////////////////////////////////
+      ///////////////////////CONSTRUCT LENS//////////////////////
+      ///////////////////////////////////////////////////////////
 
 
-  //////////////////////////////////////////////////////
-  //////////////////CONSTRUCT GRID//////////////////////
-  //////////////////////////////////////////////////////
+      std::cout <<                           std::endl << std::endl;
+      std::cout << "Constructing lens..." << std::endl << std::endl;
 
-  std::cout << "Constructing grid..." << std::endl;
+      // Generates lens from paramfile, glamer side
+      Lens myLens( params, &seed, cosmo );
 
-  // Construct grid using physical units of Mpch
-  GridMap myGrid( &myLens                    ,
-                  userInput.getNgridPoints() ,
-                  center                     ,
-                  angRange                   ,
-                  angRange                   *
-                  userInput.getNpixV()       /
-                  userInput.getNpixH()       );
+      std::cout <<                                        std::endl;
+      std::cout << "Lens constructed."    << std::endl << std::endl;
 
-  std::cout << "Grid constructed."    << std::endl << std::endl;
-  logMessage( std::string("Grid constructed") );
+      logMessage( std::string("Lens constructed") );
 
 
+      //////////////////////////////////////////////////////
+      //////////////////CONSTRUCT GRID//////////////////////
+      //////////////////////////////////////////////////////
 
-  std::cout << "Generating PixelMaps from grid..." << std::endl;
+      std::cout << "Constructing grid..." << std::endl;
 
-  calcLensMaps( myGrid,
-                         kappaMap ,
-                        gamma1Map ,
-                        gamma2Map ,
-                        invMagMap ,
-                         g_tanMap ,
-                         g_secMap ,
-                          distMap ,
-             userInput.getNpixH() ,
-             userInput.getNpixV() ,
-                         angRange ,
-                           center );
+      // Construct grid using physical units of Mpch
+      GridMap myGrid( &myLens                    ,
+                      userInput.getNgridPoints() ,
+                      center                     ,
+                      angRange                   ,
+                      angRange                   *
+                      userInput.getNpixV()       /
+                      userInput.getNpixH()       );
 
-  }
-  logMessage( std::string("Lens, Grid deallocated") );
+      std::cout << "Grid constructed."    << std::endl << std::endl;
+      logMessage( std::string("Grid constructed") );
 
-  std::cout << "PixelMaps generated" << std::endl << std::endl;
 
-  if ( myHalo.getPhi() != -1 ){
 
-    if ( writeAngRTS( myHalo, userInput , g_tanMap, g_secMap, distMap ) == 2){
-    std::cout << "2D maps found" << std::endl << std::endl;
-    logMessage(  "2D maps found" );
+      std::cout << "Generating PixelMaps from grid..." << std::endl;
+
+      calcLensMaps( myGrid,
+                             kappaMap ,
+                            gamma1Map ,
+                            gamma2Map ,
+                            invMagMap ,
+                             g_tanMap ,
+                             g_secMap ,
+                              distMap ,
+                 userInput.getNpixH() ,
+                 userInput.getNpixV() ,
+                             angRange ,
+                               center );
+
+
+      std::cout << "PixelMaps generated" << std::endl << std::endl;
     }
 
-  } else {
-    std::cout << "Halo orientation uknown, ignoring 2D map" << std::endl << std::endl;
-    logMessage(  "Halo orientation uknown, ignoring 2D map" );
-  }
+    logMessage( std::string("Lens, Grid deallocated") );
 
-  std::cout << myHalo.getAlpha() << " " << myHalo.getGamma() << std::endl;
+
+
+    // If the orientation of the halo is known, generate 2D maps of the Reduced shear components
+
+    if ( myHalo.getPhi() != -1 ){
+
+      if ( writeAngRTS( myHalo, userInput , g_tanMap, g_secMap, distMap ) == 2){
+      std::cout << "2D maps found" << std::endl << std::endl;
+      logMessage(  "2D maps found" );
+      }
+
+    } else {
+      std::cout << "Halo orientation uknown, ignoring 2D map" << std::endl << std::endl;
+      logMessage(  "Halo orientation uknown, ignoring 2D map" );
+    }
+
+    std::cout << myHalo.getAlpha() << " " << myHalo.getGamma() << std::endl;
+
+
 
 //This section needs work
-  ////////////////////////////////////////////////////////////
-  ///////////////////Generate sources/////////////////////////
-  ////////////////////////////////////////////////////////////
-
-
-  // Generates random source positions, distances, and errors for the shape measurements
-  // Random positions are stored in a 1D array, with pixelmap index
-  // Distance is also stored in a 1D array
-
-  std::cout << "Generating sources..." << std::endl;
-
-  double  srcErrArr[ userInput.getNsrc() ]; // Error
-  double  srcDArr  [ userInput.getNsrc() ]; // Redshift
-
-  logMessage( std::string("Allocated src arrays of size: ") + std::to_string((long long) userInput.getNsrc()) );
-
-// Need read error, Z distibution
-  for (int i = 0; i < userInput.getNsrc(); ++i ){
-    srcErrArr[i] = userInput.getShapeNoise();                           // Errors all a temporary 0.3
-  }
-
-
-  std::cout << "  generating indexes..." << std::endl;
-
-
-  int indexes[ userInput.getNsrc() ];
-  getRandomSourcesIndexes( indexes, userInput );
-
-
-  logMessage( std::string("Sources placed") );
-
-
-  std::cout << "  calculating distances..." << std::endl;
-
-  // Determine distances of the sources from center of cluster
-  distArrCalc( srcDArr, indexes, &distMap, userInput.getPhysFOV() / userInput.getAngFOV() * 180 / M_PI, userInput.getNsrc() );
-
-  logMessage( std::string("Source distances from center found") );
-
-  std::cout << "Done." << std::endl << std::endl;
-
-
-  ////////////////////////////////////////////////////////////
-  ///////////////////To calculate errors//////////////////////
-  //////////////Loop over and jacknife sample/////////////////
-  ////////////////////////////////////////////////////////////
-
-
-  densProfile nfwFits[ userInput.getNsrc() + 1 ];
-  densProfile einFits[ userInput.getNsrc() + 1 ];
-
-
-              std::cout <<"Generating fits... "  << std::endl;
-  logMessage( std::string("Generating fits... ") );
-
-
-  for ( int  omitIndex = -1; omitIndex < userInput.getNsrc(); ++ omitIndex ) {
-
-//    nfwFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
-//    einFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
-//    einFits[ omitIndex + 1 ].setType( 2 );
-
-
     ////////////////////////////////////////////////////////////
-    ///////////////////Determine radial average/////////////////
-    ///////////////////Bin different source vals////////////////
+    ///////////////////Generate sources/////////////////////////
     ////////////////////////////////////////////////////////////
 
 
-// Here loop over sources, indicating which index to omit (start at -1)
-// Pass to dist and shear calculators, to indicate ommited index
-    if ( omitIndex > -1 ){
-                std::cout <<"  Omitting source " << omitIndex << std::endl;
-    logMessage( std::string("  Omitting source ") +
-                std::to_string( (long long) omitIndex ) );
+    // Generates random source positions, distances, and errors for the shape measurements
+    // Random positions are stored in a 1D array, with pixelmap index
+    // Distance is also stored in a 1D array
+
+    std::cout << "Generating sources..." << std::endl;
+
+    double  srcErrArr[ userInput.getNsrc() ]; // Error
+    double  srcDArr  [ userInput.getNsrc() ]; // Redshift
+
+    logMessage( std::string("Allocated src arrays of size: ") + std::to_string((long long) userInput.getNsrc()) );
+
+    for (int i = 0; i < userInput.getNsrc(); ++i ){
+      srcErrArr[i] = userInput.getShapeNoise();                           // Errors all a temporary 0.3
     }
 
-    // Array to bin distances, RTS, and their errors
-    double    distArr[ userInput.getNbins() ],
-              gTanArr[ userInput.getNbins() ],
-              gErrArr[ userInput.getNbins() ];
 
-    radialDistAverage( distArr, srcDArr, userInput, center );
 
-    logMessage( std::string("  Source distances averaged") );
+    // Place in random index locations
 
-    radialShearAverage( gTanArr, gErrArr, indexes, g_tanMap, srcErrArr, srcDArr, userInput, center );
+    std::cout << "  generating indexes..." << std::endl;
 
-    logMessage( std::string("  Shear values averaged") );
+    int indexes[ userInput.getNsrc() ];
+    getRandomSourcesIndexes( indexes, userInput );
 
-    std::cout << "  Sources averaged" << std::endl;
+    logMessage( std::string("Sources placed") );
+
+
+
+    // Generate distances based on index
+
+    std::cout << "  calculating distances..." << std::endl;
+
+    // Determine distances of the sources from center of cluster
+    distArrCalc( srcDArr, indexes, &distMap, userInput.getPhysFOV() / userInput.getAngFOV() * 180 / M_PI, userInput.getNsrc() );
+
+    logMessage( std::string("Source distances from center found") );
+
+    std::cout << "Done." << std::endl << std::endl;
+
+
+
+    ////////////////////////////////////////////////////////////
+    ///////////////////To calculate errors//////////////////////
+    //////////////Loop over and jacknife sample/////////////////
+    ////////////////////////////////////////////////////////////
+
+
+    densProfile nfwFits[ userInput.getNsrc() + 1 ];
+    densProfile einFits[ userInput.getNsrc() + 1 ];
+
+
+                std::cout <<"Generating fits... "  << std::endl;
+    logMessage( std::string("Generating fits... ") );
+
+
+    for ( int  omitIndex = -1; omitIndex < userInput.getNsrc(); ++ omitIndex ) {
+
+  //    nfwFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
+  //    einFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
+  //    einFits[ omitIndex + 1 ].setType( 2 );
+
+
+
+      ////////////////////////////////////////////////////////////
+      ///////////////////Determine radial average/////////////////
+      ///////////////////Bin different source vals////////////////
+      ////////////////////////////////////////////////////////////
+
+
+
+      // Here loop over sources, indicating which index to omit (start at -1)
+      // Pass to dist and shear calculators, to indicate ommited index
+      if ( omitIndex > -1 ){
+                  std::cout <<"  Omitting source " << omitIndex << std::endl;
+      logMessage( std::string("  Omitting source ") +
+                  std::to_string( (long long) omitIndex ) );
+      }
+
+      // Array to bin distances, RTS, and their errors
+      double    distArr[ userInput.getNbins() ],
+                gTanArr[ userInput.getNbins() ],
+                gErrArr[ userInput.getNbins() ];
+
+      radialDistAverage( distArr, srcDArr, userInput, center );
+
+      logMessage( std::string("  Source distances averaged") );
+
+      radialShearAverage( gTanArr, gErrArr, indexes, g_tanMap, srcErrArr, srcDArr, userInput, center );
+
+      logMessage( std::string("  Shear values averaged") );
+
+      std::cout << "  Sources averaged" << std::endl;
+
 
 densProfile testProfile;
 testProfile.setM_enc( 1.0e14 );
@@ -420,35 +461,34 @@ gErrArr[0] = 0;
 generateNFWRTS( gTanArr, testProfile, userInput.getNbins(), distArr, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ) );
 
 
-    //////////////////////////////////////////////////////////
-    ////////////////////////FIT PROFILE///////////////////////
-    //////////////////////////////////////////////////////////
+      //////////////////////////////////////////////////////////
+      ////////////////////////FIT PROFILE///////////////////////
+      //////////////////////////////////////////////////////////
 
-    // Attempts to fit the density using the radial averages of distance and RTS
+      // Attempts to fit the density using the radial averages of distance and RTS
 
-                std::cout <<"  Calculating NFW fit..." << std::endl;
-    logMessage( std::string("  Calculating NFW fit...") );
-
-    rollingFitDensProfile( nfwFits[ omitIndex + 1], myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
-
-
-                std::cout <<"  Calculating EIN fit..." << std::endl;
-    logMessage( std::string("  Calculating EIN fit...") );
+                  std::cout <<"  Calculating NFW fit..." << std::endl;
+      logMessage( std::string("  Calculating NFW fit...") );
+      rollingFitDensProfile( nfwFits[ omitIndex + 1], myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 
 
-    rollingFitDensProfile( einFits[ omitIndex + 1], myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 
-    std::cout << std::endl ;
+                  std::cout <<"  Calculating EIN fit..." << std::endl;
+      logMessage( std::string("  Calculating EIN fit...") );
+      rollingFitDensProfile( einFits[ omitIndex + 1], myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 
-  }
+      std::cout << std::endl ;
 
-  // Calculate the jacknife errors
+    }
 
-  double nfwErr[3]; // 0 is C, 1 is log(M), 2 is alpha
-  double einErr[3];
 
-  jacknife( nfwFits, userInput.getNsrc(), nfwErr );
-  jacknife( einFits, userInput.getNsrc(), einErr );
+    // Calculate the jacknife errors
+
+    double nfwErr[3]; // 0 is C, 1 is log(M), 2 is alpha
+    double einErr[3];
+
+    jacknife( nfwFits, userInput.getNsrc(), nfwErr );
+    jacknife( einFits, userInput.getNsrc(), einErr );
 
 printf("           %10.6f %10.6f\n", nfwFits[0].getC(), std::log10(nfwFits[0].getM_enc()));
 printf("           %10.6f %10.6f\n", nfwErr[0], nfwErr[1]);
@@ -456,19 +496,27 @@ printf("           %10.6f %10.6f\n", nfwErr[0], nfwErr[1]);
 printf("           %10.6f %10.6f %10.6f\n", einFits[0].getC(), std::log10(einFits[0].getM_enc()), einFits[0].getAlpha());
 printf("           %10.6f %10.6f %10.6f\n", einErr[0], einErr[1],einErr[2]);
 
-              std::cout <<"Done.              " << std::endl;
-  logMessage( std::string("Fitting complete"   ));
+                std::cout <<"Done.              " << std::endl;
+    logMessage( std::string("Fitting complete"   ));
 
 
 
 
-  writeProfileFits( userInput, myHalo, einFits[0], nfwFits[0], einErr, nfwErr, halo_index );
+    writeProfileFits( userInput, myHalo, einFits[0], nfwFits[0], einErr, nfwErr, halo_index );
 
 
   } while ( true );
 
+  std::cout << "Reached edge of halo list, exiting" << std::endl;
+
+  logMessage( std::string("Read ") +
+              std::to_string( (long long) halo_index ) +
+              std::string(" halos"));
+
 /*
 Need to check tan/azi uses in the program
+
+Need to work on error introduction
 //*/
 
   exit(0);

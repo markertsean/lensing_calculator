@@ -314,4 +314,6 @@ void writeProfileFits( userInfo        u ,   // User input
 
   fclose( pFile );
 
+  std::cout << "Appended file: " << fileName << std::endl << std::endl;
+
 }
