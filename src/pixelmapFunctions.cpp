@@ -269,6 +269,7 @@ double calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
                       PixelMap  &invMagMap ,
                       PixelMap   &g_tanMap ,
                       PixelMap   &g_secMap ,
+                      PixelMap   &g_totMap ,
                       PixelMap    &distMap ,
                       int       N_pixels_h ,  // Number of pixels on a side
                       int       N_pixels_v ,  // Number of pixels on a side
@@ -312,6 +313,8 @@ double calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
     g_secMap[k] = (-gamma1Map[k]*sin(a)+gamma2Map[k]*cos(a)) / (1-kappaMap[k]);
 
     mass       +=    kappaMap[k];
+
+    g_totMap[k] = sqrt( g_tanMap[k] * g_tanMap[k] + g_secMap[k] * g_secMap[k] );
   }
   }
 

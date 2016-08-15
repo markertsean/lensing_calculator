@@ -47,6 +47,7 @@ double calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
                       PixelMap  &invMagMap ,
                       PixelMap   &g_tanMap ,
                       PixelMap   &g_aziMap ,
+                      PixelMap   &g_totMap ,
                       PixelMap    &distMap ,
                       int       N_pixels_h ,  //Number of pixels on a side
                       int       N_pixels_v ,  //Number of pixels on a side

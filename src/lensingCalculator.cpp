@@ -247,6 +247,7 @@ userInput.setNpix( 9*9);
 
     // PixelMaps we need to keep
 
+    PixelMap  g_totMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
     PixelMap  g_tanMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
     PixelMap  g_secMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
     PixelMap   distMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
@@ -312,6 +313,7 @@ userInput.setNpix( 9*9);
                             invMagMap ,
                              g_tanMap ,
                              g_secMap ,
+                             g_totMap ,
                               distMap ,
                  userInput.getNpixH() ,
                  userInput.getNpixV() ,
@@ -442,7 +444,7 @@ userInput.setNpix( 9*9);
 
       logMessage( std::string("  Source distances averaged") );
 
-      radialShearAverage( gTanArr, gErrArr, indexes, g_tanMap, srcErrArr, srcDArr, userInput, center );
+      radialShearAverage( gTanArr, gErrArr, indexes, g_totMap, srcErrArr, srcDArr, userInput, center );
 
       logMessage( std::string("  Shear values averaged") );
 
