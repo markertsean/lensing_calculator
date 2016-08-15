@@ -348,7 +348,6 @@ userInput.setNpix( 9*9);
 
 
 
-//This section needs work
     ////////////////////////////////////////////////////////////
     ///////////////////Generate sources/////////////////////////
     ////////////////////////////////////////////////////////////
@@ -507,11 +506,6 @@ generateNFWRTS( gTanArr, testProfile, userInput.getNbins(), distArr, cosmo.Sigma
     jacknife( nfTFits, userInput.getNsrc(), nfTErr );
     jacknife( einFits, userInput.getNsrc(), einErr );
 
-printf("           %10.6f %10.6f\n", nfwFits[0].getC(), std::log10(nfwFits[0].getM_enc()));
-printf("           %10.6f %10.6f\n", nfwErr[0], nfwErr[1]);
-
-printf("           %10.6f %10.6f %10.6f\n", einFits[0].getC(), std::log10(einFits[0].getM_enc()), einFits[0].getAlpha());
-printf("           %10.6f %10.6f %10.6f\n", einErr[0], einErr[1],einErr[2]);
 
                 std::cout <<"Done.              " << std::endl;
     logMessage( std::string("Fitting complete"   ));

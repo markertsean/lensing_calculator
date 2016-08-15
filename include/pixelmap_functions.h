@@ -67,7 +67,7 @@ void getRandomSourcesIndexes( int      *indexes ,  //Array of pixelmap indexes
                               userInfo        u ); //Input user information
 
 // Box-Muller transformation to provide gaussian distribution
-double gaussErr( userInfo     u ,
+double gaussErr( double   sigma ,
                  int       Ngal ); // Number of galaxies
 
 

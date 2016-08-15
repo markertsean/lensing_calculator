@@ -68,11 +68,9 @@ N_bins_A2D  = 10   ; // Number of bins for radial averaging
 */
 
 
-  maxFitAttempts = 1e2   ;
-   N_chromosomes = 5     ;
 
-//  maxFitAttempts = 1e3   ; // Maximum number of steps to roll ball, or times to reproduce
-//   N_chromosomes = 1e3   ; // Number of chromosomes or balls
+  maxFitAttempts = 1e3   ; // Maximum number of steps to roll ball, or times to reproduce
+   N_chromosomes = 1e3   ; // Number of chromosomes or balls
       consistent = 2e1   ; // Number of steps to converge before accepting
        tolerance = 1e-5  ; // If difference between steps less than this, converged
 
