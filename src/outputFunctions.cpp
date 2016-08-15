@@ -254,11 +254,15 @@ std::cout << zInc    << " " << h.getGamma() << std::endl;
 
 void writeProfileFits( userInfo        u ,   // User input
                        haloInfo        h ,   // Info on our halo
-                       densProfile   ein ,   // Einasto  density profile
-                       densProfile   nfw ,   // NFW Full density profile
-                       double    *einErr ,   // Einasto  errors
-                       double    *nfwErr ,   // NFW Full errors
-                       int       haloNum ){  // How many times we've written, first time we need to write halo info
+                       densProfile   ein ,   // Einasto   density profile
+                       densProfile   nfw ,   // NFW Full  density profile
+                       densProfile   nfT ,   // NFW trunc density profile
+                       double    *einErr ,   // Einasto   errors
+                       double    *nfwErr ,   // NFW Full  errors
+                       double    *nfTErr ,   // NFW trunc errors
+                       int       haloNum ,   // How many times we've written, first time we need to write halo info
+                       double     imageM ){  // Total mass in image, measure of LSS
+
 
   checkDir( u.getOutputPath() );
 
@@ -308,8 +312,10 @@ void writeProfileFits( userInfo        u ,   // User input
 
 
   fprintf( pFile , "IntegLength %10.6f\n"        , u.getIntegLength() );
-  fprintf( pFile , "NFW %10.6f %10.6f %10.6f %10.6f %10.6f %10.6f\n" , log10( nfw.getM_enc() ), nfw.getC(),           -1.0, nfwErr[1], nfwErr[0],      -1.0);
-  fprintf( pFile , "Ein %10.6f %10.6f %10.6f %10.6f %10.6f %10.6f\n" , log10( ein.getM_enc() ), ein.getC(), ein.getAlpha(), einErr[1], einErr[0], einErr[2]);
+  fprintf( pFile , "ImageMass   %14.6e\n"        , imageM             );
+  fprintf( pFile , "NFW_Full %10.6f %10.6f %10.6f %10.6f %10.6f %10.6f\n" , log10( nfw.getM_enc() ), nfw.getC(),           -1.0, nfwErr[1], nfwErr[0],      -1.0);
+  fprintf( pFile , "NFW_Trnc %10.6f %10.6f %10.6f %10.6f %10.6f %10.6f\n" , log10( nfT.getM_enc() ), nfT.getC(),           -1.0, nfTErr[1], nfTErr[0],      -1.0);
+  fprintf( pFile , "Ein      %10.6f %10.6f %10.6f %10.6f %10.6f %10.6f\n" , log10( ein.getM_enc() ), ein.getC(), ein.getAlpha(), einErr[1], einErr[0], einErr[2]);
 
 
   fclose( pFile );

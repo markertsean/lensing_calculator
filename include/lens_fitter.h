@@ -26,6 +26,14 @@ void rollingFitDensProfile(
                     const COSMOLOGY          cosmo ); // Error array in RTS
 
 
+void generateNFWTruncRTS(
+                          double          *gArr ,  // RTS array to output
+                    const densProfile     &lens ,  // Input density profile to generate profile for
+                    const double         N_bins ,  // Actual information from the halo
+                    const double          *dist ,  // Projected distances between source and lens
+                    const double           SigC ); // Critical surface density of sources
+
+
 void generateNFWRTS(
                           double          *gArr ,  // RTS array to output
                     const densProfile     &lens ,  // Input density profile to generate profile for

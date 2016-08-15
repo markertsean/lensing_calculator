@@ -240,9 +240,9 @@ int main(int arg,char **argv){
 
 
 
-userInput.setNpixH( 99 );
-userInput.setNpixV( 99 );
-userInput.setNpix( 99*99);
+userInput.setNpixH( 9 );
+userInput.setNpixV( 9 );
+userInput.setNpix( 9*9);
     std::cout << "Constructing PixelMaps..." << std::endl;
 
     // PixelMaps we need to keep
@@ -250,6 +250,8 @@ userInput.setNpix( 99*99);
     PixelMap  g_tanMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
     PixelMap  g_secMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
     PixelMap   distMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
+
+    double totalMass;
 
     {
 
@@ -303,7 +305,7 @@ userInput.setNpix( 99*99);
 
       std::cout << "Generating PixelMaps from grid..." << std::endl;
 
-      calcLensMaps( myGrid,
+      totalMass = calcLensMaps( myGrid,
                              kappaMap ,
                             gamma1Map ,
                             gamma2Map ,
@@ -315,6 +317,8 @@ userInput.setNpix( 99*99);
                  userInput.getNpixV() ,
                              angRange ,
                                center );
+
+      totalMass = totalMass * cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() );
 
 
       std::cout << "PixelMaps generated" << std::endl << std::endl;
@@ -396,6 +400,7 @@ userInput.setNpix( 99*99);
 
 
     densProfile nfwFits[ userInput.getNsrc() + 1 ];
+    densProfile nfTFits[ userInput.getNsrc() + 1 ];
     densProfile einFits[ userInput.getNsrc() + 1 ];
 
 
@@ -405,9 +410,11 @@ userInput.setNpix( 99*99);
 
     for ( int  omitIndex = -1; omitIndex < userInput.getNsrc(); ++ omitIndex ) {
 
-  //    nfwFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
-  //    einFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
-  //    einFits[ omitIndex + 1 ].setType( 2 );
+      nfwFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
+      nfTFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
+      einFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
+      einFits[ omitIndex + 1 ].setType( 2 );
+      nfTFits[ omitIndex + 1 ].setType( 0 );
 
 
 
@@ -448,8 +455,10 @@ testProfile.setR_max( 5.0    );
 testProfile.setC    ( 5.0    );
 
 nfwFits[ omitIndex + 1 ].setR_max( testProfile.getR_max() );
+nfTFits[ omitIndex + 1 ].setR_max( testProfile.getR_max() );
 einFits[ omitIndex + 1 ].setR_max( testProfile.getR_max() );
 einFits[ omitIndex + 1 ].setType( 2 );
+nfTFits[ omitIndex + 1 ].setType( 0 );
 
 for ( int i = 0; i < userInput.getNbins(); ++i ){
 
@@ -472,6 +481,10 @@ generateNFWRTS( gTanArr, testProfile, userInput.getNbins(), distArr, cosmo.Sigma
       rollingFitDensProfile( nfwFits[ omitIndex + 1], myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
 
 
+                  std::cout <<"  Calculating NFW trunc fit..." << std::endl;
+      logMessage( std::string("  Calculating NFW trunc fit...") );
+      rollingFitDensProfile( nfTFits[ omitIndex + 1], myHalo, userInput, gTanArr, distArr, gErrArr, cosmo );
+
 
                   std::cout <<"  Calculating EIN fit..." << std::endl;
       logMessage( std::string("  Calculating EIN fit...") );
@@ -485,9 +498,11 @@ generateNFWRTS( gTanArr, testProfile, userInput.getNbins(), distArr, cosmo.Sigma
     // Calculate the jacknife errors
 
     double nfwErr[3]; // 0 is C, 1 is log(M), 2 is alpha
+    double nfTErr[3];
     double einErr[3];
 
     jacknife( nfwFits, userInput.getNsrc(), nfwErr );
+    jacknife( nfTFits, userInput.getNsrc(), nfTErr );
     jacknife( einFits, userInput.getNsrc(), einErr );
 
 printf("           %10.6f %10.6f\n", nfwFits[0].getC(), std::log10(nfwFits[0].getM_enc()));
@@ -502,7 +517,7 @@ printf("           %10.6f %10.6f %10.6f\n", einErr[0], einErr[1],einErr[2]);
 
 
 
-    writeProfileFits( userInput, myHalo, einFits[0], nfwFits[0], einErr, nfwErr, halo_index );
+    writeProfileFits( userInput, myHalo, einFits[0], nfwFits[0], nfTFits[0], einErr, nfwErr, nfTErr, halo_index, totalMass );
 
 
   } while ( true );

@@ -262,18 +262,18 @@ void distMapCalc( PixelMap  &distMap ,  // pixelmap to output
 //  Calculate the lensing quantities from the grid
 //  Overwrites all the input PixelMaps
 //
-void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
-                    PixelMap   &kappaMap ,
-                    PixelMap  &gamma1Map ,
-                    PixelMap  &gamma2Map ,
-                    PixelMap  &invMagMap ,
-                    PixelMap   &g_tanMap ,
-                    PixelMap   &g_secMap ,
-                    PixelMap    &distMap ,
-                    int       N_pixels_h ,  // Number of pixels on a side
-                    int       N_pixels_v ,  // Number of pixels on a side
-                    double      realSize ,  // Angular width in horizontal direction
-                    double     center[2] ){ // Center location of halo
+double calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
+                      PixelMap   &kappaMap ,
+                      PixelMap  &gamma1Map ,
+                      PixelMap  &gamma2Map ,
+                      PixelMap  &invMagMap ,
+                      PixelMap   &g_tanMap ,
+                      PixelMap   &g_secMap ,
+                      PixelMap    &distMap ,
+                      int       N_pixels_h ,  // Number of pixels on a side
+                      int       N_pixels_v ,  // Number of pixels on a side
+                      double      realSize ,  // Angular width in horizontal direction
+                      double     center[2] ){ // Center location of halo
 
 
 
@@ -291,6 +291,7 @@ void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
   double posArr[2]= { 0, 0 }; // Pixel position
   double phi      =   0;      // Position angle
 
+  double mass = 0;            // Total mass in kappa
 
   for (int i=0;i<N_pixels_v;++i){
     posArr[1] = (-i - 0.5 + N_pixels_v/2.0)-center[1];
@@ -309,6 +310,8 @@ void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
 
     g_tanMap[k] = (-gamma1Map[k]*cos(a)-gamma2Map[k]*sin(a)) / (1-kappaMap[k]);
     g_secMap[k] = (-gamma1Map[k]*sin(a)+gamma2Map[k]*cos(a)) / (1-kappaMap[k]);
+
+    mass       +=    kappaMap[k];
   }
   }
 
@@ -324,6 +327,8 @@ void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
   printPixelMap(  g_tanMap, N_pixels_h, N_pixels_v );
   printPixelMap(  g_secMap, N_pixels_h, N_pixels_v );
 */
+
+  return mass;
 }
 
 

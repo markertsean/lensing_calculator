@@ -40,18 +40,18 @@ void  distMapCalc(  PixelMap  &distMap ,
 
 
 
-void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
-                    PixelMap   &kappaMap ,
-                    PixelMap  &gamma1Map ,
-                    PixelMap  &gamma2Map ,
-                    PixelMap  &invMagMap ,
-                    PixelMap   &g_tanMap ,
-                    PixelMap   &g_aziMap ,
-                    PixelMap    &distMap ,
-                    int       N_pixels_h ,  //Number of pixels on a side
-                    int       N_pixels_v ,  //Number of pixels on a side
-                    double      realSize ,  //Real width on the 2D sky plane
-                    double     center[2] ); //Center location of halo
+double calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
+                      PixelMap   &kappaMap ,
+                      PixelMap  &gamma1Map ,
+                      PixelMap  &gamma2Map ,
+                      PixelMap  &invMagMap ,
+                      PixelMap   &g_tanMap ,
+                      PixelMap   &g_aziMap ,
+                      PixelMap    &distMap ,
+                      int       N_pixels_h ,  //Number of pixels on a side
+                      int       N_pixels_v ,  //Number of pixels on a side
+                      double      realSize ,  //Real width on the 2D sky plane
+                      double     center[2] ); //Center location of halo
 
 
 void printPixelMap( PixelMap   &inpMap ,  //input pixel map

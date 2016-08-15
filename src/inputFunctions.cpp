@@ -83,6 +83,25 @@ void readFitsHeader( const std::string inputFile ,  // Name of the FITS file
                std::string("INTEG, "        )+ std::to_string((long double) integ        ) );
 
 
+  // Measure the total mass in the image
+/*
+  std::valarray<unsigned long>  contents;
+
+  h0->read(contents);
+
+  long ax1(h0->axis(0));
+  long ax2(h0->axis(1));
+
+  for (long j = 0; j < ax2; j+=10)
+  {
+printf();
+//          std::ostream_iterator<short> c(std::cout,"\t");
+//          std::copy(&contents[j*ax1],&contents[(j+1)*ax1-1],c);
+//          std::cout << '\n';
+  }
+exit(0);
+
+//*/
   // Put halo values into halo data type
   myHalo.setID    (       id );
   myHalo.setM     (     mass );
