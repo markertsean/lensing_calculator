@@ -7,6 +7,7 @@
 #include <vector>
 
 
+
 void checkDir( std::string dirName ){
     struct stat sb;
     if ( stat( dirName.c_str(), &sb ) !=0 ){
@@ -85,7 +86,7 @@ void generateParamfile( std::string haloName ){
 
 
 
-int  writeAngRTS( haloInfo     h ,
+int  writeAngRTS( haloInfo   & h ,
                   userInfo     u ,
                   PixelMap  gTan ,
                   PixelMap  gSec ,
@@ -118,7 +119,8 @@ int  writeAngRTS( haloInfo     h ,
 
   h.setAlpha( alpha_0 );                        // Store orientation as halo info
   h.setGamma( zInc    );
-
+std::cout << alpha_0 << " " << h.getAlpha() << std::endl;
+std::cout << zInc    << " " << h.getGamma() << std::endl;
   if ( checkFile( fileName ) )                  // If file exists, don't bother writing a new one
     return 2;
 
@@ -250,3 +252,66 @@ int  writeAngRTS( haloInfo     h ,
 
 
 
+void writeProfileFits( userInfo        u ,   // User input
+                       haloInfo        h ,   // Info on our halo
+                       densProfile   ein ,   // Einasto  density profile
+                       densProfile   nfw ,   // NFW Full density profile
+                       double    *einErr ,   // Einasto  errors
+                       double    *nfwErr ,   // NFW Full errors
+                       int       haloNum ){  // How many times we've written, first time we need to write halo info
+
+  checkDir( u.getOutputPath() );
+
+  double integ = u.getIntegLength(); // Need for file name
+
+  if ( integ == -1 ){                // If sphere, just mark as 0 integ length
+    integ = 0.0;
+  }
+
+  char     fileName[100];
+  sprintf( fileName, "%sHalo_%010li_densFits.dat", u.getOutputPath().c_str(), h.getID() );
+
+
+
+  if ( haloNum == 1 ){ // First time through, write the general halo info
+    FILE *pFile;
+
+    pFile = fopen( fileName, "w" );
+
+    fprintf( pFile , "ID          %10li\n" , h.getID   () );
+    fprintf( pFile , "M           %14.6e\n", h.getM    () );
+    fprintf( pFile , "C           %10.6f\n", h.getC    () );
+    fprintf( pFile , "R_max       %10.6f\n", h.getRmax () );
+    fprintf( pFile , "Z           %10.6f\n", h.getZ    () );
+    fprintf( pFile , "b/a         %10.6f\n", h.getBA   () );
+    fprintf( pFile , "c/a         %10.6f\n", h.getCA   () );
+    fprintf( pFile , "phi         %10.6f\n", h.getPhi  () );
+    fprintf( pFile , "theta       %10.6f\n", h.getTheta() );
+    fprintf( pFile , "alpha       %10.6f\n", h.getAlpha() );
+    fprintf( pFile , "gamma       %10.6f\n", h.getGamma() );
+
+    fprintf( pFile , "FOV         %10.6f\n", u.getPhysFOV() );
+    fprintf( pFile , "N_pixH      %10i\n"  , u.getNpixH  () );
+    fprintf( pFile , "N_pixV      %10i\n"  , u.getNpixV  () );
+
+    fprintf( pFile , "N_src       %10i\n"  , u.getNsrc      () );
+    fprintf( pFile , "Z_src       %10.6f\n", u.getSourceZ   () );
+    fprintf( pFile , "sigma_shape %10.6f\n", u.getShapeNoise() );
+
+    fclose(  pFile );
+  }
+
+  FILE *pFile;
+
+  pFile = fopen( fileName, "a+" );
+
+
+
+  fprintf( pFile , "IntegLength %10.6f\n"        , u.getIntegLength() );
+  fprintf( pFile , "NFW %10.6f %10.6f %10.6f %10.6f %10.6f %10.6f\n" , log10( nfw.getM_enc() ), nfw.getC(),           -1.0, nfwErr[1], nfwErr[0],      -1.0);
+  fprintf( pFile , "Ein %10.6f %10.6f %10.6f %10.6f %10.6f %10.6f\n" , log10( ein.getM_enc() ), ein.getC(), ein.getAlpha(), einErr[1], einErr[0], einErr[2]);
+
+
+  fclose( pFile );
+
+}

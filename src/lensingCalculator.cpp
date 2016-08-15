@@ -306,6 +306,8 @@ userInput.setNpix( 99*99);
     logMessage(  "Halo orientation uknown, ignoring 2D map" );
   }
 
+  std::cout << myHalo.getAlpha() << " " << myHalo.getGamma() << std::endl;
+
 //This section needs work
   ////////////////////////////////////////////////////////////
   ///////////////////Generate sources/////////////////////////
@@ -348,7 +350,6 @@ userInput.setNpix( 99*99);
 
   std::cout << "Done." << std::endl << std::endl;
 
-exit(0);
 
   ////////////////////////////////////////////////////////////
   ///////////////////To calculate errors//////////////////////
@@ -443,7 +444,7 @@ generateNFWRTS( gTanArr, testProfile, userInput.getNbins(), distArr, cosmo.Sigma
 
   // Calculate the jacknife errors
 
-  double nfwErr[3];
+  double nfwErr[3]; // 0 is C, 1 is log(M), 2 is alpha
   double einErr[3];
 
   jacknife( nfwFits, userInput.getNsrc(), nfwErr );
@@ -459,35 +460,12 @@ printf("           %10.6f %10.6f %10.6f\n", einErr[0], einErr[1],einErr[2]);
   logMessage( std::string("Fitting complete"   ));
 
 
+
+
+  writeProfileFits( userInput, myHalo, einFits[0], nfwFits[0], einErr, nfwErr, halo_index );
+
+
   } while ( true );
-/*
-Stuff to output:
-
-halo id
-z
-ba
-ca
-phi
-theta
-
-physfov
-NpixV/H
-
-zsource
-n_sources
-shape noise
-
-for each image
-
-halo/box/integ
-total mass in image
-
-for each profile:
-  real profile values
-  M, C, A
-  uncertainties
-
-//*/
 
 /*
 Need to check tan/azi uses in the program
