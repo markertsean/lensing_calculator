@@ -137,7 +137,7 @@ void readInpFile(          userInfo  &inpInfo  ,   // Info needed for the rest o
            if ( inpS=="N_bins"      ){        inpInfo.setNbins           (        atoi(inpC2) ); }  // Number of bins for profile fitting
       else if ( inpS=="N_binsR2D"   ){        inpInfo.setNbins_R2D       (        atoi(inpC2) ); }  // Number of radial  bins for 2D averaging
       else if ( inpS=="N_binsA2D"   ){        inpInfo.setNbins_A2D       (        atoi(inpC2) ); }  // Number of angular bins for 2D averaging
-      else if ( inpS=="N_sources"   ){        inpInfo.setNsrc            (        atoi(inpC2) ); }  // Number of sources to place
+      else if ( inpS=="N_binsJac"   ){        inpInfo.setJacknifeBins    (        atoi(inpC2) ); }  // Number of jacknife bins to use
       else if ( inpS=="N_threads"   ){        inpInfo.setNthreads        (        atoi(inpC2) ); }  // Number of omp threads
       else if ( inpS=="N_edgepix"   ){        inpInfo.setEdgePix         (        atoi(inpC2) ); }  // Number of pixel buffer on the edge
 

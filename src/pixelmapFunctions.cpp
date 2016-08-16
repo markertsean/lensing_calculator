@@ -33,19 +33,39 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
     N_countsArr[i] = 0;
   }
 
+
+
+  // For checking if in jacknife subset
+  bool noJack  = ignoreIndex == -1 ;
+
+  int lowerXSS = ( ignoreIndex % u.getJacknifeBins()     ) * u.getNpixH();
+  int upperXSS = ( ignoreIndex % u.getJacknifeBins() + 1 ) * u.getNpixH();
+
+  int lowerYSS = ( ignoreIndex / u.getJacknifeBins()     ) * u.getNpixH();
+  int upperYSS = ( ignoreIndex / u.getJacknifeBins() + 1 ) * u.getNpixH();
+
+
+
   // For each source, find which bin it's in,
   //  and use nearby pixels to generate an average
   //  shear value to use
   for(int i = 0; i < u.getNsrc(); ++i ){
 
-    // Ignore for error analysis
-    if ( i != ignoreIndex ){
 
-      // 1 is y, or row
-      // 0 is x, or columns
-      // Pixel numbers, from top corner
-      posArr[0] = indexes[i] % u.getNpixH();
-      posArr[1] = indexes[i] / u.getNpixH();
+    // 1 is y, or row
+    // 0 is x, or columns
+    // Pixel numbers, from top corner
+    posArr[0] = indexes[i] % u.getNpixH();
+    posArr[1] = indexes[i] / u.getNpixH();
+
+    bool xSS =  ( lowerXSS <= posArr[0] ) && ( posArr[0] < upperXSS ) ; // True if this coordinate in the subset
+    bool ySS =  ( lowerYSS <= posArr[1] ) && ( posArr[1] < upperYSS ) ;
+
+
+    // Ignore for error analysis, will only go if not jacknifing, or source outside of jacknife subset
+    if (    noJack ||
+         !( xSS    &&
+            ySS    )) {
 
 
       // Locate indexes for source averaging
@@ -111,6 +131,7 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
 void radialDistAverage( double       *avgArr ,  // Array to overwrite
                         double    *distances ,  // Distance array of sources
                         userInfo           u ,
+                        int         *indexes ,
                         double     center[2] ,
                         int      ignoreIndex ){
 
@@ -126,11 +147,35 @@ void radialDistAverage( double       *avgArr ,  // Array to overwrite
     N_countsArr[i] = 0;
   }
 
+
+  // For checking if in jacknife subset
+  bool noJack  = ignoreIndex == -1 ;
+
+  int lowerXSS = ( ignoreIndex % u.getJacknifeBins()     ) * u.getNpixH();
+  int upperXSS = ( ignoreIndex % u.getJacknifeBins() + 1 ) * u.getNpixH();
+
+  int lowerYSS = ( ignoreIndex / u.getJacknifeBins()     ) * u.getNpixH();
+  int upperYSS = ( ignoreIndex / u.getJacknifeBins() + 1 ) * u.getNpixH();
+
+
   // For each source, find which bin it's in
   for(int i = 0; i < u.getNsrc(); ++i ){
 
-    // For errors
-    if ( i != ignoreIndex ) {
+    // 1 is y, or row
+    // 0 is x, or columns
+    // Pixel numbers, from top corner
+    posArr[0] = indexes[i] % u.getNpixH();
+    posArr[1] = indexes[i] / u.getNpixH();
+
+    bool xSS =  ( lowerXSS <= posArr[0] ) && ( posArr[0] < upperXSS ) ; // True if this coordinate in the subset
+    bool ySS =  ( lowerYSS <= posArr[1] ) && ( posArr[1] < upperYSS ) ;
+
+    // For errors, either no jacknifing (full sample)
+    //   or outside of subset to remove
+    if (    noJack ||
+         !( xSS    &&
+            ySS    )) {
+
       // Distance of pixels from center, converted to "bin" units
 
       iBin = std::min(
@@ -165,15 +210,32 @@ void radialDistAverage( double       *avgArr ,  // Array to overwrite
 //
 // Get array of distances for sources
 //
-void distArrCalc( double *sourceDistArr ,  // Array to overwrite
+int  distArrCalc( double *sourceDistArr ,  // Array to overwrite
                   int          *indexes ,  // Source locations
                   PixelMap     *distMap ,  // Map of distances
                   double          scale ,  // Mpc/rad conversion
-                  int         N_sources ){ // Number of source
+                  int         N_sources ,  // Number of source
+                  double          R_max ){ // Radius need to be outside
+
+  int N_valid = 0;
 
   for(int i = 0 ; i < N_sources ; ++i ){
-    sourceDistArr[i] = (*distMap).getValue( indexes[i] ) * scale;
+
+    double d = (*distMap).getValue( indexes[i] ) * scale;
+
+    if ( d > R_max ){
+
+      N_valid += 1;
+
+      sourceDistArr[i] = d ;
+    } else {
+      sourceDistArr[i] = -1;
+    }
+
   }
+
+  return N_valid;
+
 }
 
 

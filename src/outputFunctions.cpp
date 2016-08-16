@@ -177,10 +177,16 @@ int  writeAngRTS( haloInfo   & h ,
 
                                                   , 0                )
                                                   , u.getNbins_A2D() );
-    gTan_binned[aBin][rBin] += gTan[i];
-    gSec_binned[aBin][rBin] += gSec[i];
-    gTot_binned[aBin][rBin] += sqrt( gTan[i] * gTan[i] + gSec[i] * gSec[i] );
-    NTot_binned[aBin][rBin] += 1;
+    if ( gTan[i] == gTan[i] &&
+         gSec[i] == gSec[i] ){
+
+      gTan_binned[aBin][rBin] += gTan[i];
+      gSec_binned[aBin][rBin] += gSec[i];
+      gTot_binned[aBin][rBin] += sqrt( gTan[i] * gTan[i] + gSec[i] * gSec[i] );
+      NTot_binned[aBin][rBin] += 1;
+
+    }
+
   }
 
   for ( int i = 0; i < u.getNbins_A2D(); ++ i ){ // Take the average

@@ -153,6 +153,7 @@ int main(int arg,char **argv){
 
   do{
 
+    userInput.setNsrc( -1 ); // Reset each time, as we will change during the program
 
 
     //////////////////////////////////////
@@ -355,13 +356,26 @@ userInput.setNpix( 9*9);
 
     std::cout << "Generating sources..." << std::endl;
 
-    double  srcErrArr[ userInput.getNsrc() ]; // Error
-    double  srcDArr  [ userInput.getNsrc() ]; // Redshift
+    double *srcErrArr ;
+    double *srcDArr   ;
+    int    *indexes   ;
+
+
+    double *srcErrArrTemp;
+    double *srcDArrTemp  ;
+    int    *indexesTemp  ;
+
+    srcErrArrTemp = new double[ userInput.getNsrc() ];
+    srcDArrTemp   = new double[ userInput.getNsrc() ];
+    indexesTemp   = new int   [ userInput.getNsrc() ];
+
+//    double  srcErrArr[ userInput.getNsrc() ]; // Error
+//    double  srcDArr  [ userInput.getNsrc() ]; // Redshift
 
     logMessage( std::string("Allocated src arrays of size: ") + std::to_string((long long) userInput.getNsrc()) );
 
     for (int i = 0; i < userInput.getNsrc(); ++i ){
-      srcErrArr[i] = userInput.getShapeNoise();                           // Errors all a temporary 0.3
+      srcErrArrTemp[i] = userInput.getShapeNoise();                           // Errors all a temporary 0.3
     }
 
 
@@ -370,8 +384,8 @@ userInput.setNpix( 9*9);
 
     std::cout << "  generating indexes..." << std::endl;
 
-    int indexes[ userInput.getNsrc() ];
-    getRandomSourcesIndexes( indexes, userInput );
+//    int indexes[ userInput.getNsrc() ];
+    getRandomSourcesIndexes( indexesTemp, userInput );
 
     logMessage( std::string("Sources placed") );
 
@@ -381,13 +395,42 @@ userInput.setNpix( 9*9);
 
     std::cout << "  calculating distances..." << std::endl;
 
-    // Determine distances of the sources from center of cluster
-    distArrCalc( srcDArr, indexes, &distMap, userInput.getPhysFOV() / userInput.getAngFOV() * 180 / M_PI, userInput.getNsrc() );
 
-    logMessage( std::string("Source distances from center found") );
+    // Comb through sources and only keep those outside our halo radius
+    {
+
+      int new_Nsrc = 0;
+
+      // Determine distances of the sources from center of cluster, if within Rmax flag as -1
+      new_Nsrc = distArrCalc( srcDArrTemp, indexesTemp, &distMap, userInput.getPhysFOV() / userInput.getAngFOV() * 180 / M_PI, userInput.getNsrc(), myHalo.getRmax() );
+
+      logMessage( std::string("Source distances from center found") );
+
+
+      srcErrArr = new double [ new_Nsrc ];
+      srcDArr   = new double [ new_Nsrc ];
+      indexes   = new int    [ new_Nsrc ];
+
+      int validCounter = 0;
+
+      for ( int i = 0; i < userInput.getNsrc(); ++i ){
+        if ( srcDArrTemp[i] != -1 ){
+          srcErrArr[ validCounter ] = srcErrArrTemp[i];
+          srcDArr  [ validCounter ] = srcDArrTemp  [i];
+          indexes  [ validCounter ] = indexesTemp  [i];
+          ++validCounter;
+        }
+      }
+      userInput.setNsrc( new_Nsrc );
+
+    }
+
+    delete[] srcErrArrTemp ;
+    delete[] srcDArrTemp   ;
+    delete[] indexesTemp   ;
+
 
     std::cout << "Done." << std::endl << std::endl;
-
 
 
     ////////////////////////////////////////////////////////////
@@ -405,7 +448,7 @@ userInput.setNpix( 9*9);
     logMessage( std::string("Generating fits... ") );
 
 
-    for ( int  omitIndex = -1; omitIndex < userInput.getNsrc(); ++ omitIndex ) {
+    for ( int  omitIndex = -1; omitIndex < 100; ++ omitIndex ) {
 
       nfwFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
       nfTFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
@@ -435,7 +478,7 @@ userInput.setNpix( 9*9);
                 gErrArr[ userInput.getNbins() ];
 
 
-      radialDistAverage( distArr, srcDArr, userInput, center, omitIndex );
+      radialDistAverage( distArr, srcDArr, userInput, indexes, center, omitIndex );
 
       logMessage( std::string("  Source distances averaged") );
 
@@ -510,6 +553,12 @@ generateNFWRTS( gTanArr, testProfile, userInput.getNbins(), distArr, cosmo.Sigma
 
 
     writeProfileFits( userInput, myHalo, einFits[0], nfwFits[0], nfTFits[0], einErr, nfwErr, nfTErr, halo_index );
+
+
+
+    delete[] srcErrArr ;
+    delete[] srcDArr   ;
+    delete[] indexes   ;
 
 
   } while ( true );

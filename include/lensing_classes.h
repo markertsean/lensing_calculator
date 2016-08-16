@@ -90,6 +90,7 @@ class userInfo{
     void setImageMass       ( double inpF ) {   totMass      = inpF ; }
     void setNpix            ( int    inpI ) {   N_pixels     = inpI ; }
     void setNpart           ( int    inpI ) {   N_particles  = inpI ; }
+    void setJacknifeBins    ( int    inpI ) {   jacknifeBins = inpI ; }
 
     void setSourceZ         ( double inpF ) {        sourceZ = inpF ; }
     void setSourceDens      ( double inpF ) {     sourceDens = inpF ; }
@@ -134,6 +135,7 @@ class userInfo{
     double getIntegLength     () const { return  integLength   ; }
     int    getNpixH           () const { return  N_pixels_h    ; }
     int    getNpixV           () const { return  N_pixels_v    ; }
+    int    getJacknifeBins    () const { return  jacknifeBins  ; }
     double getImageMass       () const { return  totMass       ; }
     double getPhysFOV         () const { return  physFOV       ; }
     double getAngFOV          () const { return  angFOV        ; }
@@ -236,6 +238,7 @@ class userInfo{
   double alphaMin;
   double alphaMax;
 
+  int jacknifeBins;
 
   int maxFitAttempts; // Max attempts at fitting before abort
   int  N_chromosomes; // Number of chromosomes in population

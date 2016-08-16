@@ -10,6 +10,7 @@
 void radialDistAverage( double       *avgArr , // Array to overwrite
                         double    *distances , // Array of source distances
                         userInfo           u , // User parameters
+                        int         *indexes ,
                         double     center[2] ,
                         int ignoreIndex = -1 );// Index to ignore, for errors
 
@@ -24,12 +25,12 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
                          int ignoreIndex =-1 ); // Index to ignore, for errors
 
 
-void distArrCalc( double *sourceDistArr ,  // Array to overwrite
+int  distArrCalc( double *sourceDistArr ,  // Array to overwrite
                   int          *indexes ,  // Source locations
                   PixelMap     *distMap ,  // Map of distances
                   double          scale ,  // Mpc/rad conversion
-                  int         N_sources ); // Number of source
-
+                  int         N_sources ,  // Number of source
+                  double          R_max ); // Maximum radius to use
 
 
 void  distMapCalc(  PixelMap  &distMap ,
@@ -64,7 +65,7 @@ void printPixelMap( PixelMap   &inpMap   ,  //input pixel map
 
 
 void getRandomSourcesIndexes( int      *indexes ,  //Array of pixelmap indexes
-                              userInfo        u ); //Input user information
+                              userInfo        u ); // User information
 
 // Box-Muller transformation to provide gaussian distribution
 double gaussErr( double   sigma ,
