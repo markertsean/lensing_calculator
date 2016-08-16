@@ -40,7 +40,7 @@ void  distMapCalc(  PixelMap  &distMap ,
 
 
 
-double calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
+void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
                       PixelMap   &kappaMap ,
                       PixelMap  &gamma1Map ,
                       PixelMap  &gamma2Map ,

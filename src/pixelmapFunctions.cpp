@@ -262,7 +262,7 @@ void distMapCalc( PixelMap  &distMap ,  // pixelmap to output
 //  Calculate the lensing quantities from the grid
 //  Overwrites all the input PixelMaps
 //
-double calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
+void   calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
                       PixelMap   &kappaMap ,
                       PixelMap  &gamma1Map ,
                       PixelMap  &gamma2Map ,
@@ -292,8 +292,6 @@ double calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
   double posArr[2]= { 0, 0 }; // Pixel position
   double phi      =   0;      // Position angle
 
-  double mass = 0;            // Total mass in kappa
-
   for (int i=0;i<N_pixels_v;++i){
     posArr[1] = (-i - 0.5 + N_pixels_v/2.0)-center[1];
 
@@ -312,8 +310,6 @@ double calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
     g_tanMap[k] = (-gamma1Map[k]*cos(a)-gamma2Map[k]*sin(a)) / (1-kappaMap[k]);
     g_secMap[k] = (-gamma1Map[k]*sin(a)+gamma2Map[k]*cos(a)) / (1-kappaMap[k]);
 
-    mass       +=    kappaMap[k];
-
     g_totMap[k] = sqrt( g_tanMap[k] * g_tanMap[k] + g_secMap[k] * g_secMap[k] );
   }
   }
@@ -331,7 +327,6 @@ double calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
   printPixelMap(  g_secMap, N_pixels_h, N_pixels_v );
 */
 
-  return mass;
 }
 
 

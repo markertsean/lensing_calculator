@@ -239,10 +239,11 @@ int main(int arg,char **argv){
 
 
 
-
+/*
 userInput.setNpixH( 9 );
 userInput.setNpixV( 9 );
 userInput.setNpix( 9*9);
+//*/
     std::cout << "Constructing PixelMaps..." << std::endl;
 
     // PixelMaps we need to keep
@@ -252,7 +253,6 @@ userInput.setNpix( 9*9);
     PixelMap  g_secMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
     PixelMap   distMap( center, userInput.getNpixH(), userInput.getNpixV(), angRange / userInput.getNpixH() );
 
-    double totalMass;
 
     {
 
@@ -306,7 +306,7 @@ userInput.setNpix( 9*9);
 
       std::cout << "Generating PixelMaps from grid..." << std::endl;
 
-      totalMass = calcLensMaps( myGrid,
+      calcLensMaps( myGrid,
                              kappaMap ,
                             gamma1Map ,
                             gamma2Map ,
@@ -319,8 +319,6 @@ userInput.setNpix( 9*9);
                  userInput.getNpixV() ,
                              angRange ,
                                center );
-
-      totalMass = totalMass * cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() );
 
 
       std::cout << "PixelMaps generated" << std::endl << std::endl;
@@ -343,8 +341,6 @@ userInput.setNpix( 9*9);
       std::cout << "Halo orientation uknown, ignoring 2D map" << std::endl << std::endl;
       logMessage(  "Halo orientation uknown, ignoring 2D map" );
     }
-
-    std::cout << myHalo.getAlpha() << " " << myHalo.getGamma() << std::endl;
 
 
 
@@ -449,7 +445,7 @@ userInput.setNpix( 9*9);
 
       std::cout << "  Sources averaged" << std::endl;
 
-
+/*
 densProfile testProfile;
 testProfile.setM_enc( 1.0e14 );
 testProfile.setR_max( 5.0    );
@@ -469,7 +465,7 @@ for ( int i = 0; i < userInput.getNbins(); ++i ){
 }
 gErrArr[0] = 0;
 generateNFWRTS( gTanArr, testProfile, userInput.getNbins(), distArr, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ) );
-
+//*/
 
       //////////////////////////////////////////////////////////
       ////////////////////////FIT PROFILE///////////////////////
@@ -513,7 +509,7 @@ generateNFWRTS( gTanArr, testProfile, userInput.getNbins(), distArr, cosmo.Sigma
 
 
 
-    writeProfileFits( userInput, myHalo, einFits[0], nfwFits[0], nfTFits[0], einErr, nfwErr, nfTErr, halo_index, totalMass );
+    writeProfileFits( userInput, myHalo, einFits[0], nfwFits[0], nfTFits[0], einErr, nfwErr, nfTErr, halo_index );
 
 
   } while ( true );

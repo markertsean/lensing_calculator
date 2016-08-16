@@ -28,8 +28,7 @@ void writeProfileFits( userInfo        u ,   // User input
                        double    *einErr ,   // Einasto   errors
                        double    *nfwErr ,   // NFW Full  errors
                        double    *nfTErr ,   // NFW trunc errors
-                       int       haloNum ,   // How many times we've written, first time we need to write halo info
-                       double     imageM );  // Total mass in image, measure of LSS
+                       int       haloNum );  // How many times we've written, first time we need to write halo info
 
 
 #endif // OUTPUT_FUNCTIONS

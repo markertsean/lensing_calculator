@@ -87,6 +87,7 @@ class userInfo{
     userInfo();
 
     void setFOV             ( double inpF ) {   angFOV       = inpF ; }
+    void setImageMass       ( double inpF ) {   totMass      = inpF ; }
     void setNpix            ( int    inpI ) {   N_pixels     = inpI ; }
     void setNpart           ( int    inpI ) {   N_particles  = inpI ; }
 
@@ -133,6 +134,7 @@ class userInfo{
     double getIntegLength     () const { return  integLength   ; }
     int    getNpixH           () const { return  N_pixels_h    ; }
     int    getNpixV           () const { return  N_pixels_v    ; }
+    double getImageMass       () const { return  totMass       ; }
     double getPhysFOV         () const { return  physFOV       ; }
     double getAngFOV          () const { return  angFOV        ; }
     double getSourceRadius    () const { return  sourceR       ; }
@@ -197,6 +199,7 @@ class userInfo{
 
     double    sourceDens ; // Source Number Density, in gal/arcmin^2
     double shapeNoise ;
+    double totMass    ;  // Total mass in image
 
     int    N_pixels   ;  // Number of pixels on grid
     int    N_pixels_h ;  // Number of pixels on x-axis

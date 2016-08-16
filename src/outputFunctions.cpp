@@ -119,8 +119,7 @@ int  writeAngRTS( haloInfo   & h ,
 
   h.setAlpha( alpha_0 );                        // Store orientation as halo info
   h.setGamma( zInc    );
-std::cout << alpha_0 << " " << h.getAlpha() << std::endl;
-std::cout << zInc    << " " << h.getGamma() << std::endl;
+
   if ( checkFile( fileName ) )                  // If file exists, don't bother writing a new one
     return 2;
 
@@ -200,9 +199,11 @@ std::cout << zInc    << " " << h.getGamma() << std::endl;
   pFile = fopen( fileName, "w" );
 
   fprintf( pFile, "M       %14.6e\n", h.getM    () );
-  fprintf( pFile, "C       %14.6e\n", h.getPhi  () );
-  fprintf( pFile, "R_max   %14.6e\n", h.getPhi  () );
+  fprintf( pFile, "C       %14.6e\n", h.getC    () );
+  fprintf( pFile, "R_max   %14.6e\n", h.getRmax () );
 
+  fprintf( pFile, "integ   %14.6e\n", integ        );
+  fprintf( pFile, "M_img   %14.6e\n", u.getImageMass() );
 
   fprintf( pFile, "phi     %14.6e\n", h.getPhi  () );
   fprintf( pFile, "theta   %14.6e\n", h.getTheta() );
@@ -260,8 +261,7 @@ void writeProfileFits( userInfo        u ,   // User input
                        double    *einErr ,   // Einasto   errors
                        double    *nfwErr ,   // NFW Full  errors
                        double    *nfTErr ,   // NFW trunc errors
-                       int       haloNum ,   // How many times we've written, first time we need to write halo info
-                       double     imageM ){  // Total mass in image, measure of LSS
+                       int       haloNum ){  // How many times we've written, first time we need to write halo info
 
 
   checkDir( u.getOutputPath() );
@@ -312,7 +312,7 @@ void writeProfileFits( userInfo        u ,   // User input
 
 
   fprintf( pFile , "IntegLength %10.6f\n"        , u.getIntegLength() );
-  fprintf( pFile , "ImageMass   %14.6e\n"        , imageM             );
+  fprintf( pFile , "ImageMass   %14.6e\n"        , u.getImageMass  () );
   fprintf( pFile , "NFW_Full %10.6f %10.6f %10.6f %10.6f %10.6f %10.6f\n" , log10( nfw.getM_enc() ), nfw.getC(),           -1.0, nfwErr[1], nfwErr[0],      -1.0);
   fprintf( pFile , "NFW_Trnc %10.6f %10.6f %10.6f %10.6f %10.6f %10.6f\n" , log10( nfT.getM_enc() ), nfT.getC(),           -1.0, nfTErr[1], nfTErr[0],      -1.0);
   fprintf( pFile , "Ein      %10.6f %10.6f %10.6f %10.6f %10.6f %10.6f\n" , log10( ein.getM_enc() ), ein.getC(), ein.getAlpha(), einErr[1], einErr[0], einErr[2]);

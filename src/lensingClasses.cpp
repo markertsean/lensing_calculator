@@ -22,6 +22,7 @@ haloInfo::haloInfo(){
 userInfo::userInfo(){
         angFOV = -1.  ; //  Angular size of image
        physFOV = -1.  ; // Physical size of image
+       totMass = -1.  ; // Total mass in image
          R_max = -1.  ; // ?
    sourceR     =  1.0 ; // Radius of source in pixels
    sourceZ     = -1.  ; // Redshift of sources
@@ -31,8 +32,8 @@ userInfo::userInfo(){
    N_pixels_h  = -1   ; // Number of pixels on x-axis
    N_pixels_v  = -1   ; // Number of pixels on y-axis
    N_bins      = -1   ; // Number of bins for radial averaging
-N_bins_R2D  = 10  ; // Number of bins for radial averaging
-N_bins_A2D  = 10   ; // Number of bins for radial averaging
+   N_bins_R2D  =100   ; // Number of bins for 2D map averaging
+   N_bins_A2D  =100   ; // Number of bins for 2D map averaging
    N_sources   = -1   ; // Number of sources to generate
    N_particles = -1   ; // Number of particles in simulation
    num_threads =  1   ; // Number of threads for parallel processing
@@ -54,20 +55,8 @@ N_bins_A2D  = 10   ; // Number of bins for radial averaging
       rMax =  2.0;
       mMin = 12.5;     // Range of mass values to fit
       mMax = 16.5;
-  alphaMin =  9e-2;  // Range of alpha values to fit
+  alphaMin =  9e-2;    // Range of alpha values to fit
   alphaMax =  0.68;
-
-/*
-  maxFitAttempts = 1e4   ;
-   N_chromosomes = 1e4   ;
-      N_chiTrack = 1e2   ;
-      consistent = 2e2   ;
-       tolerance = 1e-3  ;
-       mutChance = 1e-2  ;
-      avgTestVal = 0.5   ;
-*/
-
-
 
   maxFitAttempts = 1e3   ; // Maximum number of steps to roll ball, or times to reproduce
    N_chromosomes = 1e3   ; // Number of chromosomes or balls
