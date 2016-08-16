@@ -192,14 +192,14 @@ void readInpFile(          userInfo  &inpInfo  ,   // Info needed for the rest o
   }
 
   logMessage( std::string(  "N_bins    = ") + std::to_string((long long  ) inpInfo.getNbins           () ) +
-              std::string("\nN_binsR2D = ") + std::to_string((long long  ) inpInfo.getNsrc            () ) +
-              std::string("\nN_binsA2D = ") + std::to_string((long long  ) inpInfo.getNsrc            () ) +
+              std::string("\nN_binsR2D = ") + std::to_string((long long  ) inpInfo.getNbins_R2D       () ) +
+              std::string("\nN_binsA2D = ") + std::to_string((long long  ) inpInfo.getNbins_A2D       () ) +
               std::string("\nN_sources = ") + std::to_string((long long  ) inpInfo.getNsrc            () ) +
-              std::string("\nN_threads = ") + std::to_string((long long  ) inpInfo.getNsrc            () ) +
-              std::string("\nN_edgepix = ") + std::to_string((long long  ) inpInfo.getNsrc            () ) +
-              std::string("\nN_fitAtte = ") + std::to_string((long long  ) inpInfo.getNsrc            () ) +
-              std::string("\nN_probes  = ") + std::to_string((long long  ) inpInfo.getNsrc            () ) +
-              std::string("\nN_consist = ") + std::to_string((long long  ) inpInfo.getNthreads        () ) +
+              std::string("\nN_threads = ") + std::to_string((long long  ) inpInfo.getNthreads        () ) +
+              std::string("\nN_edgepix = ") + std::to_string((long long  ) inpInfo.getEdgePix         () ) +
+              std::string("\nN_fitAtte = ") + std::to_string((long long  ) inpInfo.getMaxFitNum       () ) +
+              std::string("\nN_probes  = ") + std::to_string((long long  ) inpInfo.getNchrome         () ) +
+              std::string("\nN_consist = ") + std::to_string((long long  ) inpInfo.getNConsistent     () ) +
               std::string("\nfitTolera = ") + std::to_string((long double) inpInfo.getTolerance       () ) +
               std::string("\nsrcRadius = ") + std::to_string((long double) inpInfo.getSourceRadius    () ) +
               std::string("\nsrcDensit = ") + std::to_string((long double) inpInfo.getSourceDensity   () ) +

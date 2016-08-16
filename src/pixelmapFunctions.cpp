@@ -70,7 +70,12 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
 
 
       // Distance of radians from center, converted to "bin" units
-      iBin = round( dist[i] / u.getPhysFOV() * 2 * u.getNbins() );
+      iBin = std::min(
+             std::max(
+                           ( dist[i] / u.getPhysFOV() * 2 * u.getNbins() )  ,
+                                                                      0.0   ),
+                                                 (double)  (u.getNbins()-1) );
+
 
 
            avgArr[iBin] += avgVal / n_srcs / ( errors[i]*errors[i] ); // Weighted average sum
@@ -127,7 +132,12 @@ void radialDistAverage( double       *avgArr ,  // Array to overwrite
     // For errors
     if ( i != ignoreIndex ) {
       // Distance of pixels from center, converted to "bin" units
-      iBin = round( distances[i] / u.getPhysFOV() * 2 * u.getNbins() );
+
+      iBin = std::min(
+             std::max(
+                           ( distances[i] / u.getPhysFOV() * 2 * u.getNbins() )  ,
+                                                                          0.0   ),
+                                                     (double)  (u.getNbins()-1) );
 
            avgArr[iBin] += distances[i];
       N_countsArr[iBin] += 1;
@@ -253,7 +263,6 @@ void distMapCalc( PixelMap  &distMap ,  // pixelmap to output
               sqrt( pow( posArr[0]-center[0] ,2) + pow( posArr[1]-center[1] ,2) );
   }
   }
-
 }
 
 

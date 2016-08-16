@@ -414,7 +414,6 @@ userInput.setNpix( 9*9);
       nfTFits[ omitIndex + 1 ].setType( 0 );
 
 
-
       ////////////////////////////////////////////////////////////
       ///////////////////Determine radial average/////////////////
       ///////////////////Bin different source vals////////////////
@@ -435,11 +434,12 @@ userInput.setNpix( 9*9);
                 gTanArr[ userInput.getNbins() ],
                 gErrArr[ userInput.getNbins() ];
 
-      radialDistAverage( distArr, srcDArr, userInput, center );
+
+      radialDistAverage( distArr, srcDArr, userInput, center, omitIndex );
 
       logMessage( std::string("  Source distances averaged") );
 
-      radialShearAverage( gTanArr, gErrArr, indexes, g_totMap, srcErrArr, srcDArr, userInput, center );
+      radialShearAverage( gTanArr, gErrArr, indexes, g_totMap, srcErrArr, srcDArr, userInput, center, omitIndex );
 
       logMessage( std::string("  Shear values averaged") );
 

@@ -21,7 +21,7 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
                          double        *dist ,  // Distances of the halos
                          userInfo          u ,
                          double    center[2] ,
-                         int ignoreIndex = 1 ); // Index to ignore, for errors
+                         int ignoreIndex =-1 ); // Index to ignore, for errors
 
 
 void distArrCalc( double *sourceDistArr ,  // Array to overwrite

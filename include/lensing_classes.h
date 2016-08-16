@@ -175,9 +175,9 @@ class userInfo{
     int    getNsrc            () const { if (    N_sources != -1 ) // If users provided a number, use that
                                           return N_sources     ;
                                           return (int) (           // Otherwise use source density and size
-                                                 sourceDens *      //   of our FOV
-                                                 physFOV    *
-                                                 physFOV    )  ; }
+                                                 sourceDens  *     //   of our FOV in arcmin
+                                                 angFOV * 60 *
+                                                 angFOV * 60 )  ; }
 
 
 
