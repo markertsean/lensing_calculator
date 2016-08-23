@@ -438,17 +438,24 @@ userInput.setNpix( 9*9);
     //////////////Loop over and jacknife sample/////////////////
     ////////////////////////////////////////////////////////////
 
+    int N_jackbins = userInput.getJacknifeBins() * userInput.getJacknifeBins() ;
 
-    densProfile nfwFits[ userInput.getNsrc() + 1 ];
-    densProfile nfTFits[ userInput.getNsrc() + 1 ];
-    densProfile einFits[ userInput.getNsrc() + 1 ];
+
+                std::cout <<"Using " <<     N_jackbins    << " subsets to calculate errors" << std::endl;
+    logMessage( std::string   (            "N_jackbins = ") +
+                std::to_string( (long long) N_jackbins    ) );
+
+
+    densProfile nfwFits[ N_jackbins + 1 ];
+    densProfile nfTFits[ N_jackbins + 1 ];
+    densProfile einFits[ N_jackbins + 1 ];
 
 
                 std::cout <<"Generating fits... "  << std::endl;
     logMessage( std::string("Generating fits... ") );
 
 
-    for ( int  omitIndex = -1; omitIndex < 100; ++ omitIndex ) {
+    for ( int  omitIndex = -1; omitIndex < N_jackbins ; ++ omitIndex ) {
 
       nfwFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
       nfTFits[ omitIndex + 1 ].setR_max( myHalo.getRmax() );
@@ -488,27 +495,6 @@ userInput.setNpix( 9*9);
 
       std::cout << "  Sources averaged" << std::endl;
 
-/*
-densProfile testProfile;
-testProfile.setM_enc( 1.0e14 );
-testProfile.setR_max( 5.0    );
-testProfile.setC    ( 5.0    );
-
-nfwFits[ omitIndex + 1 ].setR_max( testProfile.getR_max() );
-nfTFits[ omitIndex + 1 ].setR_max( testProfile.getR_max() );
-einFits[ omitIndex + 1 ].setR_max( testProfile.getR_max() );
-einFits[ omitIndex + 1 ].setType( 2 );
-nfTFits[ omitIndex + 1 ].setType( 0 );
-
-for ( int i = 0; i < userInput.getNbins(); ++i ){
-
-  distArr[i] = 1e-3 + i * userInput.getPhysFOV() / userInput.getNbins() / 2.0;
-  gErrArr[i] = 0.3;
-
-}
-gErrArr[0] = 0;
-generateNFWRTS( gTanArr, testProfile, userInput.getNbins(), distArr, cosmo.SigmaCrit( myHalo.getZ(), userInput.getSourceZ() ) );
-//*/
 
       //////////////////////////////////////////////////////////
       ////////////////////////FIT PROFILE///////////////////////
@@ -541,9 +527,9 @@ generateNFWRTS( gTanArr, testProfile, userInput.getNbins(), distArr, cosmo.Sigma
     double nfTErr[3];
     double einErr[3];
 
-    jacknife( nfwFits, userInput.getNsrc(), nfwErr );
-    jacknife( nfTFits, userInput.getNsrc(), nfTErr );
-    jacknife( einFits, userInput.getNsrc(), einErr );
+    jacknife( nfwFits, N_jackbins , nfwErr );
+    jacknife( nfTFits, N_jackbins , nfTErr );
+    jacknife( einFits, N_jackbins , einErr );
 
 
                 std::cout <<"Done.              " << std::endl;
