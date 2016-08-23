@@ -38,12 +38,16 @@ void radialShearAverage( double      *avgArr ,  // Array to overwrite
   // For checking if in jacknife subset
   bool noJack  = ignoreIndex == -1 ;
 
-  int lowerXSS = ( ignoreIndex % u.getJacknifeBins()     ) * u.getNpixH();
-  int upperXSS = ( ignoreIndex % u.getJacknifeBins() + 1 ) * u.getNpixH();
+  int lowerXSS = ignoreIndex  %  u.getJacknifeBins() ;
+  int lowerYSS = ignoreIndex  /  u.getJacknifeBins() ;
 
-  int lowerYSS = ( ignoreIndex / u.getJacknifeBins()     ) * u.getNpixH();
-  int upperYSS = ( ignoreIndex / u.getJacknifeBins() + 1 ) * u.getNpixH();
+  int upperXSS =    lowerXSS  +  1 ;
+  int upperYSS =    lowerYSS  +  1 ;
 
+  lowerXSS = lowerXSS * u.getNpixH() / u.getJacknifeBins();
+  lowerYSS = lowerYSS * u.getNpixH() / u.getJacknifeBins();
+  upperXSS = upperXSS * u.getNpixH() / u.getJacknifeBins();
+  upperYSS = upperYSS * u.getNpixH() / u.getJacknifeBins();
 
 
   // For each source, find which bin it's in,
@@ -149,13 +153,21 @@ void radialDistAverage( double       *avgArr ,  // Array to overwrite
 
 
   // For checking if in jacknife subset
+  // Takes bins whose numbers go horizontally
+  //  across the image
+
   bool noJack  = ignoreIndex == -1 ;
 
-  int lowerXSS = ( ignoreIndex % u.getJacknifeBins()     ) * u.getNpixH();
-  int upperXSS = ( ignoreIndex % u.getJacknifeBins() + 1 ) * u.getNpixH();
+  int lowerXSS = ignoreIndex  %  u.getJacknifeBins() ;
+  int lowerYSS = ignoreIndex  /  u.getJacknifeBins() ;
 
-  int lowerYSS = ( ignoreIndex / u.getJacknifeBins()     ) * u.getNpixH();
-  int upperYSS = ( ignoreIndex / u.getJacknifeBins() + 1 ) * u.getNpixH();
+  int upperXSS =    lowerXSS  +  1 ;
+  int upperYSS =    lowerYSS  +  1 ;
+
+  lowerXSS = lowerXSS * u.getNpixH() / u.getJacknifeBins();
+  lowerYSS = lowerYSS * u.getNpixH() / u.getJacknifeBins();
+  upperXSS = upperXSS * u.getNpixH() / u.getJacknifeBins();
+  upperYSS = upperYSS * u.getNpixH() / u.getJacknifeBins();
 
 
   // For each source, find which bin it's in
@@ -187,6 +199,7 @@ void radialDistAverage( double       *avgArr ,  // Array to overwrite
            avgArr[iBin] += distances[i];
       N_countsArr[iBin] += 1;
     }
+
   }
 
   // Perform the averaging

@@ -474,8 +474,8 @@ userInput.setNpix( 9*9);
       // Here loop over sources, indicating which index to omit (start at -1)
       // Pass to dist and shear calculators, to indicate ommited index
       if ( omitIndex > -1 ){
-                  std::cout <<"  Omitting source " << omitIndex << std::endl;
-      logMessage( std::string("  Omitting source ") +
+                  std::cout <<"  Omitting subset " << omitIndex << std::endl;
+      logMessage( std::string("  Omitting subset ") +
                   std::to_string( (long long) omitIndex ) );
       }
 
