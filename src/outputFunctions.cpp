@@ -204,6 +204,8 @@ int  writeAngRTS( haloInfo   & h ,
 
   pFile = fopen( fileName, "w" );
 
+
+  fprintf( pFile, "ID      %10li\n" , h.getID   () );
   fprintf( pFile, "M       %14.6e\n", h.getM    () );
   fprintf( pFile, "C       %14.6e\n", h.getC    () );
   fprintf( pFile, "R_max   %14.6e\n", h.getRmax () );
