@@ -358,8 +358,8 @@ void   calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
                       int       N_pixels_h ,  // Number of pixels on a side
                       int       N_pixels_v ,  // Number of pixels on a side
                       double      realSize ,  // Angular width in horizontal direction
-                      double     center[2] ){ // Center location of halo
-
+                      double     center[2] ,  // Center location of halo
+                      double     kappaAvg  ){ // Average value of kappa to add
 
 
 
@@ -376,6 +376,35 @@ void   calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
   double posArr[2]= { 0, 0 }; // Pixel position
   double phi      =   0;      // Position angle
 
+
+
+  // Fix Kappa values
+  double kappaOffset = 0;     // Glamer does odd things to Kappa, brings average to 0
+  double kappaMin    = 0;
+
+  for ( int i = 0; i < N_pixels_h * N_pixels_v; ++ i){
+      kappaOffset += kappaMap[i];
+
+    if ( kappaMap[i] < kappaMin )
+         kappaMin = kappaMap[i];
+
+  }
+    kappaOffset  = kappaOffset / ( N_pixels_h * N_pixels_v ) - kappaMin; // Avg in GLAMER map
+                                                                         // kappaMin added to each pix, so really min*Npix/Npix
+
+  double totM1 = 0;
+  double totM2 = 0;
+
+  // Modify Kappa so matches our original map
+  for ( int i = 0; i < N_pixels_h * N_pixels_v; ++i ){
+
+    kappaMap[i] = ( kappaMap[i]  - kappaMin ) * kappaAvg / kappaOffset; // Rezero the image, and change scale. Assumes original had at least 1 zero pixel
+
+  }
+
+
+
+
   for (int i=0;i<N_pixels_v;++i){
     posArr[1] = (-i - 0.5 + N_pixels_v/2.0)-center[1];
 
@@ -383,6 +412,7 @@ void   calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
     posArr[0] = ( j + 0.5 - N_pixels_h/2.0)-center[0];
 
     int k = j+i*N_pixels_h;
+
     phi = atan2(posArr[1],posArr[0]);
     //gamma1  <0 |   >0 -
     //gamma2  <0 \   >0 /
@@ -397,7 +427,6 @@ void   calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
     g_totMap[k] = sqrt( g_tanMap[k] * g_tanMap[k] + g_secMap[k] * g_secMap[k] );
   }
   }
-
 
   logMessage( std::string("gtan   map populated") );
   logMessage( std::string("gsec   map populated") );

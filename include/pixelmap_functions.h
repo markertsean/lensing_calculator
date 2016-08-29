@@ -53,7 +53,8 @@ void calcLensMaps(  GridMap     &inpGrid ,  //GLAMER grid to calc values on
                       int       N_pixels_h ,  //Number of pixels on a side
                       int       N_pixels_v ,  //Number of pixels on a side
                       double      realSize ,  //Real width on the 2D sky plane
-                      double     center[2] ); //Center location of halo
+                      double     center[2] ,  //Center location of halo
+                      double      kappaAVG );
 
 
 void printPixelMap( PixelMap   &inpMap ,  //input pixel map

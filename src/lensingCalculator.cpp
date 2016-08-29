@@ -319,7 +319,12 @@ userInput.setNpix( 9*9);
                  userInput.getNpixH() ,
                  userInput.getNpixV() ,
                              angRange ,
-                               center );
+                               center ,
+             userInput.getImageMass() /
+             userInput.getNpix     () /
+             cosmo.SigmaCrit(
+             myHalo.getZ() ,
+             userInput.getSourceZ() ) );
 
 
       std::cout << "PixelMaps generated" << std::endl << std::endl;
