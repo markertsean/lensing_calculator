@@ -30,5 +30,12 @@ void writeProfileFits( userInfo        u ,   // User input
                        double    *nfTErr ,   // NFW trunc errors
                        int       haloNum );  // How many times we've written, first time we need to write halo info
 
+// Writes source data points for stacking
+void writeDataPoints(  userInfo        u ,
+                       haloInfo        h ,
+                       double      *dArr ,
+                       int      *indexes ,
+                       PixelMap    &gMap );
+
 
 #endif // OUTPUT_FUNCTIONS

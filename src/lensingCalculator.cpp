@@ -240,11 +240,6 @@ int main(int arg,char **argv){
 
 
 
-/*
-userInput.setNpixH( 9 );
-userInput.setNpixV( 9 );
-userInput.setNpix( 9*9);
-//*/
     std::cout << "Constructing PixelMaps..." << std::endl;
 
     // PixelMaps we need to keep
@@ -374,8 +369,6 @@ userInput.setNpix( 9*9);
     srcDArrTemp   = new double[ userInput.getNsrc() ];
     indexesTemp   = new int   [ userInput.getNsrc() ];
 
-//    double  srcErrArr[ userInput.getNsrc() ]; // Error
-//    double  srcDArr  [ userInput.getNsrc() ]; // Redshift
 
     logMessage( std::string("Allocated src arrays of size: ") + std::to_string((long long) userInput.getNsrc()) );
 
@@ -389,7 +382,6 @@ userInput.setNpix( 9*9);
 
     std::cout << "  generating indexes..." << std::endl;
 
-//    int indexes[ userInput.getNsrc() ];
     getRandomSourcesIndexes( indexesTemp, userInput );
 
     logMessage( std::string("Sources placed") );
@@ -436,6 +428,9 @@ userInput.setNpix( 9*9);
 
 
     std::cout << "Done." << std::endl << std::endl;
+
+    // Write the sources to file
+    writeDataPoints( userInput, myHalo, srcDArr, indexes, g_totMap );
 
 
     ////////////////////////////////////////////////////////////
@@ -560,11 +555,6 @@ userInput.setNpix( 9*9);
               std::to_string( (long long) halo_index ) +
               std::string(" halos"));
 
-/*
-Need to check tan/azi uses in the program
-
-Need to work on error introduction
-//*/
 
   exit(0);
   return 0;

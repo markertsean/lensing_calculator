@@ -334,3 +334,102 @@ void writeProfileFits( userInfo        u ,   // User input
   std::cout << "Appended file: " << fileName << std::endl << std::endl;
 
 }
+
+
+
+// Writes source data points for stacking
+void writeDataPoints(  userInfo        u ,
+                       haloInfo        h ,
+                       double      *dArr ,
+                       int      *indexes ,
+                       PixelMap    &gMap ) {
+
+
+  checkDir( u.getOutputPath() );
+
+  double integ = u.getIntegLength(); // Need for file name
+
+  if ( integ == -1 ){                // If sphere, just mark as 0 integ length
+    integ = 0.0;
+  }
+
+  char     fileName[100];
+  sprintf( fileName, "%sHalo_%010li_%06.1f_Sources.dat", u.getOutputPath().c_str(), h.getID(), integ);
+
+
+  FILE *pFile;
+
+  pFile = fopen( fileName, "w" );
+
+  fprintf( pFile , "ID          %10li\n" , h.getID   () );
+  fprintf( pFile , "M           %14.6e\n", h.getM    () );
+  fprintf( pFile , "C           %10.6f\n", h.getC    () );
+  fprintf( pFile , "R_max       %10.6f\n", h.getRmax () );
+  fprintf( pFile , "Z           %10.6f\n", h.getZ    () );
+  fprintf( pFile , "b/a         %10.6f\n", h.getBA   () );
+  fprintf( pFile , "c/a         %10.6f\n", h.getCA   () );
+  fprintf( pFile , "phi         %10.6f\n", h.getPhi  () );
+  fprintf( pFile , "theta       %10.6f\n", h.getTheta() );
+  fprintf( pFile , "alpha       %10.6f\n", h.getAlpha() );
+  fprintf( pFile , "gamma       %10.6f\n", h.getGamma() );
+
+  fprintf( pFile , "IntegLength %10.6f\n", u.getIntegLength() );
+  fprintf( pFile , "IntegMass   %14.8e\n", u.getImageMass() );
+  fprintf( pFile , "FOV         %10.6f\n", u.getPhysFOV() );
+  fprintf( pFile , "N_pixH      %10i\n"  , u.getNpixH  () );
+  fprintf( pFile , "N_pixV      %10i\n"  , u.getNpixV  () );
+
+  fprintf( pFile , "N_src       %10i\n"  , u.getNsrc      () );
+  fprintf( pFile , "Z_src       %10.6f\n", u.getSourceZ   () );
+  fprintf( pFile , "sigma_shape %10.6f\n", u.getShapeNoise() );
+
+
+
+
+  int posArr[] = { 0, 0 };
+
+  // For each source, find which pixel it's in,
+  //  and use nearby pixels to generate an average
+  //  shear value to use
+  for(int i = 0; i < u.getNsrc(); ++i ){
+
+
+    // 1 is y, or row
+    // 0 is x, or columns
+    // Pixel numbers, from top corner
+    posArr[0] = indexes[i] % u.getNpixH();
+    posArr[1] = indexes[i] / u.getNpixH();
+
+    // Locate indexes for source averaging
+    int startXIndex = std::max( (int) ( posArr[0] - u.getSourceRadius() ),            0 );
+    int   endXIndex = std::min( (int) ( posArr[0] + u.getSourceRadius() ), u.getNpixH() );
+
+    int startYIndex = std::max( (int) ( posArr[1] - u.getSourceRadius() ), 0 );
+    int   endYIndex = std::min( (int) ( posArr[1] + u.getSourceRadius() ), u.getNpixV() );
+
+    double avgVal = 0;
+    int    n_srcs = 0;
+
+    // Average over the nearby pixels for a given source
+    for ( int j = startXIndex; j <= endXIndex; ++j ){
+    for ( int k = startYIndex; k <= endYIndex; ++k ){
+
+      avgVal += gMap.getValue( k * u.getNpixH() + j );
+      n_srcs += 1;
+
+    }
+    }
+
+  fprintf( pFile , "%10.6f %14.8e\n", dArr[i], avgVal / n_srcs );
+
+  }
+
+
+
+  fclose(  pFile );
+
+  std::cout << "Wrote file: " << fileName << std::endl;
+
+
+}
+
