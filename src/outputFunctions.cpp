@@ -204,6 +204,8 @@ int  writeAngRTS( haloInfo   & h ,
 
   pFile = fopen( fileName, "w" );
 
+
+  fprintf( pFile, "ID      %10li\n" , h.getID   () );
   fprintf( pFile, "M       %14.6e\n", h.getM    () );
   fprintf( pFile, "C       %14.6e\n", h.getC    () );
   fprintf( pFile, "R_max   %14.6e\n", h.getRmax () );
@@ -211,11 +213,14 @@ int  writeAngRTS( haloInfo   & h ,
   fprintf( pFile, "integ   %14.6e\n", integ        );
   fprintf( pFile, "M_img   %14.6e\n", u.getImageMass() );
 
+  fprintf( pFile , "b/a    %10.6f\n", h.getBA   () );
+  fprintf( pFile , "c/a    %10.6f\n", h.getCA   () );
+
   fprintf( pFile, "phi     %14.6e\n", h.getPhi  () );
   fprintf( pFile, "theta   %14.6e\n", h.getTheta() );
 
-  fprintf( pFile, "alpha_0  %14.6e\n", alpha_0     );
-  fprintf( pFile, "z_inc    %14.6e\n", zInc        );
+  fprintf( pFile, "alpha   %14.6e\n", alpha_0     );
+  fprintf( pFile, "gamma   %14.6e\n", zInc        );
 
   fprintf( pFile, "a %10.6f %10.6f %4i\n", aMin, aMax, u.getNbins_A2D() );
   fprintf( pFile, "r %10.6f %10.6f %4i\n", rMin, rMax, u.getNbins_R2D() );
