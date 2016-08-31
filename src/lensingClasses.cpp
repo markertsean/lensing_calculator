@@ -24,14 +24,14 @@ userInfo::userInfo(){
        physFOV = -1.  ; // Physical size of image
        totMass = -1.  ; // Total mass in image
          R_max = -1.  ; // ?
-   sourceR     =  1.0 ; // Radius of source in pixels
+   sourceR     =  3.0 ; // Radius of source in pixels
    sourceZ     = -1.  ; // Redshift of sources
    sourceDens  = 10.0 ; // Surface density of background sources, gal/arcmin^2
    shapeNoise  =  0.3 ; // Intrinsic shape noise in the sources
    N_pixels    = -1   ; // Number of pixels on the grid
    N_pixels_h  = -1   ; // Number of pixels on x-axis
    N_pixels_v  = -1   ; // Number of pixels on y-axis
-   N_bins      = -1   ; // Number of bins for radial averaging
+   N_bins      = 20   ; // Number of bins for radial averaging
    N_bins_R2D  =100   ; // Number of bins for 2D map averaging
    N_bins_A2D  =100   ; // Number of bins for 2D map averaging
    N_sources   = -1   ; // Number of sources to generate
@@ -39,7 +39,7 @@ userInfo::userInfo(){
    num_threads =  1   ; // Number of threads for parallel processing
   N_edgepixels =  3   ; // Number of pixels to leave on an edge
 
-  nearestSourceNeighbor = 1.5;   // Minimum distance between sources
+  nearestSourceNeighbor = 3.0;   // Minimum distance between sources
   readFile     = " ";            // Fits file to read
   catType      = " ";            // Catalog file to read
   cosmo        = " ";            // Type of cosmology
@@ -58,7 +58,7 @@ userInfo::userInfo(){
   alphaMin =  9e-2;    // Range of alpha values to fit
   alphaMax =  0.68;
 
-  maxFitAttempts = 1e2   ; // Maximum number of steps to roll ball, or times to reproduce
+  maxFitAttempts = 5e2   ; // Maximum number of steps to roll ball, or times to reproduce
    N_chromosomes = 1e3   ; // Number of chromosomes or balls
 
       consistent = 2e1   ; // Number of steps to converge before accepting
