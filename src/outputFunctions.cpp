@@ -18,6 +18,7 @@ void checkDir( std::string dirName ){
     }
 }
 
+// Returns true if file exists
 bool checkFile( char dirName[] ){
     struct stat sb;
     if ( stat( dirName, &sb ) !=0 ){
@@ -25,6 +26,18 @@ bool checkFile( char dirName[] ){
     }
       return true;
 }
+
+
+bool checkOutputExists( userInfo       u , // If output files exist before first run, abort
+                        haloInfo       h ){
+
+  char     fileName[100];
+  sprintf( fileName, "%sHalo_%010li_densFits.dat", u.getOutputPath().c_str(), h.getID() );
+
+  return checkFile( fileName );
+
+}
+
 
 
 // Reads the halo fits file from a file, to generate file for GLAMER

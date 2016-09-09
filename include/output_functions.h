@@ -37,5 +37,8 @@ void writeDataPoints(  userInfo        u ,
                        int      *indexes ,
                        PixelMap    &gMap );
 
+bool checkOutputExists( userInfo       u , // If output files exist before first run, abort
+                        haloInfo       h );
+
 
 #endif // OUTPUT_FUNCTIONS

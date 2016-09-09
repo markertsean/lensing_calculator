@@ -270,6 +270,17 @@ int main(int arg,char **argv){
       userInput.setSourceZ(srcZ);
     }
 
+    // On first iteration, check if output exists. If it does, abort
+    if ( halo_index == 1 &&
+         checkOutputExists( userInput, myHalo ) ) {
+
+                    std::cout << "Output exists for this halo, aborting..." << std::endl;
+
+        logMessage( std::string( "Output exists for this halo, aborting...") );
+        exit(0);
+
+    }
+
 
     ///////////////////////////////////////////////////
     /////////////INITIALIZE NEEDED MAPS////////////////
