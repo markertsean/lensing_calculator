@@ -7,9 +7,6 @@ cmake_minimum_required(VERSION 2.8)
 set(sample_VERSION_MAJOR 1)
 set(sample_VERSION_MINOR 0)
 
-set (CMAKE_CXX_COMPILER "/home/users/markert/bin/g++")
-set (CMAKE_C_COMPILER "/home/users/markert/bin/gcc")
-
 
 project(lensingCalculator)
 
@@ -41,8 +38,7 @@ endif()
 ####
 # build
 ####
-message(${GLAMER_LIBRARIES})
-message(${GLAMER_INCLUDE_DIRS})
+
 add_executable(lensing_calculator ${SOURCES})
 
-target_link_libraries(lensing_calculator ${GLAMER_LIBRARIES} "-lcfitsio" "-lCCfits")
+target_link_libraries(lensing_calculator ${GLAMER_LIBRARIES} "-lcfitsio")
