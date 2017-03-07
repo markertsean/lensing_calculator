@@ -1,13 +1,20 @@
 This code is to analyze FITS images output by MAGNMS (Mass mAp GeNerator for the Multidark Suite)
 
 5 input files are required (in order of reading):
+  
   lensUserParams.dat - Contains variables used by the code, many have default values
+  
   foxH2012.dat       - FoxH function table to interpolate over for Einasto fitting
+  
   foxH2123.dat       - " "
+  
   haloList.dat       - File containing all the FITS images to analyze, DO NOT MIX DIFFERENT HALOS IN THIS FILE
+  
   param_build        - Glamer file containing variables used by the program
 
+
 The flow of the code is as follows:
+
 1 - Read user input file, and set variables that will not be changing over course of program
 
 2 - Read the FoxH tables, as they will also be unchanging over the course of the program
